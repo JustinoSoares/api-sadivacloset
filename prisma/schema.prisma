@@ -1,0 +1,306 @@
+// Prisma schema — SadivaCloset API — schema completo
+// Moeda sempre inteiro (AOA, sem casas decimais)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────
+
+enum Role {
+  comprador
+  admin
+}
+
+enum Categoria {
+  fatos
+  camisas
+  vestidos
+  outros
+}
+
+enum EstadoProduto {
+  novo
+  semi_novo
+}
+
+enum EstadoPedido {
+  aguardando_pagamento
+  pago
+  em_preparacao
+  em_entrega
+  concluido
+  cancelado
+}
+
+enum TipoEntrega {
+  domicilio
+  levantamento_loja
+}
+
+enum EstadoEntrega {
+  agendada
+  a_caminho
+  entregue
+  falhada
+  cancelada
+}
+
+enum MetodoPagamento {
+  multicaixa_express
+  referencia_multicaixa
+  transferencia
+  pagamento_entrega
+  cartao
+}
+
+enum EstadoPagamento {
+  pendente
+  processando
+  pago
+  falhado
+  reembolsado
+}
+
+// ── Comprador ──────────────────────────────────────────────
+
+model Comprador {
+  id           String   @id @default(uuid()) @db.Uuid
+  nome         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(comprador)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  ativo        Boolean  @default(true)
+
+  favoritos     Favorito[]
+  itensCarrinho ItemCarrinho[]
+  notificacoes  Notificacao[]
+  enderecos     Endereco[]
+  pedidos       Pedido[]
+  logsAuditoria LogAuditoria[] @relation("AdminLogs")
+
+  @@map("compradores")
+}
+
+// ── Produto ────────────────────────────────────────────────
+
+model Produto {
+  id          String        @id @default(uuid()) @db.Uuid
+  imagem      String
+  nomeProduto String        @map("nome_produto")
+  descricao   String        @db.Text
+  categoria   Categoria
+  tamanho     String
+  estado      EstadoProduto
+  volume      Int           // stock / quantidade disponível
+  price       Int           // AOA inteiro
+  desconto    Int           @default(0) // 0-100
+  criadoEm    DateTime      @default(now()) @map("criado_em")
+
+  favoritos     Favorito[]
+  itensCarrinho ItemCarrinho[]
+  itensPedido   ItemPedido[]
+
+  @@index([categoria])
+  @@index([estado])
+  @@map("produtos")
+}
+
+// ── ZonaEntrega ────────────────────────────────────────────
+
+model ZonaEntrega {
+  id     String @id @default(uuid()) @db.Uuid
+  bairro String @unique
+  preco  Int // AOA inteiro
+
+  @@map("zonas_entrega")
+}
+
+// ── Favorito (chave composta) ──────────────────────────────
+
+model Favorito {
+  compradorId String   @map("comprador_id") @db.Uuid
+  produtoId   String   @map("produto_id") @db.Uuid
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  comprador Comprador @relation(fields: [compradorId], references: [id], onDelete: Cascade)
+  produto   Produto   @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@id([compradorId, produtoId])
+  @@map("favoritos")
+}
+
+// ── ItemCarrinho ───────────────────────────────────────────
+
+model ItemCarrinho {
+  id          String @id @default(uuid()) @db.Uuid
+  compradorId String @map("comprador_id") @db.Uuid
+  produtoId   String @map("produto_id") @db.Uuid
+  quantidade  Int    @default(1)
+
+  comprador Comprador @relation(fields: [compradorId], references: [id], onDelete: Cascade)
+  produto   Produto   @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([compradorId, produtoId])
+  @@map("itens_carrinho")
+}
+
+// ── Notificacao ────────────────────────────────────────────
+
+model Notificacao {
+  id          String   @id @default(uuid()) @db.Uuid
+  compradorId String   @map("comprador_id") @db.Uuid
+  titulo      String
+  descricao   String   @db.Text
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  lida        Boolean  @default(false)
+
+  comprador Comprador @relation(fields: [compradorId], references: [id], onDelete: Cascade)
+
+  @@index([compradorId, lida])
+  @@map("notificacoes")
+}
+
+// ── Endereco ───────────────────────────────────────────────
+
+model Endereco {
+  id          String  @id @default(uuid()) @db.Uuid
+  compradorId String  @map("comprador_id") @db.Uuid
+  etiqueta    String // ex: Casa, Trabalho
+  provincia   String
+  municipio   String
+  bairro      String
+  rua         String
+  referencia  String? @db.Text
+  latitude    Float?  @db.DoublePrecision
+  longitude   Float?  @db.DoublePrecision
+  predefinida Boolean @default(false)
+
+  comprador      Comprador      @relation(fields: [compradorId], references: [id], onDelete: Cascade)
+  entregasPedido EntregaPedido[]
+
+  @@index([compradorId])
+  @@map("enderecos")
+}
+
+// ── Pedido ─────────────────────────────────────────────────
+
+model Pedido {
+  id          String       @id @default(uuid()) @db.Uuid
+  compradorId String       @map("comprador_id") @db.Uuid
+  subtotal    Int // AOA inteiro
+  taxaEntrega Int          @map("taxa_entrega")
+  total       Int
+  estado      EstadoPedido @default(aguardando_pagamento)
+  criadoEm    DateTime     @default(now()) @map("criado_em")
+
+  comprador Comprador      @relation(fields: [compradorId], references: [id], onDelete: Cascade)
+  itens     ItemPedido[]
+  entrega   EntregaPedido?
+  pagamento Pagamento?
+
+  @@index([compradorId, estado])
+  @@map("pedidos")
+}
+
+// ── ItemPedido (snapshot) ──────────────────────────────────
+
+model ItemPedido {
+  id            String @id @default(uuid()) @db.Uuid
+  pedidoId      String @map("pedido_id") @db.Uuid
+  produtoId     String @map("produto_id") @db.Uuid
+  nomeProduto   String @map("nome_produto")
+  precoUnitario Int    @map("preco_unitario") // snapshot
+  desconto      Int // snapshot 0-100
+  quantidade    Int
+
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Restrict)
+
+  @@index([pedidoId])
+  @@map("itens_pedido")
+}
+
+// ── EntregaPedido ──────────────────────────────────────────
+
+model EntregaPedido {
+  id            String        @id @default(uuid()) @db.Uuid
+  pedidoId      String        @unique @map("pedido_id") @db.Uuid
+  tipo          TipoEntrega
+  enderecoId    String?       @map("endereco_id") @db.Uuid
+  dataAgendada  DateTime      @map("data_agendada") @db.Date
+  janelaHorario String        @map("janela_horario") // ex: 09:00-12:00
+  estado        EstadoEntrega @default(agendada)
+  taxaEntrega   Int           @map("taxa_entrega")
+  instrucoes    String?       @db.Text
+
+  pedido   Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  endereco Endereco? @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
+
+  @@map("entregas_pedido")
+}
+
+// ── Pagamento ──────────────────────────────────────────────
+
+model Pagamento {
+  id                String          @id @default(uuid()) @db.Uuid
+  pedidoId          String          @unique @map("pedido_id") @db.Uuid
+  metodo            MetodoPagamento
+  valor             Int // AOA inteiro
+  estado            EstadoPagamento @default(pendente)
+  referenciaExterna String?         @map("referencia_externa")
+  comprovativoUrl   String?         @map("comprovativo_url")
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
+}
+
+// ── LojaConfig (singleton) ─────────────────────────────────
+
+model LojaConfig {
+  id           String @id @default("singleton")
+  nome         String @default("SadivaCloset")
+  emailContacto String @map("email_contacto")
+  telefone     String
+  morada       String @db.Text
+
+  @@map("loja_config")
+}
+
+// ── PreferenciasAdmin (singleton) ──────────────────────────
+
+model PreferenciasAdmin {
+  id                      String            @id @default("singleton")
+  notificarNovosPedidos   Boolean           @default(true) @map("notificar_novos_pedidos")
+  notificarStockBaixo     Boolean           @default(true) @map("notificar_stock_baixo")
+  notificarNovasMensagens Boolean           @default(true) @map("notificar_novas_mensagens")
+  taxaEntregaPadrao       Int               @default(3000) @map("taxa_entrega_padrao")
+  metodosPagamentoAtivos  MetodoPagamento[] @map("metodos_pagamento_ativos")
+
+  @@map("preferencias_admin")
+}
+
+// ── LogAuditoria ───────────────────────────────────────────
+
+model LogAuditoria {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  acao       String // ex: criar_produto, atualizar_pedido
+  entidade   String // ex: Produto, Pedido
+  entidadeId String   @map("entidade_id")
+  detalhes   Json?    @db.JsonB
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  admin Comprador @relation("AdminLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([entidade, entidadeId])
+  @@map("logs_auditoria")
+}
