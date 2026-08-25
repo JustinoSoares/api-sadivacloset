@@ -28,10 +28,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     `;
 
     try {
-      const result = (await this.redis.eval(lua, 1, redisKey, String(ttl))) as [
-        number,
-        number,
-      ];
+      const result = (await this.redis.eval(lua, 1, redisKey, String(ttl))) as [number, number];
       const totalHits = Number(result[0]);
       const timeToExpire = Number(result[1]);
       // pttl pode ser -2 se key não existe? INCR garante existência, então -1 tratado
