@@ -12,6 +12,8 @@ import { RedisModule } from './modules/redis/redis.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ProductsModule } from './modules/products/products.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -87,6 +89,8 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     JwtModule.register({}),
     AuthModule,
     AdminModule,
+    ProductsModule,
+    CategoriesModule,
     HealthModule,
   ],
   controllers: [AppController],

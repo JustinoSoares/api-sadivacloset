@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Produto } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 import { FiltrarProdutosDto } from './dto/filtrar-produtos.dto';
@@ -8,7 +9,15 @@ import { PaginatedResponse, buildPaginatedResponse } from '../../../common/dto/p
 
 @Injectable()
 export class ProdutosAdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
+
+  private async invalidateCatalogCache(): Promise<void> {
+    await this.redis.delByPattern('cache:produtos:*');
+    await this.redis.del('cache:categorias');
+  }
 
   async findAll(query: FiltrarProdutosDto): Promise<PaginatedResponse<Produto>> {
     const where: Prisma.ProdutoWhereInput = {};
@@ -38,7 +47,7 @@ export class ProdutosAdminService {
   }
 
   async create(dto: CreateProdutoDto): Promise<Produto> {
-    return this.prisma.produto.create({
+    const produto = await this.prisma.produto.create({
       data: {
         imagem: dto.imagem,
         nomeProduto: dto.nomeProduto,
@@ -51,6 +60,8 @@ export class ProdutosAdminService {
         desconto: dto.desconto ?? 0,
       },
     });
+    await this.invalidateCatalogCache();
+    return produto;
   }
 
   async update(id: string, dto: UpdateProdutoDto): Promise<Produto> {
@@ -61,7 +72,7 @@ export class ProdutosAdminService {
       });
     }
 
-    return this.prisma.produto.update({
+    const updated = await this.prisma.produto.update({
       where: { id },
       data: {
         ...(dto.imagem !== undefined ? { imagem: dto.imagem } : {}),
@@ -75,6 +86,8 @@ export class ProdutosAdminService {
         ...(dto.desconto !== undefined ? { desconto: dto.desconto } : {}),
       },
     });
+    await this.invalidateCatalogCache();
+    return updated;
   }
 
   async remove(id: string): Promise<{ mensagem: string }> {
@@ -86,6 +99,7 @@ export class ProdutosAdminService {
     }
 
     await this.prisma.produto.delete({ where: { id } });
+    await this.invalidateCatalogCache();
     return { mensagem: 'Produto removido com sucesso' };
   }
 }

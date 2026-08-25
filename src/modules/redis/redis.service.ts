@@ -28,4 +28,14 @@ export class RedisService {
   async exists(key: string): Promise<boolean> {
     return (await this.redis.exists(key)) === 1;
   }
+
+  async keys(pattern: string): Promise<string[]> {
+    return this.redis.keys(pattern);
+  }
+
+  async delByPattern(pattern: string): Promise<number> {
+    const keys = await this.redis.keys(pattern);
+    if (keys.length === 0) return 0;
+    return this.redis.del(...keys);
+  }
 }
