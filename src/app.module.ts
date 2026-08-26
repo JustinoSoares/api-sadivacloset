@@ -14,6 +14,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { DeliveryZonesModule } from './modules/delivery-zones/delivery-zones.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { CartModule } from './modules/cart/cart.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -91,6 +96,11 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     AdminModule,
     ProductsModule,
     CategoriesModule,
+    DeliveryZonesModule,
+    FavoritesModule,
+    CartModule,
+    NotificationsModule,
+    AddressesModule,
     HealthModule,
   ],
   controllers: [AppController],
