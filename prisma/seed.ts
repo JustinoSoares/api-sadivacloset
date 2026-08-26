@@ -4,166 +4,160 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seed iniciado...');
+  console.log('🌱 Seed started...');
 
   // ── 1) Admin ────────────────────────────────────────────────
   const passwordHash = await bcrypt.hash('Admin@123', 10);
-  const admin = await prisma.comprador.upsert({
+  const admin = await prisma.user.upsert({
     where: { email: 'admin@sadivacloset.local' },
     update: {
-      nome: 'Admin SadivaCloset',
-      role: 'admin',
-      ativo: true,
+      name: 'Admin SadivaCloset',
+      role: 'ADMIN' as any,
+      isActive: true,
       passwordHash,
     },
     create: {
-      nome: 'Admin SadivaCloset',
+      name: 'Admin SadivaCloset',
       email: 'admin@sadivacloset.local',
       passwordHash,
-      role: 'admin',
-      ativo: true,
+      role: 'ADMIN' as any,
+      isActive: true,
     },
   });
   console.log(`✅ Admin: ${admin.email} (${admin.id}) role=${admin.role}`);
 
-  // ── 2) Zonas de entrega — 16 bairros reais de Luanda ─────────
-  const zonas: { bairro: string; preco: number }[] = [
-    { bairro: 'Talatona', preco: 2500 },
-    { bairro: 'Kilamba', preco: 3000 },
-    { bairro: 'Viana', preco: 2500 },
-    { bairro: 'Cazenga', preco: 2000 },
-    { bairro: 'Maianga', preco: 1500 },
-    { bairro: 'Sambizanga', preco: 1500 },
-    { bairro: 'Ingombota', preco: 1200 },
-    { bairro: 'Rangel', preco: 1500 },
-    { bairro: 'Samba', preco: 1800 },
-    { bairro: 'Benfica', preco: 2200 },
-    { bairro: 'Cacuaco', preco: 2800 },
-    { bairro: 'Zango', preco: 3200 },
-    { bairro: 'Morro Bento', preco: 2500 },
-    { bairro: 'Alvalade', preco: 1500 },
-    { bairro: 'Miramar', preco: 1200 },
-    { bairro: 'Golf 2', preco: 2000 },
+  // ── 2) Delivery zones — 16 Luanda neighborhoods ─────────
+  const zones: { neighborhood: string; price: number }[] = [
+    { neighborhood: 'Talatona', price: 2500 },
+    { neighborhood: 'Kilamba', price: 3000 },
+    { neighborhood: 'Viana', price: 2500 },
+    { neighborhood: 'Cazenga', price: 2000 },
+    { neighborhood: 'Maianga', price: 1500 },
+    { neighborhood: 'Sambizanga', price: 1500 },
+    { neighborhood: 'Ingombota', price: 1200 },
+    { neighborhood: 'Rangel', price: 1500 },
+    { neighborhood: 'Samba', price: 1800 },
+    { neighborhood: 'Benfica', price: 2200 },
+    { neighborhood: 'Cacuaco', price: 2800 },
+    { neighborhood: 'Zango', price: 3200 },
+    { neighborhood: 'Morro Bento', price: 2500 },
+    { neighborhood: 'Alvalade', price: 1500 },
+    { neighborhood: 'Miramar', price: 1200 },
+    { neighborhood: 'Golf 2', price: 2000 },
   ];
 
-  for (const z of zonas) {
-    await prisma.zonaEntrega.upsert({
-      where: { bairro: z.bairro },
-      update: { preco: z.preco },
-      create: { bairro: z.bairro, preco: z.preco },
+  for (const z of zones) {
+    await prisma.deliveryZone.upsert({
+      where: { neighborhood: z.neighborhood },
+      update: { price: z.price },
+      create: { neighborhood: z.neighborhood, price: z.price },
     });
   }
-  console.log(`✅ Zonas: ${zonas.length} bairros`);
+  console.log(`✅ Zones: ${zones.length} neighborhoods`);
 
-  // ── 3) LojaConfig (singleton) ─────────────────────────────────
-  await prisma.lojaConfig.upsert({
+  // ── 3) StoreConfig (singleton) ─────────────────────────────────
+  await prisma.storeConfig.upsert({
     where: { id: 'singleton' },
     update: {},
     create: {
       id: 'singleton',
-      nome: 'SadivaCloset',
-      emailContacto: 'contacto@sadivacloset.co.ao',
-      telefone: '+244 900 000 000',
-      morada: 'Luanda, Talatona, Rua da Samba, nº 123',
+      name: 'SadivaCloset',
+      contactEmail: 'contacto@sadivacloset.co.ao',
+      phone: '+244 900 000 000',
+      address: 'Luanda, Talatona, Rua da Samba, nº 123',
     },
   });
-  console.log('✅ LojaConfig singleton');
+  console.log('✅ StoreConfig singleton');
 
-  // ── 4) PreferenciasAdmin (singleton) ─────────────────────────
-  await prisma.preferenciasAdmin.upsert({
+  // ── 4) AdminPreferences (singleton) ─────────────────────────
+  await prisma.adminPreferences.upsert({
     where: { id: 'singleton' },
     update: {},
     create: {
       id: 'singleton',
-      notificarNovosPedidos: true,
-      notificarStockBaixo: true,
-      notificarNovasMensagens: true,
-      taxaEntregaPadrao: 2500,
-      metodosPagamentoAtivos: [
-        'multicaixa_express',
-        'referencia_multicaixa',
-        'pagamento_entrega',
+      notifyNewOrders: true,
+      notifyLowStock: true,
+      notifyNewMessages: true,
+      defaultDeliveryFee: 2500,
+      activePaymentMethods: [
+        'MULTICAIXA_EXPRESS' as any,
+        'MULTICAIXA_REFERENCE' as any,
+        'CASH_ON_DELIVERY' as any,
       ],
     },
   });
-  console.log('✅ PreferenciasAdmin singleton');
+  console.log('✅ AdminPreferences singleton');
 
-  // ── 5) Produtos de exemplo — 3-4 categorias ──────────────────
-  const produtosCount = await prisma.produto.count();
-  if (produtosCount === 0) {
-    const produtos = [
+  // ── 5) Example products — 3-4 categories ──────────────────
+  const productsCount = await prisma.product.count();
+  if (productsCount === 0) {
+    const products = [
       {
-        imagem: 'https://picsum.photos/seed/fato-preto/600/800',
-        nomeProduto: 'Fato Social Preto Clássico',
-        descricao:
-          'Fato completo (paletó + calça) em tecido premium, corte moderno, ideal para cerimónias e trabalho.',
-        categoria: 'fatos' as const,
-        tamanho: 'M',
-        estado: 'novo' as const,
-        volume: 10,
+        image: 'https://picsum.photos/seed/fato-preto/600/800',
+        name: 'Classic Black Suit',
+        description: 'Complete suit (blazer + pants) in premium fabric, modern cut, ideal for ceremonies and work.',
+        category: 'SUITS' as any,
+        size: 'M',
+        condition: 'NEW' as any,
+        stock: 10,
         price: 45000,
-        desconto: 10,
+        discount: 10,
       },
       {
-        imagem: 'https://picsum.photos/seed/camisa-branca/600/800',
-        nomeProduto: 'Camisa Branca Clássica',
-        descricao:
-          'Camisa de algodão 100%, gola italiana, manga comprida — semi-nova em excelente estado.',
-        categoria: 'camisas' as const,
-        tamanho: 'L',
-        estado: 'semi_novo' as const,
-        volume: 15,
+        image: 'https://picsum.photos/seed/camisa-branca/600/800',
+        name: 'Classic White Shirt',
+        description: '100% cotton shirt, Italian collar, long sleeves — pre-owned in excellent condition.',
+        category: 'SHIRTS' as any,
+        size: 'L',
+        condition: 'PRE_OWNED' as any,
+        stock: 15,
         price: 15000,
-        desconto: 0,
+        discount: 0,
       },
       {
-        imagem: 'https://picsum.photos/seed/vestido-floral/600/800',
-        nomeProduto: 'Vestido Floral Verão',
-        descricao:
-          'Vestido leve estampado floral, tecido fluido, perfeito para dias quentes.',
-        categoria: 'vestidos' as const,
-        tamanho: 'S',
-        estado: 'novo' as const,
-        volume: 8,
+        image: 'https://picsum.photos/seed/vestido-floral/600/800',
+        name: 'Floral Summer Dress',
+        description: 'Light floral printed dress, fluid fabric, perfect for hot days.',
+        category: 'DRESSES' as any,
+        size: 'S',
+        condition: 'NEW' as any,
+        stock: 8,
         price: 25000,
-        desconto: 15,
+        discount: 15,
       },
       {
-        imagem: 'https://picsum.photos/seed/conjunto-casual/600/800',
-        nomeProduto: 'Conjunto Casual Unissexo',
-        descricao:
-          'Conjunto descontraído (camisola + calção) — categoria outros, ideal para dia a dia.',
-        categoria: 'outros' as const,
-        tamanho: 'M',
-        estado: 'novo' as const,
-        volume: 20,
+        image: 'https://picsum.photos/seed/conjunto-casual/600/800',
+        name: 'Unisex Casual Set',
+        description: 'Relaxed set (sweater + shorts) — category others, ideal for daily use.',
+        category: 'OTHERS' as any,
+        size: 'M',
+        condition: 'NEW' as any,
+        stock: 20,
         price: 18000,
-        desconto: 5,
+        discount: 5,
       },
     ];
 
-    for (const p of produtos) {
-      await prisma.produto.create({ data: p });
+    for (const p of products) {
+      await prisma.product.create({ data: p });
     }
-    console.log(`✅ Produtos: ${produtos.length} criados`);
+    console.log(`✅ Products: ${products.length} created`);
   } else {
-    console.log(`ℹ️ Produtos já existem (${produtosCount}), skip`);
+    console.log(`ℹ️ Products already exist (${productsCount}), skip`);
   }
 
-  // ── Resumo ───────────────────────────────────────────────────
-  const [totalCompradores, totalZonas, totalProdutos] = await Promise.all([
-    prisma.comprador.count(),
-    prisma.zonaEntrega.count(),
-    prisma.produto.count(),
+  // ── Summary ───────────────────────────────────────────────────
+  const [totalUsers, totalZones, totalProducts] = await Promise.all([
+    prisma.user.count(),
+    prisma.deliveryZone.count(),
+    prisma.product.count(),
   ]);
-  console.log(
-    `🎉 Seed concluído — compradores=${totalCompradores} zonas=${totalZonas} produtos=${totalProdutos}`,
-  );
+  console.log(`🎉 Seed completed — users=${totalUsers} zones=${totalZones} products=${totalProducts}`);
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Erro no seed:', e);
+    console.error('❌ Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {

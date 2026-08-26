@@ -3,6 +3,13 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, AppRole } from '../decorators/roles.decorator';
 import type { JwtPayload } from './jwt-auth.guard';
 
+function normalizeRole(role: string): string {
+  const lower = role.toLowerCase();
+  if (lower === 'comprador' || lower === 'buyer') return 'buyer';
+  if (lower === 'admin') return 'admin';
+  return lower;
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
@@ -13,13 +20,11 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // Auto-protege qualquer rota /admin/* exigindo role admin, mesmo sem @Roles explícito
     const requestUrl = context.switchToHttp().getRequest<{ url?: string }>().url ?? '';
     const isAdminPath = requestUrl.startsWith('/api/v1/admin') || requestUrl.startsWith('/admin');
 
     const effectiveRoles = requiredRoles ?? (isAdminPath ? (['admin'] as AppRole[]) : null);
 
-    // Sem @Roles e não é rota admin => libera (apenas autenticação já verificada pelo JwtAuthGuard)
     if (!effectiveRoles || effectiveRoles.length === 0) return true;
 
     const request = context.switchToHttp().getRequest<{ user?: JwtPayload }>();
@@ -31,7 +36,10 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    if (!effectiveRoles.includes(user.role as AppRole)) {
+    const userRole = normalizeRole(user.role);
+    const normalizedRequired = effectiveRoles.map((r) => normalizeRole(r as string));
+
+    if (!normalizedRequired.includes(userRole)) {
       throw new ForbiddenException({
         erro: {
           codigo: 'ACESSO_NEGADO',

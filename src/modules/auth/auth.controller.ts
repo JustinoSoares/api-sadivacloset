@@ -5,12 +5,12 @@ import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
-import { RegistarDto } from './dto/registar.dto';
+import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
-import { EsqueciPasswordDto } from './dto/esqueci-password.dto';
-import { RedefinirPasswordDto } from './dto/redefinir-password.dto';
-import { AtualizarPerfilDto } from './dto/perfil.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('auth')
 @Throttle({ auth: { limit: 20, ttl: 60_000 }, default: { limit: 60, ttl: 60_000 } })
@@ -18,14 +18,24 @@ import { AtualizarPerfilDto } from './dto/perfil.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // ── POST /api/v1/auth/registar ─────────────────────────────
+  // ── POST /api/v1/auth/register ─────────────────────────────
+  @SkipThrottle({ esqueci: true, checkout: true })
+  @Public()
+  @Post('auth/register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() dto: RegisterDto) {
+    const user = await this.authService.register(dto.name, dto.email, dto.password);
+    return { data: user };
+  }
+
+  // legacy alias
   @SkipThrottle({ esqueci: true, checkout: true })
   @Public()
   @Post('auth/registar')
   @HttpCode(HttpStatus.CREATED)
-  async registar(@Body() dto: RegistarDto) {
-    const comprador = await this.authService.registar(dto.nome, dto.email, dto.password);
-    return { dados: comprador };
+  async registarAlias(@Body() dto: RegisterDto) {
+    const user = await this.authService.register(dto.name, dto.email, dto.password);
+    return { data: user, dados: user };
   }
 
   // ── POST /api/v1/auth/login ────────────────────────────────
@@ -55,36 +65,66 @@ export class AuthController {
     return this.authService.logout(dto.refresh_token);
   }
 
-  // ── POST /api/v1/auth/esqueci-password ─────────────────────
+  // ── POST /api/v1/auth/forgot-password ─────────────────────
+  @Throttle({ esqueci: { limit: 5, ttl: 15 * 60 * 1000 } })
+  @SkipThrottle({ auth: true, default: true, checkout: true })
+  @Public()
+  @Post('auth/forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
   @Throttle({ esqueci: { limit: 5, ttl: 15 * 60 * 1000 } })
   @SkipThrottle({ auth: true, default: true, checkout: true })
   @Public()
   @Post('auth/esqueci-password')
   @HttpCode(HttpStatus.OK)
-  async esqueciPassword(@Body() dto: EsqueciPasswordDto) {
-    return this.authService.esqueciPassword(dto.email);
+  async esqueciPasswordAlias(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
-  // ── POST /api/v1/auth/redefinir-password ───────────────────
+  // ── POST /api/v1/auth/reset-password ───────────────────
+  @SkipThrottle({ esqueci: true, checkout: true })
+  @Public()
+  @Post('auth/reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
   @SkipThrottle({ esqueci: true, checkout: true })
   @Public()
   @Post('auth/redefinir-password')
   @HttpCode(HttpStatus.OK)
-  async redefinirPassword(@Body() dto: RedefinirPasswordDto) {
-    return this.authService.redefinirPassword(dto.token, dto.novaPassword);
+  async redefinirPasswordAlias(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
-  // ── GET /api/v1/perfil ─────────────────────────────────────
+  // ── GET /api/v1/profile ─────────────────────────────────────
+  @Get('profile')
+  async getProfile(@CurrentUser() user: JwtPayload) {
+    const profile = await this.authService.getProfile(user.sub);
+    return { data: profile, dados: profile };
+  }
+
+  // legacy alias
   @Get('perfil')
-  async getPerfil(@CurrentUser() user: JwtPayload) {
-    const perfil = await this.authService.getPerfil(user.sub);
-    return { dados: perfil };
+  async getPerfilAlias(@CurrentUser() user: JwtPayload) {
+    const profile = await this.authService.getProfile(user.sub);
+    return { dados: profile, data: profile };
   }
 
-  // ── PATCH /api/v1/perfil ───────────────────────────────────
+  // ── PATCH /api/v1/profile ───────────────────────────────────
+  @Patch('profile')
+  async updateProfile(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
+    const profile = await this.authService.updateProfile(user.sub, dto);
+    return { data: profile, dados: profile };
+  }
+
   @Patch('perfil')
-  async patchPerfil(@CurrentUser() user: JwtPayload, @Body() dto: AtualizarPerfilDto) {
-    const perfil = await this.authService.atualizarPerfil(user.sub, dto);
-    return { dados: perfil };
+  async patchPerfilAlias(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
+    const profile = await this.authService.updateProfile(user.sub, dto as any);
+    return { dados: profile, data: profile };
   }
 }

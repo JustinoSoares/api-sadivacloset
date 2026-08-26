@@ -24,8 +24,6 @@ export class AuthService {
     private readonly redis: RedisService,
   ) {}
 
-  // ── Helpers ─────────────────────────────────────────────────
-
   private parseExpiresToSeconds(value: string): number {
     const m = value.match(/^(\d+)([smhd])$/);
     if (!m) return 7 * 24 * 3600;
@@ -40,8 +38,8 @@ export class AuthService {
     return bcrypt.hash(password, salt);
   }
 
-  private async signTokens(comprador: { id: string; email: string; role: string }) {
-    const payload = { sub: comprador.id, email: comprador.email, role: comprador.role };
+  private async signTokens(user: { id: string; email: string; role: string }) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const secret = this.config.get<string>('jwt.secret') as string;
     const refreshSecret = this.config.get<string>('jwt.refreshSecret') as string;
     const expiresIn = this.config.get<string>('jwt.expiresIn') as string;
@@ -59,7 +57,6 @@ export class AuthService {
   }
 
   private refreshKey(jtiOrToken: string): string {
-    // Usa hash do token para chave curta (evita guardar token gigante)
     const hash = crypto.createHash('sha256').update(jtiOrToken).digest('hex');
     return `blacklist:refresh:${hash}`;
   }
@@ -68,10 +65,10 @@ export class AuthService {
     return `reset:password:${hash}`;
   }
 
-  // ── Registar ────────────────────────────────────────────────
+  // ── Register ────────────────────────────────────────────────
 
-  async registar(nome: string, email: string, password: string) {
-    const exists = await this.prisma.comprador.findUnique({ where: { email } });
+  async register(name: string, email: string, password: string) {
+    const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) {
       throw new ConflictException({
         erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está registado' },
@@ -80,43 +77,48 @@ export class AuthService {
 
     const passwordHash = await this.hashPassword(password);
 
-    const comprador = await this.prisma.comprador.create({
+    const user = await this.prisma.user.create({
       data: {
-        nome,
+        name,
         email,
         passwordHash,
-        role: 'comprador',
+        role: 'BUYER' as any,
       },
-      select: { id: true, nome: true, email: true, role: true, criadoEm: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
 
-    return comprador;
+    return user;
+  }
+
+  // keep legacy alias for backward compatibility
+  async registar(nome: string, email: string, password: string) {
+    return this.register(nome, email, password);
   }
 
   // ── Login ───────────────────────────────────────────────────
 
   async login(email: string, password: string) {
-    const comprador = await this.prisma.comprador.findUnique({ where: { email } });
-    if (!comprador) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
       throw new UnauthorizedException({
         erro: { codigo: 'CREDENCIAIS_INVALIDAS', mensagem: 'Email ou password inválidos' },
       });
     }
 
-    if (!comprador.ativo) {
+    if (!user.isActive) {
       throw new UnauthorizedException({
         erro: { codigo: 'CONTA_INATIVA', mensagem: 'Conta desativada' },
       });
     }
 
-    const ok = await bcrypt.compare(password, comprador.passwordHash);
+    const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedException({
         erro: { codigo: 'CREDENCIAIS_INVALIDAS', mensagem: 'Email ou password inválidos' },
       });
     }
 
-    const tokens = await this.signTokens(comprador);
+    const tokens = await this.signTokens(user);
     return tokens;
   }
 
@@ -126,7 +128,6 @@ export class AuthService {
     const refreshSecret = this.config.get<string>('jwt.refreshSecret') as string;
     const refreshExpiresIn = this.config.get<string>('jwt.refreshExpiresIn') as string;
 
-    // Blacklist check
     const blKey = this.refreshKey(refreshToken);
     const blacklisted = await this.redis.exists(blKey);
     if (blacklisted) {
@@ -144,20 +145,19 @@ export class AuthService {
       });
     }
 
-    const comprador = await this.prisma.comprador.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
-    if (!comprador || !comprador.ativo) {
+    if (!user || !user.isActive) {
       throw new UnauthorizedException({
         erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Utilizador não encontrado ou inativo' },
       });
     }
 
-    // Rotação: invalida o refresh antigo (blacklist com TTL = validade do refresh)
     const ttl = this.parseExpiresToSeconds(refreshExpiresIn);
     await this.redis.set(blKey, '1', ttl);
 
-    const tokens = await this.signTokens(comprador);
+    const tokens = await this.signTokens(user);
     return tokens;
   }
 
@@ -170,7 +170,6 @@ export class AuthService {
       });
     }
 
-    // Valida formato do token antes de blacklistar (evita enchente)
     const refreshSecret = this.config.get<string>('jwt.refreshSecret') as string;
     try {
       await this.jwt.verifyAsync(refreshToken, { secret: refreshSecret });
@@ -188,22 +187,19 @@ export class AuthService {
     return { mensagem: 'Sessão terminada com sucesso' };
   }
 
-  // ── Esqueci password ────────────────────────────────────────
+  // ── Forgot password ────────────────────────────────────────
 
-  async esqueciPassword(email: string) {
-    const comprador = await this.prisma.comprador.findUnique({ where: { email } });
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-    // Resposta genérica para não enumerar emails — mas se existir, cria token
-    if (comprador) {
+    if (user) {
       const rawToken = crypto.randomBytes(32).toString('hex');
       const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
       const key = this.resetKey(hash);
 
-      // Guarda hash do token + compradorId com TTL 15min
-      await this.redis.set(key, comprador.id, 15 * 60);
+      await this.redis.set(key, user.id, 15 * 60);
 
-      const resetLink = `http://localhost:${this.config.get('port') ?? 3001}/redefinir-password?token=${rawToken}`;
-      // Por agora loga em vez de enviar email
+      const resetLink = `http://localhost:${this.config.get('port') ?? 3001}/reset-password?token=${rawToken}`;
       this.logger.log(`[RESET PASSWORD] email=${email} link=${resetLink} hash=${hash}`);
       this.logger.log(`   Token raw (para testes): ${rawToken}`);
       console.log(`\n🔑 [RESET PASSWORD] Link para ${email}: ${resetLink}\n`);
@@ -216,14 +212,18 @@ export class AuthService {
     };
   }
 
-  // ── Redefinir password ──────────────────────────────────────
+  async esqueciPassword(email: string) {
+    return this.forgotPassword(email);
+  }
 
-  async redefinirPassword(token: string, novaPassword: string) {
+  // ── Reset password ──────────────────────────────────────
+
+  async resetPassword(token: string, newPassword: string) {
     const hash = crypto.createHash('sha256').update(token).digest('hex');
     const key = this.resetKey(hash);
-    const compradorId = await this.redis.get(key);
+    const userId = await this.redis.get(key);
 
-    if (!compradorId) {
+    if (!userId) {
       throw new BadRequestException({
         erro: {
           codigo: 'TOKEN_EXPIRADO',
@@ -232,76 +232,87 @@ export class AuthService {
       });
     }
 
-    const comprador = await this.prisma.comprador.findUnique({
-      where: { id: compradorId },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
-    if (!comprador) {
+    if (!user) {
       throw new NotFoundException({
         erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Utilizador não encontrado' },
       });
     }
 
-    const passwordHash = await this.hashPassword(novaPassword);
-    await this.prisma.comprador.update({
-      where: { id: compradorId },
+    const passwordHash = await this.hashPassword(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
       data: { passwordHash },
     });
 
-    // Invalida token após uso
     await this.redis.del(key);
 
     return { mensagem: 'Password redefinida com sucesso' };
   }
 
-  // ── Perfil ──────────────────────────────────────────────────
+  async redefinirPassword(token: string, novaPassword: string) {
+    return this.resetPassword(token, novaPassword);
+  }
 
-  async getPerfil(compradorId: string) {
-    const comprador = await this.prisma.comprador.findUnique({
-      where: { id: compradorId },
+  // ── Profile ──────────────────────────────────────────────────
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
       select: {
         id: true,
-        nome: true,
+        name: true,
         email: true,
         role: true,
-        criadoEm: true,
-        ativo: true,
+        createdAt: true,
+        isActive: true,
       },
     });
-    if (!comprador) {
+    if (!user) {
       throw new NotFoundException({
         erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Utilizador não encontrado' },
       });
     }
-    return comprador;
+    return user;
   }
 
-  async atualizarPerfil(compradorId: string, dados: { nome?: string; email?: string }) {
-    if (dados.email) {
-      const outro = await this.prisma.comprador.findUnique({
-        where: { email: dados.email },
+  async getPerfil(compradorId: string) {
+    return this.getProfile(compradorId);
+  }
+
+  async updateProfile(userId: string, data: { name?: string; email?: string }) {
+    if (data.email) {
+      const other = await this.prisma.user.findUnique({
+        where: { email: data.email },
       });
-      if (outro && outro.id !== compradorId) {
+      if (other && other.id !== userId) {
         throw new ConflictException({
           erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está em uso' },
         });
       }
     }
 
-    const atualizado = await this.prisma.comprador.update({
-      where: { id: compradorId },
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
       data: {
-        ...(dados.nome ? { nome: dados.nome } : {}),
-        ...(dados.email ? { email: dados.email } : {}),
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.email ? { email: data.email } : {}),
       },
       select: {
         id: true,
-        nome: true,
+        name: true,
         email: true,
         role: true,
-        criadoEm: true,
+        createdAt: true,
       },
     });
 
-    return atualizado;
+    return updated;
+  }
+
+  async atualizarPerfil(compradorId: string, dados: { nome?: string; email?: string }) {
+    return this.updateProfile(compradorId, { name: dados.nome, email: dados.email });
   }
 }

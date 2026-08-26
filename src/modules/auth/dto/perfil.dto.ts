@@ -1,11 +1,2 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
-
-export class AtualizarPerfilDto {
-  @IsOptional()
-  @IsString()
-  nome?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-}
+export { UpdateProfileDto } from './update-profile.dto';
+export { UpdateProfileDto as AtualizarPerfilDto } from './update-profile.dto';

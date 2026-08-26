@@ -1,6 +1,2 @@
-import { IsEmail } from 'class-validator';
-
-export class EsqueciPasswordDto {
-  @IsEmail()
-  email!: string;
-}
+export { ForgotPasswordDto } from './forgot-password.dto';
+export { ForgotPasswordDto as EsqueciPasswordDto } from './forgot-password.dto';

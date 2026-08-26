@@ -4,18 +4,17 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO base para paginação clássica ?page=&limit=
- * Usado em todos os endpoints listáveis, incluindo /admin/produtos.
- * O frontend consome páginas sucessivas para implementar scroll infinito.
+ * Used in all listable endpoints, including /admin/products.
  */
 export class PaginationDto {
-  @ApiPropertyOptional({ minimum: 1, default: 1, description: 'Número da página' })
+  @ApiPropertyOptional({ minimum: 1, default: 1, description: 'Page number' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20, description: 'Itens por página' })
+  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20, description: 'Items per page' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -32,7 +31,7 @@ export class PaginationDto {
   }
 }
 
-// ── Formato legado (compatibilidade) ─────────────────────────────────
+// ── Legacy format (compatibility) ─────────────────────────────────
 export interface PaginatedResult<T> {
   data: T[];
   meta: {
@@ -61,12 +60,14 @@ export function buildPaginatedResult<T>(
   };
 }
 
-// ── Formato novo exigido pela task transversal ─────────────────────────
-// Recebe page e limit da query, devolve { dados, pagina, total, total_paginas }
+// ── Bilingual format: English + Portuguese (code English, messages Portuguese) ─────────────────────────
 export interface PaginatedResponse<T> {
+  data: T[];
   dados: T[];
+  page: number;
   pagina: number;
   total: number;
+  totalPages: number;
   total_paginas: number;
 }
 
@@ -76,15 +77,21 @@ export function buildPaginatedResponse<T>(
   dto: PaginationDto,
 ): PaginatedResponse<T> {
   const pagina = dto.page ?? 1;
+  const page = pagina;
   const limit = dto.limit ?? 20;
+  const totalPages = Math.ceil(total / limit);
+  const total_paginas = totalPages;
   return {
+    data: dados,
     dados,
+    page,
     pagina,
     total,
-    total_paginas: Math.ceil(total / limit),
+    totalPages,
+    total_paginas,
   };
 }
 
-// Alias para helper reutilizável — nome solicitado na task
+// Alias for reusable helper
 export const paginate = buildPaginatedResponse;
 export const paginar = buildPaginatedResponse;
