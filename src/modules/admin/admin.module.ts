@@ -1,26 +1,27 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
-import { ProductsAdminController, ProdutosAdminController } from './produtos/products-admin.controller';
-import { ProductsAdminService } from './produtos/products-admin.service';
-import { AdminPedidosController, AdminOrdersController } from './pedidos/admin-orders.controller';
-import { AdminOrdersService } from './pedidos/admin-orders.service';
-import { AdminEntregasController, AdminDeliveriesController } from './entregas/admin-deliveries.controller';
-import { AdminDeliveriesService } from './entregas/admin-deliveries.service';
-import { AdminEstatisticasController, AdminStatisticsController } from './estatisticas/admin-estatisticas.controller';
-import { AdminEstatisticasService } from './estatisticas/admin-estatisticas.service';
-import { AdminLojaController, AdminStoreController } from './loja/admin-loja.controller';
-import { AdminLojaService } from './loja/admin-loja.service';
-import { AdminContaController, AdminAccountController } from './conta/admin-conta.controller';
-import { AdminContaService } from './conta/admin-conta.service';
-import { AdminPreferenciasController, AdminPreferencesController } from './preferencias/admin-preferencias.controller';
-import { AdminPreferenciasService } from './preferencias/admin-preferencias.service';
-import { AdminMembrosController, AdminMembersController } from './membros/admin-membros.controller';
-import { AdminMembrosService } from './membros/admin-membros.service';
+import { ProductsAdminController, ProdutosAdminController } from './products/products-admin.controller';
+import { ProductsAdminService } from './products/products-admin.service';
+import { AdminOrdersController, AdminPedidosController } from './orders/admin-orders.controller';
+import { AdminOrdersService } from './orders/admin-orders.service';
+import { AdminDeliveriesController, AdminEntregasController } from './deliveries/admin-deliveries.controller';
+import { AdminDeliveriesService } from './deliveries/admin-deliveries.service';
+import { AdminStatisticsController, AdminEstatisticasController } from './statistics/admin-statistics.controller';
+import { AdminStatisticsService } from './statistics/admin-statistics.service';
+import { AdminStoreController, AdminLojaController } from './loja/admin-loja.controller';
+import { AdminStoreService } from './store/admin-store.service';
+import { AdminAccountController, AdminContaController } from './account/admin-account.controller';
+import { AdminAccountService } from './account/admin-account.service';
+import { AdminPreferencesController, AdminPreferenciasController } from './preferences/admin-preferences.controller';
+import { AdminPreferencesService } from './preferences/admin-preferences.service';
+import { AdminMembersController, AdminMembrosController } from './members/admin-members.controller';
+import { AdminMembersService } from './members/admin-members.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuditModule } from '../audit/audit.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({
-  imports: [NotificationsModule, AuditoriaModule],
+  imports: [NotificationsModule, AuditModule, AuditoriaModule],
   controllers: [
     AdminController,
     ProductsAdminController,
@@ -44,21 +45,21 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     ProductsAdminService,
     AdminOrdersService,
     AdminDeliveriesService,
-    AdminEstatisticasService,
-    AdminLojaService,
-    AdminContaService,
-    AdminPreferenciasService,
-    AdminMembrosService,
+    AdminStatisticsService,
+    AdminStoreService,
+    AdminAccountService,
+    AdminPreferencesService,
+    AdminMembersService,
   ],
   exports: [
     ProductsAdminService,
     AdminOrdersService,
     AdminDeliveriesService,
-    AdminEstatisticasService,
-    AdminLojaService,
-    AdminContaService,
-    AdminPreferenciasService,
-    AdminMembrosService,
+    AdminStatisticsService,
+    AdminStoreService,
+    AdminAccountService,
+    AdminPreferencesService,
+    AdminMembersService,
   ],
 })
 export class AdminModule {}

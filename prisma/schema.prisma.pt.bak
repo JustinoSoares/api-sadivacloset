@@ -1,0 +1,355 @@
+// Prisma schema — SadivaCloset API — english code, portuguese messages only for user
+// Currency always integer (AOA, no decimals)
+// All model/field/enum names in English; only user-facing messages stay in Portuguese (via @map to keep DB compatible)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────
+
+enum Role {
+  BUYER  @map("comprador")
+  ADMIN  @map("admin")
+}
+
+enum Category {
+  SUITS   @map("fatos")
+  SHIRTS  @map("camisas")
+  DRESSES @map("vestidos")
+  OTHERS  @map("outros")
+}
+
+enum ProductCondition {
+  NEW        @map("novo")
+  PRE_OWNED  @map("semi_novo")
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT @map("aguardando_pagamento")
+  PAID             @map("pago")
+  PREPARING        @map("em_preparacao")
+  SHIPPING         @map("em_entrega")
+  COMPLETED        @map("concluido")
+  CANCELLED        @map("cancelado")
+}
+
+enum DeliveryType {
+  HOME_DELIVERY @map("domicilio")
+  STORE_PICKUP  @map("levantamento_loja")
+}
+
+enum DeliveryStatus {
+  SCHEDULED   @map("agendada")
+  ON_THE_WAY  @map("a_caminho")
+  DELIVERED   @map("entregue")
+  FAILED      @map("falhada")
+  CANCELLED   @map("cancelada")
+}
+
+enum PaymentMethod {
+  MULTICAIXA_EXPRESS   @map("multicaixa_express")
+  MULTICAIXA_REFERENCE @map("referencia_multicaixa")
+  BANK_TRANSFER        @map("transferencia")
+  CASH_ON_DELIVERY     @map("pagamento_entrega")
+  CARD                 @map("cartao")
+}
+
+enum PaymentStatus {
+  PENDING    @map("pendente")
+  PROCESSING @map("processando")
+  PAID       @map("pago")
+  FAILED     @map("falhado")
+  REFUNDED   @map("reembolsado")
+}
+
+// ── User (was Comprador) ───────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @map("nome")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(BUYER)
+  createdAt    DateTime @default(now()) @map("criado_em")
+  isActive     Boolean  @default(true) @map("ativo")
+
+  favorites     Favorite[]
+  cartItems     CartItem[]
+  notifications Notification[]
+  addresses     Address[]
+  orders        Order[]
+  auditLogs     AuditLog[] @relation("AdminLogs")
+
+  @@map("compradores")
+}
+
+// ── Product (was Produto) ──────────────────────────────────
+
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  image       String           @map("imagem")
+  name        String           @map("nome_produto")
+  description String           @map("descricao") @db.Text
+  category    Category         @map("categoria")
+  size        String           @map("tamanho")
+  condition   ProductCondition @map("estado")
+  stock       Int              @map("volume")
+  price       Int              @map("price")
+  discount    Int              @default(0) @map("desconto")
+  createdAt   DateTime         @default(now()) @map("criado_em")
+
+  favorites Favorite[]
+  cartItems CartItem[]
+  orderItems OrderItem[]
+
+  @@index([category])
+  @@index([condition])
+  @@map("produtos")
+}
+
+// ── DeliveryZone (was ZonaEntrega) ─────────────────────────
+
+model DeliveryZone {
+  id           String @id @default(uuid()) @db.Uuid
+  neighborhood String @unique @map("bairro")
+  price        Int    @map("preco")
+
+  @@map("zonas_entrega")
+}
+
+// ── Favorite (was Favorito) ────────────────────────────────
+
+model Favorite {
+  buyerId   String   @map("comprador_id") @db.Uuid
+  productId String   @map("produto_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("criado_em")
+
+  buyer   User    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([buyerId, productId])
+  @@map("favoritos")
+}
+
+// ── CartItem (was ItemCarrinho) ────────────────────────────
+
+model CartItem {
+  id        String @id @default(uuid()) @db.Uuid
+  buyerId   String @map("comprador_id") @db.Uuid
+  productId String @map("produto_id") @db.Uuid
+  quantity  Int    @default(1) @map("quantidade")
+
+  buyer   User    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, productId])
+  @@map("itens_carrinho")
+}
+
+// ── Notification (was Notificacao) ─────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  buyerId   String   @map("comprador_id") @db.Uuid
+  title     String   @map("titulo")
+  description String @map("descricao") @db.Text
+  createdAt DateTime @default(now()) @map("criado_em")
+  isRead    Boolean  @default(false) @map("lida")
+
+  buyer User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, isRead])
+  @@map("notificacoes")
+}
+
+// ── Address (was Endereco) ─────────────────────────────────
+
+model Address {
+  id          String  @id @default(uuid()) @db.Uuid
+  buyerId     String  @map("comprador_id") @db.Uuid
+  label       String  @map("etiqueta")
+  province    String  @map("provincia")
+  municipality String @map("municipio")
+  neighborhood String @map("bairro")
+  street      String  @map("rua")
+  reference   String? @map("referencia") @db.Text
+  latitude    Float?  @map("latitude") @db.DoublePrecision
+  longitude   Float?  @map("longitude") @db.DoublePrecision
+  isDefault   Boolean @default(false) @map("predefinida")
+
+  buyer         User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  orderDeliveries Delivery[]
+
+  @@index([buyerId])
+  @@map("enderecos")
+}
+
+// ── Order (was Pedido) ─────────────────────────────────────
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  buyerId     String      @map("comprador_id") @db.Uuid
+  subtotal    Int         @map("subtotal")
+  deliveryFee Int         @map("taxa_entrega")
+  total       Int         @map("total")
+  status      OrderStatus @default(AWAITING_PAYMENT) @map("estado")
+  createdAt   DateTime    @default(now()) @map("criado_em")
+
+  buyer    User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  delivery Delivery?
+  payment  Payment?
+
+  @@index([buyerId, status])
+  @@map("pedidos")
+}
+
+// ── OrderItem (was ItemPedido) ─────────────────────────────
+
+model OrderItem {
+  id          String @id @default(uuid()) @db.Uuid
+  orderId     String @map("pedido_id") @db.Uuid
+  productId   String @map("produto_id") @db.Uuid
+  productName String @map("nome_produto")
+  unitPrice   Int    @map("preco_unitario")
+  discount    Int    @map("desconto")
+  quantity    Int    @map("quantidade")
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@map("itens_pedido")
+}
+
+// ── Delivery (was EntregaPedido) ───────────────────────────
+
+model Delivery {
+  id            String         @id @default(uuid()) @db.Uuid
+  orderId       String         @unique @map("pedido_id") @db.Uuid
+  type          DeliveryType   @map("tipo")
+  addressId     String?        @map("endereco_id") @db.Uuid
+  scheduledDate DateTime       @map("data_agendada") @db.Date
+  timeWindow    String         @map("janela_horario")
+  status        DeliveryStatus @default(SCHEDULED) @map("estado")
+  deliveryFee   Int            @map("taxa_entrega")
+  instructions  String?        @map("instrucoes") @db.Text
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  address Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
+  @@map("entregas_pedido")
+}
+
+// ── Payment (was Pagamento) ────────────────────────────────
+
+model Payment {
+  id                String        @id @default(uuid()) @db.Uuid
+  orderId           String        @unique @map("pedido_id") @db.Uuid
+  method            PaymentMethod @map("metodo")
+  amount            Int           @map("valor")
+  status            PaymentStatus @default(PENDING) @map("estado")
+  externalReference String?       @map("referencia_externa")
+  receiptUrl        String?       @map("comprovativo_url")
+  providerTxId      String?       @map("provider_tx_id")
+  bridpayIntentId   String?       @map("bridpay_intent_id")
+  bridpayMerchantTxId String?     @map("bridpay_merchant_tx_id")
+  providerDetails   Json?         @map("provider_details") @db.JsonB
+  phoneNumber       String?       @map("telefone")
+  iban              String?       @map("iban")
+  webhookProcessedAt DateTime?    @map("webhook_processado_em")
+  createdAt         DateTime      @default(now()) @map("criado_em")
+  updatedAt         DateTime      @updatedAt @map("atualizado_em")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
+}
+
+// ── Wallet (internal ledger for entradas/saidas) ──────────
+model WalletTransaction {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @map("tipo") // credit:entrada, debit:saida
+  amount      Int      @map("valor")
+  balanceBefore Int    @default(0) @map("saldo_antes")
+  balanceAfter  Int    @default(0) @map("saldo_depois")
+  status      String   @default("settled") @map("estado")
+  referenceType String @map("tipo_referencia") // payment_intent, payout, manual
+  referenceId String @map("referencia_id") @db.Uuid
+  description String? @map("descricao")
+  orderId     String? @map("pedido_id") @db.Uuid
+  paymentId   String? @map("pagamento_id") @db.Uuid
+  bridpayTxId String? @map("bridpay_tx_id")
+  createdAt   DateTime @default(now()) @map("criado_em")
+
+  @@index([type])
+  @@index([referenceType, referenceId])
+  @@map("transacoes_carteira")
+}
+
+// ── Payout (saída via KWIK) ─────────────────────────────────
+model Payout {
+  id          String        @id @default(uuid()) @db.Uuid
+  amount      Int           @map("valor")
+  iban        String        @map("iban")
+  method      PaymentMethod @default(BANK_TRANSFER) @map("metodo")
+  status      PaymentStatus @default(PENDING) @map("estado")
+  externalReference String? @map("referencia_externa")
+  providerTxId String?      @map("provider_tx_id")
+  description String?       @map("descricao")
+  orderId     String?       @map("pedido_id") @db.Uuid
+  paymentId   String?       @map("pagamento_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("criado_em")
+  updatedAt   DateTime      @updatedAt @map("atualizado_em")
+
+  @@map("levantamentos")
+}
+
+// ── StoreConfig (was LojaConfig) ───────────────────────────
+
+model StoreConfig {
+  id           String @id @default("singleton") @map("id")
+  name         String @default("SadivaCloset") @map("nome")
+  contactEmail String @map("email_contacto")
+  phone        String @map("telefone")
+  address      String @map("morada") @db.Text
+
+  @@map("loja_config")
+}
+
+// ── AdminPreferences (was PreferenciasAdmin) ───────────────
+
+model AdminPreferences {
+  id                 String         @id @default("singleton") @map("id")
+  notifyNewOrders    Boolean        @default(true) @map("notificar_novos_pedidos")
+  notifyLowStock     Boolean        @default(true) @map("notificar_stock_baixo")
+  notifyNewMessages  Boolean        @default(true) @map("notificar_novas_mensagens")
+  defaultDeliveryFee Int            @default(3000) @map("taxa_entrega_padrao")
+  activePaymentMethods PaymentMethod[] @map("metodos_pagamento_ativos")
+
+  @@map("preferencias_admin")
+}
+
+// ── AuditLog (was LogAuditoria) ────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  action    String   @map("acao")
+  entity    String   @map("entidade")
+  entityId  String   @map("entidade_id")
+  details   Json?    @map("detalhes") @db.JsonB
+  createdAt DateTime @default(now()) @map("criado_em")
+
+  admin User @relation("AdminLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([entity, entityId])
+  @@map("logs_auditoria")
+}

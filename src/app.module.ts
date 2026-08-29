@@ -23,6 +23,7 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AppController } from './app.controller';
@@ -111,6 +112,7 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     OrdersModule,
     PaymentsModule,
     StorageModule,
+    AuditModule,
     AuditoriaModule,
     QueueModule,
     HealthModule,
