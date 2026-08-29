@@ -29,6 +29,7 @@ function buildCacheKey(query: FilterProductsDto): string {
   return `cache:products:${parts.join('|') || 'all'}`;
 }
 
+@Injectable()
 // keep legacy name alias
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);

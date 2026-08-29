@@ -17,15 +17,18 @@ describe('PaginationDto', () => {
 });
 
 describe('buildPaginatedResponse', () => {
-  it('deve retornar {dados, pagina, total, total_paginas}', () => {
+  it('deve retornar {dados, pagina, total, total_paginas} (bilingual: também data/page/totalPages)', () => {
     const dto = new PaginationDto();
     dto.page = 2;
     dto.limit = 10;
     const result = buildPaginatedResponse([{ id: 1 }, { id: 2 }] as any, 25, dto);
     expect(result).toEqual({
+      data: [{ id: 1 }, { id: 2 }],
       dados: [{ id: 1 }, { id: 2 }],
+      page: 2,
       pagina: 2,
       total: 25,
+      totalPages: 3,
       total_paginas: 3,
     });
   });

@@ -9,8 +9,14 @@ describe('HttpExceptionFilter', () => {
 
   beforeEach(() => {
     filter = new HttpExceptionFilter();
+    // silencia logs de erro esperados no teste de Error genérico
+    jest.spyOn((filter as any).logger, 'error').mockImplementation(() => {});
     jsonMock = jest.fn();
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   function createHost(): ArgumentsHost {
