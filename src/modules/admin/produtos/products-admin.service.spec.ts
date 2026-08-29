@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuditoriaService } from '../../auditoria/auditoria.service';
 import { NotFoundException } from '@nestjs/common';
 import { ProductsAdminService } from './products-admin.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -51,6 +52,7 @@ describe('ProductsAdminService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: AuditoriaService, useValue: { registar: jest.fn().mockResolvedValue({}), register: jest.fn().mockResolvedValue({}) } },
         ProductsAdminService,
         { provide: PrismaService, useValue: prisma },
         { provide: RedisService, useValue: redis },

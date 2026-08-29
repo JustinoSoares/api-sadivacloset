@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FilterProductsDto } from './dto/filter-products.dto';
@@ -32,21 +34,21 @@ export class ProductsAdminController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateProductDto) {
-    const product = await this.productsService.create(dto as any);
+  async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateProductDto) {
+    const product = await this.productsService.create(dto as any, user.sub);
     return { data: product, dados: product };
   }
 
   @Patch(':id')
-  async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto) {
-    const product = await this.productsService.update(id, dto as any);
+  async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto) {
+    const product = await this.productsService.update(id, dto as any, user.sub);
     return { data: product, dados: product };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productsService.remove(id);
+  async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.remove(id, user.sub);
   }
 }
 

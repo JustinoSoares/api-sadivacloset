@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { PaymentQueueService } from './payment-queue.service';
 
-// Placeholder para BullMQ — webhooks de pagamento e notificações
-// Ligação Redis via REDIS_URL (ioredis)
-@Module({})
+@Module({
+  providers: [PaymentQueueService],
+  exports: [PaymentQueueService],
+})
 export class QueueModule {}

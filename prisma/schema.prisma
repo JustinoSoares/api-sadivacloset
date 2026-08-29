@@ -257,10 +257,58 @@ model Payment {
   status            PaymentStatus @default(PENDING) @map("estado")
   externalReference String?       @map("referencia_externa")
   receiptUrl        String?       @map("comprovativo_url")
+  providerTxId      String?       @map("provider_tx_id")
+  bridpayIntentId   String?       @map("bridpay_intent_id")
+  bridpayMerchantTxId String?     @map("bridpay_merchant_tx_id")
+  providerDetails   Json?         @map("provider_details") @db.JsonB
+  phoneNumber       String?       @map("telefone")
+  iban              String?       @map("iban")
+  webhookProcessedAt DateTime?    @map("webhook_processado_em")
+  createdAt         DateTime      @default(now()) @map("criado_em")
+  updatedAt         DateTime      @updatedAt @map("atualizado_em")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("pagamentos")
+}
+
+// ── Wallet (internal ledger for entradas/saidas) ──────────
+model WalletTransaction {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @map("tipo") // credit:entrada, debit:saida
+  amount      Int      @map("valor")
+  balanceBefore Int    @default(0) @map("saldo_antes")
+  balanceAfter  Int    @default(0) @map("saldo_depois")
+  status      String   @default("settled") @map("estado")
+  referenceType String @map("tipo_referencia") // payment_intent, payout, manual
+  referenceId String @map("referencia_id") @db.Uuid
+  description String? @map("descricao")
+  orderId     String? @map("pedido_id") @db.Uuid
+  paymentId   String? @map("pagamento_id") @db.Uuid
+  bridpayTxId String? @map("bridpay_tx_id")
+  createdAt   DateTime @default(now()) @map("criado_em")
+
+  @@index([type])
+  @@index([referenceType, referenceId])
+  @@map("transacoes_carteira")
+}
+
+// ── Payout (saída via KWIK) ─────────────────────────────────
+model Payout {
+  id          String        @id @default(uuid()) @db.Uuid
+  amount      Int           @map("valor")
+  iban        String        @map("iban")
+  method      PaymentMethod @default(BANK_TRANSFER) @map("metodo")
+  status      PaymentStatus @default(PENDING) @map("estado")
+  externalReference String? @map("referencia_externa")
+  providerTxId String?      @map("provider_tx_id")
+  description String?       @map("descricao")
+  orderId     String?       @map("pedido_id") @db.Uuid
+  paymentId   String?       @map("pagamento_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("criado_em")
+  updatedAt   DateTime      @updatedAt @map("atualizado_em")
+
+  @@map("levantamentos")
 }
 
 // ── StoreConfig (was LojaConfig) ───────────────────────────

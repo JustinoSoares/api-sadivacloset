@@ -58,13 +58,33 @@ export class PerfilEnderecosController {
   @ApiOperation({ summary: 'Edita endereço' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
+    const etiqueta = dto.labelNormalized;
+    const provincia = dto.provinceNormalized;
+    const municipio = dto.municipalityNormalized;
+    const bairro = dto.neighborhoodNormalized;
+    const rua = dto.streetNormalized;
+    const referencia = dto.referenceNormalized;
+    const hasAny =
+      etiqueta !== undefined ||
+      provincia !== undefined ||
+      municipio !== undefined ||
+      bairro !== undefined ||
+      rua !== undefined ||
+      referencia !== undefined ||
+      dto.latitude !== undefined ||
+      dto.longitude !== undefined;
+    if (!hasAny) {
+      throw new BadRequestException({
+        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Nenhum campo para atualizar', detalhes: [] },
+      });
+    }
     const address = await this.addressesService.update(user.sub, id, {
-      etiqueta: dto.labelNormalized,
-      provincia: dto.provinceNormalized,
-      municipio: dto.municipalityNormalized,
-      bairro: dto.neighborhoodNormalized,
-      rua: dto.streetNormalized,
-      referencia: dto.referenceNormalized !== undefined ? dto.referenceNormalized : undefined,
+      etiqueta,
+      provincia,
+      municipio,
+      bairro,
+      rua,
+      referencia: referencia !== undefined ? referencia : undefined,
       latitude: dto.latitude,
       longitude: dto.longitude,
     });
@@ -139,13 +159,33 @@ export class ProfileAddressesController {
   @ApiOperation({ summary: 'Update address' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
+    const etiqueta = dto.labelNormalized;
+    const provincia = dto.provinceNormalized;
+    const municipio = dto.municipalityNormalized;
+    const bairro = dto.neighborhoodNormalized;
+    const rua = dto.streetNormalized;
+    const referencia = dto.referenceNormalized;
+    const hasAny =
+      etiqueta !== undefined ||
+      provincia !== undefined ||
+      municipio !== undefined ||
+      bairro !== undefined ||
+      rua !== undefined ||
+      referencia !== undefined ||
+      dto.latitude !== undefined ||
+      dto.longitude !== undefined;
+    if (!hasAny) {
+      throw new BadRequestException({
+        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'No fields to update', detalhes: [] },
+      });
+    }
     const address = await this.addressesService.update(user.sub, id, {
-      etiqueta: dto.labelNormalized,
-      provincia: dto.provinceNormalized,
-      municipio: dto.municipalityNormalized,
-      bairro: dto.neighborhoodNormalized,
-      rua: dto.streetNormalized,
-      referencia: dto.referenceNormalized !== undefined ? dto.referenceNormalized : undefined,
+      etiqueta,
+      provincia,
+      municipio,
+      bairro,
+      rua,
+      referencia: referencia !== undefined ? referencia : undefined,
       latitude: dto.latitude,
       longitude: dto.longitude,
     });

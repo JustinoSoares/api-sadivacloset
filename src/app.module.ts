@@ -19,6 +19,12 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CartModule } from './modules/cart/cart.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
+import { CheckoutModule } from './modules/checkout/checkout.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+import { QueueModule } from './modules/queue/queue.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -101,6 +107,12 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     CartModule,
     NotificationsModule,
     AddressesModule,
+    CheckoutModule,
+    OrdersModule,
+    PaymentsModule,
+    StorageModule,
+    AuditoriaModule,
+    QueueModule,
     HealthModule,
   ],
   controllers: [AppController],

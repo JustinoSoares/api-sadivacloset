@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Product } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
+import { AuditoriaService } from '../../auditoria/auditoria.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FilterProductsDto } from './dto/filter-products.dto';
@@ -12,6 +13,7 @@ export class ProductsAdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly auditoria: AuditoriaService,
   ) {}
 
   private async invalidateCatalogCache(): Promise<void> {
@@ -53,7 +55,7 @@ export class ProductsAdminService {
     return result;
   }
 
-  async create(dto: CreateProductDto & any): Promise<Product> {
+  async create(dto: CreateProductDto & any, adminId?: string): Promise<Product> {
     // support legacy Portuguese payload
     const image = dto.image ?? dto.imagem;
     const name = dto.name ?? dto.nomeProduto ?? dto.nome;
@@ -79,10 +81,13 @@ export class ProductsAdminService {
       },
     });
     await this.invalidateCatalogCache();
+    if (adminId) {
+      await this.auditoria.registar(adminId, 'criar_produto', 'produto', product.id, { nome: name, preco: price }).catch(() => {});
+    }
     return product;
   }
 
-  async update(id: string, dto: UpdateProductDto & any): Promise<Product> {
+  async update(id: string, dto: UpdateProductDto & any, adminId?: string): Promise<Product> {
     const exists = await this.prisma.product.findUnique({ where: { id } });
     if (!exists) {
       throw new NotFoundException({
@@ -114,10 +119,13 @@ export class ProductsAdminService {
       },
     });
     await this.invalidateCatalogCache();
+    if (adminId) {
+      await this.auditoria.registar(adminId, 'atualizar_produto', 'produto', id, { antes: exists, depois: updated }).catch(() => {});
+    }
     return updated;
   }
 
-  async remove(id: string): Promise<{ message: string; mensagem: string }> {
+  async remove(id: string, adminId?: string): Promise<{ message: string; mensagem: string }> {
     const exists = await this.prisma.product.findUnique({ where: { id } });
     if (!exists) {
       throw new NotFoundException({
@@ -127,6 +135,9 @@ export class ProductsAdminService {
 
     await this.prisma.product.delete({ where: { id } });
     await this.invalidateCatalogCache();
+    if (adminId) {
+      await this.auditoria.registar(adminId, 'remover_produto', 'produto', id, { nome: exists.name }).catch(() => {});
+    }
     return { message: 'Product removed successfully', mensagem: 'Produto removido com sucesso' };
   }
 }

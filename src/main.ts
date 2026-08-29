@@ -3,6 +3,8 @@ import { BadRequestException, ValidationPipe, RequestMethod } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import { join } from 'path';
+import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -34,11 +36,34 @@ async function bootstrap() {
     }),
   );
 
+  // Captura rawBody para validação HMAC de webhooks (x-signature)
+  // Deve vir antes de qualquer body parser
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf: Buffer) => {
+        req.rawBody = buf;
+      },
+      limit: '2mb',
+    }),
+  );
+  app.use(
+    express.urlencoded({
+      extended: true,
+      verify: (req: any, _res, buf: Buffer) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
   // CORS liberado em dev; restrinja em produção via env
   app.enableCors({
     origin: true,
     credentials: true,
   });
+
+  // Serve comprovativos e uploads
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  app.use('/api/v1/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Prefixo global /api/v1 em toda a aplicação, exceto health e docs
   app.setGlobalPrefix('api/v1', {
