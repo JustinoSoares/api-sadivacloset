@@ -1,38 +1,4 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: sadivacloset-api
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3001}:${PORT:-3001}"
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-    volumes:
-      # hot reload: código local -> container
-      - ./src:/app/src
-      - ./prisma:/app/prisma
-      - ./package.json:/app/package.json
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./nest-cli.json:/app/nest-cli.json
-      # evita sobrescrever node_modules do container
-      - /app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - web_sadiva
-    command: sh -c "pnpm exec prisma generate && pnpm run start:dev"
-
   postgres:
     image: postgres:16-alpine
     container_name: sadivacloset-postgres
