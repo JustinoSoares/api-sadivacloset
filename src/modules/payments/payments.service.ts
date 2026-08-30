@@ -529,7 +529,7 @@ export class PaymentsService {
       if (payment.status !== PaymentStatus.PAID) {
         await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerTxId: providerTxId ?? payment.providerTxId, providerDetails: payload as any } });
         await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-        await this.auditoria.registar('system-bridpay-webhook', 'webhook_pagamento_confirmado', 'pagamento', payment.id, payload);
+        await this.auditoria.registar('system-bridpay-webhook', 'webhook_pagamento_confirmado', 'pagamento', payment.id, payload).catch(() => {});
         await this.prisma.walletTransaction.create({
           data: {
             type: 'credit',
@@ -622,7 +622,7 @@ export class PaymentsService {
       if (payment.status !== PaymentStatus.PAID) {
         await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerDetails: payload } });
         await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-        await this.auditoria.registar('system-appypay-webhook', 'webhook_appypay_sucesso', 'pagamento', payment.id, payload);
+        await this.auditoria.registar('system-appypay-webhook', 'webhook_appypay_sucesso', 'pagamento', payment.id, payload).catch(() => {});
         await this.prisma.walletTransaction.create({
           data: { type: 'credit', amount: payment.amount, balanceBefore: 0, balanceAfter: 0, status: 'settled', referenceType: 'payment_intent', referenceId: payment.id, description: `Webhook AppPay sucesso ${merchantTxDerived}`, orderId: payment.orderId, paymentId: payment.id, bridpayTxId: payment.bridpayMerchantTxId ?? undefined },
         });
@@ -689,7 +689,7 @@ export class PaymentsService {
         if (payment.status !== PaymentStatus.PAID) {
           await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerDetails: payload } });
           await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-          await this.auditoria.registar('system-ekwanza-webhook', 'webhook_ekwanza_sucesso', 'pagamento', payment.id, payload);
+          await this.auditoria.registar('system-ekwanza-webhook', 'webhook_ekwanza_sucesso', 'pagamento', payment.id, payload).catch(() => {});
           await this.prisma.walletTransaction.create({
             data: { type: 'credit', amount: payment.amount, balanceBefore: 0, balanceAfter: 0, status: 'settled', referenceType: 'payment_intent', referenceId: payment.id, description: `Webhook E-Kwanza sucesso ${code}`, orderId: payment.orderId, paymentId: payment.id },
           });
@@ -846,7 +846,7 @@ export class PaymentsService {
       data: { status: PaymentStatus.PAID, providerDetails: payload, webhookProcessedAt: new Date() },
     });
     await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-    await this.auditoria.registar(`system-webhook-${gatewayNorm}`, `webhook_pagamento_${gatewayNorm}_confirmado`, 'pagamento', payment.id, { gateway: gatewayNorm, referencia_externa: referencia, payload });
+    await this.auditoria.registar(`system-webhook-${gatewayNorm}`, `webhook_pagamento_${gatewayNorm}_confirmado`, 'pagamento', payment.id, { gateway: gatewayNorm, referencia_externa: referencia, payload }).catch(() => {});
     await this.prisma.walletTransaction.create({
       data: {
         type: 'credit',

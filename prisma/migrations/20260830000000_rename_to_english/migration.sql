@@ -72,7 +72,7 @@ ALTER TABLE "addresses" RENAME COLUMN "provincia" TO "province";
 ALTER TABLE "addresses" RENAME COLUMN "municipio" TO "municipality";
 ALTER TABLE "addresses" RENAME COLUMN "bairro" TO "neighborhood";
 ALTER TABLE "addresses" RENAME COLUMN "rua" TO "street";
--- referencia stays
+ALTER TABLE "addresses" RENAME COLUMN "referencia" TO "reference";
 ALTER TABLE "addresses" RENAME COLUMN "predefinida" TO "is_default";
 
 -- ── orders ─────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ ALTER TABLE "order_items" RENAME COLUMN "produto_id" TO "product_id";
 ALTER TABLE "order_items" RENAME COLUMN "nome_produto" TO "product_name";
 ALTER TABLE "order_items" RENAME COLUMN "preco_unitario" TO "unit_price";
 ALTER TABLE "order_items" RENAME COLUMN "quantidade" TO "quantity";
--- desconto stays
+ALTER TABLE "order_items" RENAME COLUMN "desconto" TO "discount";
 
 -- ── deliveries ─────────────────────────────────────────────────────────────
 ALTER TABLE "deliveries" RENAME COLUMN "pedido_id" TO "order_id";

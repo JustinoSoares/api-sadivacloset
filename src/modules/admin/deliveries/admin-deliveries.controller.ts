@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -15,14 +15,26 @@ export class AdminDeliveriesController {
   constructor(private readonly adminDeliveriesService: AdminDeliveriesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List deliveries (admin) paginated, filter by status and date' })
+  @ApiOperation({ summary: 'List deliveries (admin) paginated, filter by status and date', description: 'Returns paginated deliveries with filters' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findAll(@Query() dto: FilterDeliveriesDto) {
     return this.adminDeliveriesService.findAll(dto);
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update delivery status (audit log and notify buyer)' })
+  @ApiOperation({ summary: 'Update delivery status (audit log and notify buyer)', description: 'Updates delivery status, creates audit log and notifies buyer' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateDeliveryStatusDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async updateStatus(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -32,9 +44,15 @@ export class AdminDeliveriesController {
     return { data: result, dados: result };
   }
 
+  @ApiExcludeEndpoint()
   @Patch(':id/estado')
-  @ApiOperation({ summary: 'Atualiza estado da entrega (alias legada)' })
+  @ApiOperation({ summary: 'Update delivery status (legacy PT alias)', description: 'Alias for updating delivery status' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateDeliveryStatusDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async updateStatusLegacy(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -45,6 +63,7 @@ export class AdminDeliveriesController {
   }
 }
 
+@ApiExcludeController()
 @ApiTags('admin-entregas')
 @ApiBearerAuth('bearer')
 @Roles('admin')

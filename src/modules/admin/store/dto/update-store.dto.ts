@@ -4,76 +4,80 @@ import { Transform } from 'class-transformer';
 
 const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
-export class UpdateLojaDto {
-  @ApiPropertyOptional({ description: 'Nome da loja', example: 'SadivaCloset' })
+export class UpdateStoreDto {
+  @ApiPropertyOptional({ description: 'Store name', example: 'SadivaCloset' })
+  @IsOptional()
+  @Trim()
+  @IsString({ message: 'name must be a string' })
+  @MinLength(2, { message: 'name must have at least 2 characters' })
+  @MaxLength(100, { message: 'name must have at most 100 characters' })
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Alias nome' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'nome deve ser texto' })
-  @MinLength(2, { message: 'nome deve ter pelo menos 2 caracteres' })
-  @MaxLength(100, { message: 'nome deve ter no máximo 100 caracteres' })
-  nome?: string;
-
-  @ApiPropertyOptional({ description: 'Alias name' })
-  @IsOptional()
-  @Trim()
-  @IsString()
   @MinLength(2)
   @MaxLength(100)
-  name?: string;
+  nome?: string;
 
-  @ApiPropertyOptional({ description: 'Email de contacto', example: 'contacto@sadivacloset.co.ao' })
+  @ApiPropertyOptional({ description: 'Contact email', example: 'contacto@sadivacloset.co.ao' })
   @IsOptional()
   @Trim()
-  @IsEmail({}, { message: 'email deve ser um email válido' })
+  @IsEmail({}, { message: 'email must be a valid email' })
   email?: string;
 
   @ApiPropertyOptional({ description: 'Alias contactEmail' })
   @IsOptional()
   @Trim()
-  @IsEmail({}, { message: 'contactEmail deve ser um email válido' })
+  @IsEmail({}, { message: 'contactEmail must be a valid email' })
   contactEmail?: string;
 
   @ApiPropertyOptional({ description: 'Alias email_contacto' })
   @IsOptional()
   @Trim()
-  @IsEmail({}, { message: 'email_contacto deve ser um email válido' })
+  @IsEmail({}, { message: 'email_contacto must be a valid email' })
   email_contacto?: string;
 
-  @ApiPropertyOptional({ description: 'Telefone', example: '+244 900 000 000' })
+  @ApiPropertyOptional({ description: 'Phone', example: '+244 900 000 000' })
+  @IsOptional()
+  @Trim()
+  @IsString({ message: 'phone must be a string' })
+  @MinLength(8, { message: 'phone must have at least 8 characters' })
+  @MaxLength(20, { message: 'phone must have at most 20 characters' })
+  phone?: string;
+
+  @ApiPropertyOptional({ description: 'Alias telefone' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'telefone deve ser texto' })
-  @MinLength(8, { message: 'telefone deve ter pelo menos 8 caracteres' })
-  @MaxLength(20, { message: 'telefone deve ter no máximo 20 caracteres' })
-  telefone?: string;
-
-  @ApiPropertyOptional({ description: 'Alias phone' })
-  @IsOptional()
-  @Trim()
-  @IsString()
   @MinLength(8)
   @MaxLength(20)
-  phone?: string;
+  telefone?: string;
 
-  @ApiPropertyOptional({ description: 'Morada', example: 'Luanda, Talatona' })
+  @ApiPropertyOptional({ description: 'Address', example: 'Luanda, Talatona' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'morada deve ser texto' })
-  @MinLength(5, { message: 'morada deve ter pelo menos 5 caracteres' })
-  @MaxLength(500, { message: 'morada deve ter no máximo 500 caracteres' })
-  morada?: string;
-
-  @ApiPropertyOptional({ description: 'Alias address' })
-  @IsOptional()
-  @Trim()
-  @IsString()
-  @MinLength(5)
-  @MaxLength(500)
+  @IsString({ message: 'address must be a string' })
+  @MinLength(5, { message: 'address must have at least 5 characters' })
+  @MaxLength(500, { message: 'address must have at most 500 characters' })
   address?: string;
 
-  get nomeNormalized(): string | undefined {
-    const v = this.nome ?? this.name;
+  @ApiPropertyOptional({ description: 'Alias morada' })
+  @IsOptional()
+  @Trim()
+  @IsString({ message: 'morada must be a string' })
+  @MinLength(5)
+  @MaxLength(500)
+  morada?: string;
+
+  get nameNormalized(): string | undefined {
+    const v = this.name ?? this.nome;
     return v && v.trim().length ? v.trim() : undefined;
+  }
+
+  get nomeNormalized(): string | undefined {
+    return this.nameNormalized;
   }
 
   get emailNormalized(): string | undefined {
@@ -81,13 +85,23 @@ export class UpdateLojaDto {
     return v && v.trim().length ? v.trim() : undefined;
   }
 
+  get phoneNormalized(): string | undefined {
+    const v = this.phone ?? this.telefone;
+    return v && v.trim().length ? v.trim() : undefined;
+  }
+
   get telefoneNormalized(): string | undefined {
-    const v = this.telefone ?? this.phone;
+    return this.phoneNormalized;
+  }
+
+  get addressNormalized(): string | undefined {
+    const v = this.address ?? this.morada;
     return v && v.trim().length ? v.trim() : undefined;
   }
 
   get moradaNormalized(): string | undefined {
-    const v = this.morada ?? this.address;
-    return v && v.trim().length ? v.trim() : undefined;
+    return this.addressNormalized;
   }
 }
+
+export class UpdateLojaDto extends UpdateStoreDto {}

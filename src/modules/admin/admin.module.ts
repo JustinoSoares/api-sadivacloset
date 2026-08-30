@@ -8,7 +8,7 @@ import { AdminDeliveriesController, AdminEntregasController } from './deliveries
 import { AdminDeliveriesService } from './deliveries/admin-deliveries.service';
 import { AdminStatisticsController, AdminEstatisticasController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
-import { AdminStoreController, AdminLojaController } from './loja/admin-loja.controller';
+import { AdminStoreController, AdminLojaController } from './store/admin-store.controller';
 import { AdminStoreService } from './store/admin-store.service';
 import { AdminAccountController, AdminContaController } from './account/admin-account.controller';
 import { AdminAccountService } from './account/admin-account.service';

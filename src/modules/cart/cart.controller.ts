@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
 import { AddCartItemDto, UpdateCartItemDto } from './dto/add-cart-item.dto';
 
+@ApiExcludeController()
 @ApiTags('carrinho')
 @ApiBearerAuth('bearer')
 @Controller('carrinho')
@@ -12,7 +13,10 @@ export class CarrinhoController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista itens do carrinho com subtotal (preço com desconto * quantidade)' })
+  @ApiOperation({ summary: 'Lista itens do carrinho com subtotal (preço com desconto * quantidade)', description: 'Returns cart items with subtotal' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async getCart(@CurrentUser() user: JwtPayload) {
     const cart = await this.cartService.getCart(user.sub);
     return { data: cart, dados: cart };
@@ -20,7 +24,13 @@ export class CarrinhoController {
 
   @Post('itens')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Adiciona item ao carrinho (valida stock)' })
+  @ApiOperation({ summary: 'Adiciona item ao carrinho (valida stock)', description: 'Adds item to cart validating stock' })
+  @ApiBody({ type: AddCartItemDto })
+  @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async addItem(@CurrentUser() user: JwtPayload, @Body() dto: AddCartItemDto) {
     const productId = dto.productIdNormalized;
     const quantidade = dto.quantityNormalized;
@@ -47,8 +57,13 @@ export class CarrinhoController {
   }
 
   @Patch('itens/:id')
-  @ApiOperation({ summary: 'Actualiza quantidade do item (valida stock)' })
+  @ApiOperation({ summary: 'Actualiza quantidade do item (valida stock)', description: 'Updates cart item quantity validating stock' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateCartItemDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async updateItem(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -70,8 +85,11 @@ export class CarrinhoController {
 
   @Delete('itens/:id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove item do carrinho' })
+  @ApiOperation({ summary: 'Remove item do carrinho', description: 'Removes item from cart' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async removeItem(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.cartService.removeItem(user.sub, id);
     return { mensagem: 'Item removido do carrinho', data: null, dados: null };
@@ -85,7 +103,11 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List cart items with subtotal (discounted price * quantity)' })
+  @ApiOperation({ summary: 'List cart items with subtotal (discounted price * quantity)', description: 'Returns cart items with subtotal' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async getCart(@CurrentUser() user: JwtPayload) {
     const cart = await this.cartService.getCart(user.sub);
     return { data: cart, dados: cart };
@@ -93,7 +115,13 @@ export class CartController {
 
   @Post('items')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Add item to cart (validates stock)' })
+  @ApiOperation({ summary: 'Add item to cart (validates stock)', description: 'Adds item to cart validating stock' })
+  @ApiBody({ type: AddCartItemDto })
+  @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async addItem(@CurrentUser() user: JwtPayload, @Body() dto: AddCartItemDto) {
     const productId = dto.productIdNormalized;
     const quantidade = dto.quantityNormalized;
@@ -120,8 +148,14 @@ export class CartController {
   }
 
   @Patch('items/:id')
-  @ApiOperation({ summary: 'Update cart item quantity (validates stock)' })
+  @ApiOperation({ summary: 'Update cart item quantity (validates stock)', description: 'Updates cart item quantity validating stock' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateCartItemDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async updateItem(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -143,8 +177,11 @@ export class CartController {
 
   @Delete('items/:id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove cart item' })
+  @ApiOperation({ summary: 'Remove cart item', description: 'Removes item from cart' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async removeItem(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.cartService.removeItem(user.sub, id);
     return { message: 'Cart item removed', mensagem: 'Item removido do carrinho', data: null, dados: null };

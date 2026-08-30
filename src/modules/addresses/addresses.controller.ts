@@ -1,10 +1,11 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto, UpdateAddressDto } from './dto/create-address.dto';
 
+@ApiExcludeController()
 @ApiTags('perfil-enderecos')
 @ApiBearerAuth('bearer')
 @Controller('perfil/enderecos')
@@ -12,7 +13,9 @@ export class PerfilEnderecosController {
   constructor(private readonly addressesService: AddressesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista endereços do comprador' })
+  @ApiOperation({ summary: 'Lista endereços do comprador', description: 'Returns buyer addresses' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const addresses = await this.addressesService.findAll(user.sub);
     return { data: addresses, dados: addresses };
@@ -20,7 +23,11 @@ export class PerfilEnderecosController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Cria endereço (primeiro fica predefinido automaticamente)' })
+  @ApiOperation({ summary: 'Cria endereço (primeiro fica predefinido automaticamente)', description: 'Creates address, first becomes default' })
+  @ApiBody({ type: CreateAddressDto })
+  @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateAddressDto) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
@@ -55,8 +62,13 @@ export class PerfilEnderecosController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Edita endereço' })
+  @ApiOperation({ summary: 'Edita endereço', description: 'Updates address' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateAddressDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
@@ -92,17 +104,24 @@ export class PerfilEnderecosController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Remove endereço (impede se único com pedidos pendentes)' })
+  @ApiOperation({ summary: 'Remove endereço (impede se único com pedidos pendentes)', description: 'Removes address, prevents if last with pending orders' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 409, description: 'Conflict' })
   async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.addressesService.remove(user.sub, id);
     return { mensagem: 'Endereço removido', data: null, dados: null };
   }
 
   @Patch(':id/predefinir')
-  @ApiOperation({ summary: 'Marca endereço como predefinido e desmarca restantes' })
+  @ApiOperation({ summary: 'Marca endereço como predefinido e desmarca restantes', description: 'Sets address as default' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async setDefault(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const address = await this.addressesService.setDefault(user.sub, id);
     return { data: address, dados: address };
@@ -116,7 +135,11 @@ export class ProfileAddressesController {
   constructor(private readonly addressesService: AddressesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List buyer addresses' })
+  @ApiOperation({ summary: 'List buyer addresses', description: 'Returns buyer addresses' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const addresses = await this.addressesService.findAll(user.sub);
     return { data: addresses, dados: addresses };
@@ -124,7 +147,12 @@ export class ProfileAddressesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create address (first becomes default)' })
+  @ApiOperation({ summary: 'Create address (first becomes default)', description: 'Creates address, first becomes default' })
+  @ApiBody({ type: CreateAddressDto })
+  @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateAddressDto) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
@@ -156,8 +184,14 @@ export class ProfileAddressesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update address' })
+  @ApiOperation({ summary: 'Update address', description: 'Updates address' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateAddressDto })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
@@ -193,17 +227,26 @@ export class ProfileAddressesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Remove address' })
+  @ApiOperation({ summary: 'Remove address', description: 'Removes address' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 409, description: 'Conflict' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.addressesService.remove(user.sub, id);
     return { message: 'Address removed', mensagem: 'Endereço removido', data: null, dados: null };
   }
 
   @Patch(':id/default')
-  @ApiOperation({ summary: 'Set address as default' })
+  @ApiOperation({ summary: 'Set address as default', description: 'Sets address as default and unsets others' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async setDefault(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const address = await this.addressesService.setDefault(user.sub, id);
     return { data: address, dados: address };
