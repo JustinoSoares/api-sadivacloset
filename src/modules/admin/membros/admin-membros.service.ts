@@ -4,7 +4,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationDto, buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { FilterMembrosDto } from './dto/filter-membros.dto';
 
-function toMemberResponse(user: any, stats: { totalPedidos: number; totalGasto: number; totalGastoPago: number }) {
+function toMemberResponse(
+  user: any,
+  stats: { totalPedidos: number; totalGasto: number; totalGastoPago: number },
+) {
   return {
     id: user.id,
     nome: user.name,
@@ -111,11 +114,15 @@ export class AdminMembrosService {
       // mas se for admin id, retorna 404 com mensagem
       const exists = await this.prisma.user.findUnique({ where: { id: membroId } });
       if (!exists) {
-        throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' } });
+        throw new NotFoundException({
+          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' },
+        });
       }
       // se for admin, não tem pedidos – mas ainda permite ver vazio? Exigir buyer
       if (exists.role !== Role.BUYER) {
-        throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' } });
+        throw new NotFoundException({
+          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' },
+        });
       }
     }
 

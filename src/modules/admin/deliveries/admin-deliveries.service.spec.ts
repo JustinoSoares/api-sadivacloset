@@ -29,7 +29,13 @@ describe('AdminDeliveriesService', () => {
     status: DeliveryStatus.SCHEDULED,
     deliveryFee: 1000,
     instructions: null,
-    order: { id: orderId, buyerId, status: 'AWAITING_PAYMENT', total: 10000, createdAt: new Date() },
+    order: {
+      id: orderId,
+      buyerId,
+      status: 'AWAITING_PAYMENT',
+      total: 10000,
+      createdAt: new Date(),
+    },
     address: null,
   };
 
@@ -37,8 +43,14 @@ describe('AdminDeliveriesService', () => {
     prisma = {
       delivery: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     };
-    notifications = { criar: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({}) };
-    audit = { register: jest.fn().mockResolvedValue({}), registar: jest.fn().mockResolvedValue({}) };
+    notifications = {
+      criar: jest.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({}),
+    };
+    audit = {
+      register: jest.fn().mockResolvedValue({}),
+      registar: jest.fn().mockResolvedValue({}),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -80,12 +92,23 @@ describe('AdminDeliveriesService', () => {
 
   it('should update status, record audit and notify buyer', async () => {
     prisma.delivery.findUnique.mockResolvedValue(deliveryMock);
-    prisma.delivery.update.mockResolvedValue({ ...deliveryMock, status: DeliveryStatus.ON_THE_WAY });
+    prisma.delivery.update.mockResolvedValue({
+      ...deliveryMock,
+      status: DeliveryStatus.ON_THE_WAY,
+    });
     const dto = new UpdateDeliveryStatusDto();
     dto.estado = 'a_caminho';
     const result = await service.updateStatus(adminId, deliveryId, dto);
-    expect(prisma.delivery.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: DeliveryStatus.ON_THE_WAY } }));
-    expect(audit.register).toHaveBeenCalledWith(adminId, 'update_delivery_status', 'delivery', deliveryId, expect.any(Object));
+    expect(prisma.delivery.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: DeliveryStatus.ON_THE_WAY } }),
+    );
+    expect(audit.register).toHaveBeenCalledWith(
+      adminId,
+      'update_delivery_status',
+      'delivery',
+      deliveryId,
+      expect.any(Object),
+    );
     expect(result.estado).toBe(DeliveryStatus.ON_THE_WAY);
     expect(result.status).toBe(DeliveryStatus.ON_THE_WAY);
   });
@@ -93,14 +116,18 @@ describe('AdminDeliveriesService', () => {
   it('should throw 400 for invalid status', async () => {
     const dto = new UpdateDeliveryStatusDto();
     dto.estado = 'invalido';
-    await expect(service.updateStatus(adminId, deliveryId, dto)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateStatus(adminId, deliveryId, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('should throw 404 if delivery not exists', async () => {
     prisma.delivery.findUnique.mockResolvedValue(null);
     const dto = new UpdateDeliveryStatusDto();
     dto.estado = 'entregue';
-    await expect(service.updateStatus(adminId, 'no-id', dto)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.updateStatus(adminId, 'no-id', dto)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('should accept english alias', async () => {

@@ -36,7 +36,11 @@ function toResponse(n: Notification): NotificationResponse {
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async criar(compradorId: string, titulo: string, descricao: string): Promise<NotificationResponse> {
+  async criar(
+    compradorId: string,
+    titulo: string,
+    descricao: string,
+  ): Promise<NotificationResponse> {
     const notification = await this.prisma.notification.create({
       data: { buyerId: compradorId, title: titulo, description: descricao },
     });

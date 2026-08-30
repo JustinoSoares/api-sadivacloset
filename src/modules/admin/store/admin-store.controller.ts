@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -14,7 +21,10 @@ export class AdminStoreController {
   constructor(private readonly storeService: AdminStoreService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get store configuration (StoreConfig)', description: 'Returns store configuration' })
+  @ApiOperation({
+    summary: 'Get store configuration (StoreConfig)',
+    description: 'Returns store configuration',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -30,7 +40,10 @@ export class AdminStoreController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Update store configuration', description: 'Updates store configuration' })
+  @ApiOperation({
+    summary: 'Update store configuration',
+    description: 'Updates store configuration',
+  })
   @ApiBody({ type: UpdateStoreDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })

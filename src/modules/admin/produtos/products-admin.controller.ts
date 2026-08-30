@@ -11,7 +11,15 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -29,7 +37,10 @@ export class ProdutosAdminController {
   constructor(private readonly productsService: ProductsAdminService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista produtos (admin, paginado, filtrável)', description: 'Returns paginated products for admin' })
+  @ApiOperation({
+    summary: 'Lista produtos (admin, paginado, filtrável)',
+    description: 'Returns paginated products for admin',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -58,7 +69,11 @@ export class ProdutosAdminController {
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 404, description: 'Not Found' })
-  async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto) {
+  async update(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductDto,
+  ) {
     const product = await this.productsService.update(id, dto as any, user.sub);
     return { data: product, dados: product };
   }

@@ -1,5 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { OrdersService } from './orders.service';
@@ -13,7 +31,10 @@ export class PedidosController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get(':id')
-  @ApiOperation({ summary: 'Detalhe completo do pedido (itens, entrega, pagamento)', description: 'Returns order detail with items, delivery and payment' })
+  @ApiOperation({
+    summary: 'Detalhe completo do pedido (itens, entrega, pagamento)',
+    description: 'Returns order detail with items, delivery and payment',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -26,7 +47,10 @@ export class PedidosController {
 
   @Patch(':id/cancelar')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Cancela pedido (só se entrega ainda não estiver a caminho/em entrega) e repõe stock', description: 'Cancels order and restores stock if delivery not in transit' })
+  @ApiOperation({
+    summary: 'Cancela pedido (só se entrega ainda não estiver a caminho/em entrega) e repõe stock',
+    description: 'Cancels order and restores stock if delivery not in transit',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -40,7 +64,10 @@ export class PedidosController {
 
   @Post(':id/entrega')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Regista/edita data_agendada, janela_horario e morada da entrega', description: 'Create or update delivery scheduling and address' })
+  @ApiOperation({
+    summary: 'Regista/edita data_agendada, janela_horario e morada da entrega',
+    description: 'Create or update delivery scheduling and address',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateDeliveryDto })
   @ApiResponse({ status: 200, description: 'Success' })
@@ -69,7 +96,10 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get(':id')
-  @ApiOperation({ summary: 'Order detail (items, delivery, payment)', description: 'Returns order detail with items, delivery and payment' })
+  @ApiOperation({
+    summary: 'Order detail (items, delivery, payment)',
+    description: 'Returns order detail with items, delivery and payment',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -83,7 +113,10 @@ export class OrdersController {
 
   @Patch(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Cancel order (only if delivery not on the way) and restore stock', description: 'Cancels order and restores stock' })
+  @ApiOperation({
+    summary: 'Cancel order (only if delivery not on the way) and restore stock',
+    description: 'Cancels order and restores stock',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -98,7 +131,10 @@ export class OrdersController {
 
   @Post(':id/delivery')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Create/update delivery info', description: 'Create or update delivery scheduling and address' })
+  @ApiOperation({
+    summary: 'Create/update delivery info',
+    description: 'Create or update delivery scheduling and address',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateDeliveryDto })
   @ApiResponse({ status: 200, description: 'Success' })

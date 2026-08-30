@@ -23,7 +23,13 @@ describe('AdminPreferencesService', () => {
     };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: AuditService, useValue: { register: jest.fn().mockResolvedValue({}), registar: jest.fn().mockResolvedValue({}) } },
+        {
+          provide: AuditService,
+          useValue: {
+            register: jest.fn().mockResolvedValue({}),
+            registar: jest.fn().mockResolvedValue({}),
+          },
+        },
         AdminPreferencesService,
         { provide: PrismaService, useValue: prisma },
       ],
@@ -61,7 +67,9 @@ describe('AdminPreferencesService', () => {
       activePaymentMethods: [PaymentMethod.CARD],
     });
     expect(prisma.adminPreferences.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ update: expect.objectContaining({ notifyNewOrders: false, defaultDeliveryFee: 5000 }) }),
+      expect.objectContaining({
+        update: expect.objectContaining({ notifyNewOrders: false, defaultDeliveryFee: 5000 }),
+      }),
     );
     expect(result.notifyNewOrders).toBe(false);
     expect(result.notificarNovosPedidos).toBe(false);

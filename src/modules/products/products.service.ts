@@ -52,12 +52,17 @@ export class ProductsService {
       }
     }
 
-    const category = (query as any).normalizedCategory ?? query.category ?? (query as any).categoria;
+    const category =
+      (query as any).normalizedCategory ?? query.category ?? (query as any).categoria;
     const size = (query as any).normalizedSize ?? query.size ?? (query as any).tamanho;
-    const condition = (query as any).normalizedCondition ?? query.condition ?? (query as any).estado;
-    const priceMin = (query as any).normalizedPriceMin ?? query.price_min ?? (query as any).preco_min;
-    const priceMax = (query as any).normalizedPriceMax ?? query.price_max ?? (query as any).preco_max;
-    const sort = (query as any).normalizedSort ?? query.sort ?? (query as any).ordenar ?? SortOrder.recent;
+    const condition =
+      (query as any).normalizedCondition ?? query.condition ?? (query as any).estado;
+    const priceMin =
+      (query as any).normalizedPriceMin ?? query.price_min ?? (query as any).preco_min;
+    const priceMax =
+      (query as any).normalizedPriceMax ?? query.price_max ?? (query as any).preco_max;
+    const sort =
+      (query as any).normalizedSort ?? query.sort ?? (query as any).ordenar ?? SortOrder.recent;
 
     const where: Prisma.ProductWhereInput = {};
 

@@ -95,7 +95,15 @@ describe('ProductsService', () => {
 
   describe('findAll - cache', () => {
     it('should return from cache when exists (english)', async () => {
-      const cached = { dados: [productsMock[0]], data: [productsMock[0]], pagina: 1, page: 1, total: 1, total_paginas: 1, totalPages: 1 };
+      const cached = {
+        dados: [productsMock[0]],
+        data: [productsMock[0]],
+        pagina: 1,
+        page: 1,
+        total: 1,
+        total_paginas: 1,
+        totalPages: 1,
+      };
       const cachedSerialized = JSON.stringify(cached);
       redis.get.mockResolvedValue(cachedSerialized);
 
@@ -108,7 +116,11 @@ describe('ProductsService', () => {
       redis.get.mockResolvedValue(null);
       const result = await service.findAll({ page: 1, limit: 20, skip: 0, take: 20 } as any);
       expect(prisma.product.findMany).toHaveBeenCalled();
-      expect(redis.set).toHaveBeenCalledWith(expect.stringContaining('cache:products:'), expect.any(String), 60);
+      expect(redis.set).toHaveBeenCalledWith(
+        expect.stringContaining('cache:products:'),
+        expect.any(String),
+        60,
+      );
       expect(result.total).toBe(4);
     });
 
@@ -148,10 +160,22 @@ describe('ProductsService', () => {
 
     it('legacy portuguese categoria should still hit same cache', async () => {
       redis.get.mockResolvedValue(null);
-      await service.findAll({ categoria: [Category.SUITS] as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      await service.findAll({
+        categoria: [Category.SUITS] as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       const keyPt = redis.get.mock.calls[0][0];
       redis.get.mockClear();
-      await service.findAll({ category: [Category.SUITS] as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      await service.findAll({
+        category: [Category.SUITS] as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       const keyEn = redis.get.mock.calls[0][0];
       // both should normalize to same English key (category)
       expect(keyPt).toContain('category=');
@@ -161,7 +185,13 @@ describe('ProductsService', () => {
 
   describe('findAll - filters', () => {
     it('should filter by q in name OR description (case-insensitive)', async () => {
-      const result = await service.findAll({ q: 'Suit', page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        q: 'Suit',
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: {
           OR: [
@@ -174,21 +204,40 @@ describe('ProductsService', () => {
     });
 
     it('should filter by category array (english)', async () => {
-      await service.findAll({ category: [Category.SUITS] as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      await service.findAll({
+        category: [Category.SUITS] as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: { category: { in: [Category.SUITS] } },
       });
     });
 
     it('legacy portuguese categoria should also filter', async () => {
-      await service.findAll({ categoria: [Category.SUITS] as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      await service.findAll({
+        categoria: [Category.SUITS] as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: { category: { in: [Category.SUITS] } },
       });
     });
 
     it('should filter by size and condition', async () => {
-      await service.findAll({ size: ['M'] as any, condition: [ProductCondition.NEW] as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      await service.findAll({
+        size: ['M'] as any,
+        condition: [ProductCondition.NEW] as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: {
           size: { in: ['M'] },
@@ -198,19 +247,46 @@ describe('ProductsService', () => {
     });
 
     it('should filter by price with discount (price_min/price_max)', async () => {
-      const resultMin = await service.findAll({ price_min: 20000, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const resultMin = await service.findAll({
+        price_min: 20000,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(resultMin.total).toBe(2);
-      expect(resultMin.dados.every((p) => p.price - (p.price * p.discount) / 100 >= 20000)).toBe(true);
+      expect(resultMin.dados.every((p) => p.price - (p.price * p.discount) / 100 >= 20000)).toBe(
+        true,
+      );
 
-      const resultMax = await service.findAll({ price_max: 15000, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const resultMax = await service.findAll({
+        price_max: 15000,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(resultMax.total).toBe(2);
 
-      const resultBoth = await service.findAll({ price_min: 10000, price_max: 20000, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const resultBoth = await service.findAll({
+        price_min: 10000,
+        price_max: 20000,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(resultBoth.total).toBe(2);
     });
 
     it('legacy preco_min/preco_max should also filter', async () => {
-      const result = await service.findAll({ preco_min: 20000, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        preco_min: 20000,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(result.total).toBe(2);
     });
 
@@ -229,25 +305,49 @@ describe('ProductsService', () => {
 
   describe('findAll - sorting', () => {
     it('should sort by price_asc (discounted)', async () => {
-      const result = await service.findAll({ sort: SortOrder.price_asc, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        sort: SortOrder.price_asc,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([9000, 15000, 20000, 40500]);
     });
 
     it('legacy ordenar preco_asc should also sort', async () => {
-      const result = await service.findAll({ ordenar: 'preco_asc' as any, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        ordenar: 'preco_asc' as any,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([9000, 15000, 20000, 40500]);
     });
 
     it('should sort by price_desc', async () => {
-      const result = await service.findAll({ sort: SortOrder.price_desc, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        sort: SortOrder.price_desc,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([40500, 20000, 15000, 9000]);
     });
 
     it('should sort by name_asc', async () => {
-      const result = await service.findAll({ sort: SortOrder.name_asc, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        sort: SortOrder.name_asc,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(result.dados[0].name).toBe('Black Suit');
       expect(result.dados[1].name).toBe('Casual Set');
     });
@@ -259,7 +359,13 @@ describe('ProductsService', () => {
     });
 
     it('should sort by oldest (createdAt asc)', async () => {
-      const result = await service.findAll({ sort: SortOrder.oldest, page: 1, limit: 20, skip: 0, take: 20 } as any);
+      const result = await service.findAll({
+        sort: SortOrder.oldest,
+        page: 1,
+        limit: 20,
+        skip: 0,
+        take: 20,
+      } as any);
       expect(result.dados[0].id).toBe('3');
       expect(result.dados[3].id).toBe('4');
     });

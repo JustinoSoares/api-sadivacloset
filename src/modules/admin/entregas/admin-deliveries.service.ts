@@ -97,7 +97,12 @@ export class AdminDeliveriesService {
         erro: {
           codigo: 'ERRO_VALIDACAO',
           mensagem: 'Estado inválido',
-          detalhes: [{ campo: 'estado', erros: [`estado deve ser um de: agendada, a_caminho, entregue, falhada, cancelada`] }],
+          detalhes: [
+            {
+              campo: 'estado',
+              erros: [`estado deve ser um de: agendada, a_caminho, entregue, falhada, cancelada`],
+            },
+          ],
         },
       });
     }
@@ -123,7 +128,11 @@ export class AdminDeliveriesService {
       include: { order: true, address: true },
     });
 
-    await this.auditoria.registar(adminId, 'atualizar_estado_entrega', 'entrega', deliveryId, { de: delivery.status, para: newStatus, estado: newStatus });
+    await this.auditoria.registar(adminId, 'atualizar_estado_entrega', 'entrega', deliveryId, {
+      de: delivery.status,
+      para: newStatus,
+      estado: newStatus,
+    });
 
     try {
       await this.notificationsService.criar(

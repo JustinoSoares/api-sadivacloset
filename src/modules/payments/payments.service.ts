@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BridpayClient } from './bridpay.client';
@@ -34,12 +40,20 @@ function mapMetodoToEnum(metodo: string): PaymentMethod {
     kwik: PaymentMethod.BANK_TRANSFER, // kwik usa transferência bancária como método local
   };
   const e = map[n];
-  if (!e) throw new BadRequestException({ erro: { codigo: 'METODO_INVALIDO', mensagem: `Método '${metodo}' inválido. Use: multicaixa_express (gpo), referencia_multicaixa (gpr), transferencia, pagamento_entrega, cartao` } });
+  if (!e)
+    throw new BadRequestException({
+      erro: {
+        codigo: 'METODO_INVALIDO',
+        mensagem: `Método '${metodo}' inválido. Use: multicaixa_express (gpo), referencia_multicaixa (gpr), transferencia, pagamento_entrega, cartao`,
+      },
+    });
   return e;
 }
 
 function isGatewayMethod(method: PaymentMethod): boolean {
-  return method === PaymentMethod.MULTICAIXA_EXPRESS || method === PaymentMethod.MULTICAIXA_REFERENCE;
+  return (
+    method === PaymentMethod.MULTICAIXA_EXPRESS || method === PaymentMethod.MULTICAIXA_REFERENCE
+  );
 }
 
 function toPaymentResponse(payment: any) {
@@ -110,22 +124,40 @@ export class PaymentsService {
     return bigint.toString(36).slice(0, 15);
   }
 
-  async iniciar(buyerId: string, orderId: string, dto: { metodo: string; phoneNumber?: string; iban?: string; descricao?: string; expiresInSeconds?: number }) {
+  async iniciar(
+    buyerId: string,
+    orderId: string,
+    dto: {
+      metodo: string;
+      phoneNumber?: string;
+      iban?: string;
+      descricao?: string;
+      expiresInSeconds?: number;
+    },
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { payment: true },
     });
     if (!order || order.buyerId !== buyerId) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+      });
     }
     if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException({ erro: { codigo: 'PEDIDO_CANCELADO', mensagem: 'Pedido cancelado não pode ser pago' } });
+      throw new BadRequestException({
+        erro: { codigo: 'PEDIDO_CANCELADO', mensagem: 'Pedido cancelado não pode ser pago' },
+      });
     }
     if (order.status === OrderStatus.PAID || order.status === OrderStatus.COMPLETED) {
-      throw new BadRequestException({ erro: { codigo: 'PEDIDO_JA_PAGO', mensagem: 'Pedido já está pago' } });
+      throw new BadRequestException({
+        erro: { codigo: 'PEDIDO_JA_PAGO', mensagem: 'Pedido já está pago' },
+      });
     }
     if (order.payment && order.payment.status === PaymentStatus.PAID) {
-      throw new BadRequestException({ erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' } });
+      throw new BadRequestException({
+        erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' },
+      });
     }
 
     const method = mapMetodoToEnum(dto.metodo);
@@ -133,7 +165,11 @@ export class PaymentsService {
     if (method === PaymentMethod.MULTICAIXA_EXPRESS) {
       if (!dto.phoneNumber) {
         throw new BadRequestException({
-          erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'phoneNumber é obrigatório para multicaixa_express (gpo)', detalhes: [{ campo: 'phoneNumber', erros: ['obrigatório para GPO'] }] },
+          erro: {
+            codigo: 'ERRO_VALIDACAO',
+            mensagem: 'phoneNumber é obrigatório para multicaixa_express (gpo)',
+            detalhes: [{ campo: 'phoneNumber', erros: ['obrigatório para GPO'] }],
+          },
         });
       }
     }
@@ -147,7 +183,12 @@ export class PaymentsService {
     if (existing && existing.status !== PaymentStatus.PAID && existing.method !== method) {
       existing = await this.prisma.payment.update({
         where: { id: existing.id },
-        data: { method, amount: order.total, phoneNumber: dto.phoneNumber ?? null, iban: dto.iban ?? null },
+        data: {
+          method,
+          amount: order.total,
+          phoneNumber: dto.phoneNumber ?? null,
+          iban: dto.iban ?? null,
+        },
       });
     }
 
@@ -195,7 +236,9 @@ export class PaymentsService {
       try {
         if (method === PaymentMethod.MULTICAIXA_EXPRESS) {
           // GPO via AppPay – /v2.0/charges
-          const paymentMethodId = this.config.get<string>('appypay.paymentMethodGpo') || 'GPO_0d23d2b0-c19c-42ca-b423-38c150acac5e';
+          const paymentMethodId =
+            this.config.get<string>('appypay.paymentMethodGpo') ||
+            'GPO_0d23d2b0-c19c-42ca-b423-38c150acac5e';
           const merchantIdentifier = this.config.get<string>('appypay.merchantIdentifier') || '';
           const apiKey = this.config.get<string>('appypay.optionsApiKey') || '';
           if (merchantIdentifier && apiKey) {
@@ -214,10 +257,16 @@ export class PaymentsService {
               data: {
                 status: PaymentStatus.PROCESSING,
                 externalReference: merchantTxId,
-                providerTxId: (appPayRes as any).id ?? (appPayRes as any).transactionId ?? providerTxId,
+                providerTxId:
+                  (appPayRes as any).id ?? (appPayRes as any).transactionId ?? providerTxId,
                 bridpayIntentId: (appPayRes as any).id ?? null,
                 bridpayMerchantTxId: merchantTxId,
-                providerDetails: { provider: 'appypay', method: 'gpo', request: { merchantTxId, providerTxId, phoneNumber: dto.phoneNumber }, response: appPayRes } as any,
+                providerDetails: {
+                  provider: 'appypay',
+                  method: 'gpo',
+                  request: { merchantTxId, providerTxId, phoneNumber: dto.phoneNumber },
+                  response: appPayRes,
+                } as any,
               },
             });
           } else {
@@ -229,14 +278,22 @@ export class PaymentsService {
                 externalReference: merchantTxId,
                 providerTxId,
                 bridpayMerchantTxId: merchantTxId,
-                providerDetails: { provider: 'appypay', mock: true, method: 'gpo', merchantTxId, providerTxId } as any,
+                providerDetails: {
+                  provider: 'appypay',
+                  mock: true,
+                  method: 'gpo',
+                  merchantTxId,
+                  providerTxId,
+                } as any,
               },
             });
             this.logger.warn('AppPay não configurado – GPO em modo mock');
           }
         } else if (method === PaymentMethod.MULTICAIXA_REFERENCE) {
           // GPR via AppPay – também suporta referência
-          const paymentMethodId = this.config.get<string>('appypay.paymentMethodReference') || 'REF_8d9c9851-4d33-4d8d-82b5-3d3b4cea5d92';
+          const paymentMethodId =
+            this.config.get<string>('appypay.paymentMethodReference') ||
+            'REF_8d9c9851-4d33-4d8d-82b5-3d3b4cea5d92';
           const merchantIdentifier = this.config.get<string>('appypay.merchantIdentifier') || '';
           const apiKey = this.config.get<string>('appypay.optionsApiKey') || '';
           if (merchantIdentifier && apiKey) {
@@ -256,7 +313,12 @@ export class PaymentsService {
                 providerTxId: (appPayRes as any).reference ?? (appPayRes as any).id ?? providerTxId,
                 bridpayIntentId: (appPayRes as any).id ?? null,
                 bridpayMerchantTxId: merchantTxId,
-                providerDetails: { provider: 'appypay', method: 'gpr', request: { merchantTxId, providerTxId }, response: appPayRes } as any,
+                providerDetails: {
+                  provider: 'appypay',
+                  method: 'gpr',
+                  request: { merchantTxId, providerTxId },
+                  response: appPayRes,
+                } as any,
               },
             });
           } else {
@@ -267,7 +329,13 @@ export class PaymentsService {
                 externalReference: merchantTxId,
                 providerTxId,
                 bridpayMerchantTxId: merchantTxId,
-                providerDetails: { provider: 'appypay', mock: true, method: 'gpr', merchantTxId, providerTxId } as any,
+                providerDetails: {
+                  provider: 'appypay',
+                  mock: true,
+                  method: 'gpr',
+                  merchantTxId,
+                  providerTxId,
+                } as any,
               },
             });
             this.logger.warn('AppPay não configurado – GPR em modo mock');
@@ -283,9 +351,15 @@ export class PaymentsService {
     if (dto.iban && dto.metodo.toLowerCase() === 'kwik') {
       const merchantTxId = this.generateMerchantTxId();
       try {
-        const ekwanzaConfigured = !!this.config.get<string>('ekwanza.apiBaseUrl') && !!this.config.get<string>('ekwanza.notificationToken');
+        const ekwanzaConfigured =
+          !!this.config.get<string>('ekwanza.apiBaseUrl') &&
+          !!this.config.get<string>('ekwanza.notificationToken');
         if (ekwanzaConfigured) {
-          const kwikRes = await this.ekwanza.sendKwikToCustomer({ iban: dto.iban!, amount, operationCode: merchantTxId });
+          const kwikRes = await this.ekwanza.sendKwikToCustomer({
+            iban: dto.iban!,
+            amount,
+            operationCode: merchantTxId,
+          });
           await this.prisma.payout.create({
             data: {
               amount,
@@ -320,7 +394,12 @@ export class PaymentsService {
             data: {
               externalReference: merchantTxId,
               providerTxId: kwikRes.ekzTransactionCode ?? merchantTxId,
-              providerDetails: { provider: 'ekwanza', method: 'kwik', request: { iban: dto.iban, merchantTxId }, response: kwikRes } as any,
+              providerDetails: {
+                provider: 'ekwanza',
+                method: 'kwik',
+                request: { iban: dto.iban, merchantTxId },
+                response: kwikRes,
+              } as any,
             },
           });
         } else {
@@ -358,7 +437,12 @@ export class PaymentsService {
             data: {
               externalReference: merchantTxId,
               providerTxId: merchantTxId,
-              providerDetails: { provider: 'ekwanza', mock: true, method: 'kwik', merchantTxId } as any,
+              providerDetails: {
+                provider: 'ekwanza',
+                mock: true,
+                method: 'kwik',
+                merchantTxId,
+              } as any,
             },
           });
           this.logger.warn('E-Kwanza não configurado – KWIK em modo mock');
@@ -366,7 +450,11 @@ export class PaymentsService {
       } catch (e: any) {
         this.logger.warn(`Falha KWiK E-Kwanza: ${e.message}`);
       }
-    } else if (method === PaymentMethod.BANK_TRANSFER && dto.iban && dto.metodo.toLowerCase() !== 'kwik') {
+    } else if (
+      method === PaymentMethod.BANK_TRANSFER &&
+      dto.iban &&
+      dto.metodo.toLowerCase() !== 'kwik'
+    ) {
       // transferência bancária simples – não chama provider, só wallet debit mock
       const merchantTxId = this.generateMerchantTxId();
       await this.prisma.payout.create({
@@ -387,26 +475,45 @@ export class PaymentsService {
   }
 
   async get(buyerId: string, orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { payment: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
     if (!order || order.buyerId !== buyerId) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+      });
     }
     if (!order.payment) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado para este pedido' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado para este pedido' },
+      });
     }
     return toPaymentResponse(order.payment);
   }
 
   async comprovativo(buyerId: string, orderId: string, file: Express.Multer.File) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { payment: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
     if (!order || order.buyerId !== buyerId) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+      });
     }
     if (!order.payment) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não iniciado. Use POST /pagamento/iniciar primeiro' } });
+      throw new NotFoundException({
+        erro: {
+          codigo: 'NAO_ENCONTRADO',
+          mensagem: 'Pagamento não iniciado. Use POST /pagamento/iniciar primeiro',
+        },
+      });
     }
     if (order.payment.status === PaymentStatus.PAID) {
-      throw new BadRequestException({ erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' } });
+      throw new BadRequestException({
+        erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' },
+      });
     }
     // Só permite comprovativo para transferência bancária (ou todos? mas spec diz transferência)
     // Vamos permitir para qualquer método que não seja gateway automático, mas avisa
@@ -437,9 +544,14 @@ export class PaymentsService {
 
   // Admin validar – regra crítica: só aqui ou webhook passa Pedido para pago
   async validarAdmin(adminId: string, paymentId: string) {
-    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId }, include: { order: true } });
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { order: true },
+    });
     if (!payment) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado' },
+      });
     }
     if (payment.status === PaymentStatus.PAID) {
       return toPaymentResponse(payment);
@@ -457,7 +569,12 @@ export class PaymentsService {
       include: { payment: true },
     });
 
-    await this.auditoria.registar(adminId, 'validar_pagamento', 'pagamento', paymentId, { orderId: payment.orderId, metodo: payment.method, valor: payment.amount, comprovativo: payment.receiptUrl });
+    await this.auditoria.registar(adminId, 'validar_pagamento', 'pagamento', paymentId, {
+      orderId: payment.orderId,
+      metodo: payment.method,
+      valor: payment.amount,
+      comprovativo: payment.receiptUrl,
+    });
 
     // Wallet ledger settled credit
     await this.prisma.walletTransaction.create({
@@ -509,7 +626,9 @@ export class PaymentsService {
 
     let payment: any = null;
     if (merchantTxId) {
-      payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: merchantTxId } });
+      payment = await this.prisma.payment.findFirst({
+        where: { bridpayMerchantTxId: merchantTxId },
+      });
     }
     if (!payment && providerTxId) {
       payment = await this.prisma.payment.findFirst({ where: { providerTxId } });
@@ -522,14 +641,34 @@ export class PaymentsService {
       return { ok: false, message: 'Payment not found' };
     }
 
-    const isSettled = status === 'settled' || status === 'paid' || status === 'pago' || status === 'success';
-    const isFailed = status === 'failed' || status === 'falhado' || status === 'expired' || status === 'reversed';
+    const isSettled =
+      status === 'settled' || status === 'paid' || status === 'pago' || status === 'success';
+    const isFailed =
+      status === 'failed' || status === 'falhado' || status === 'expired' || status === 'reversed';
 
     if (isSettled) {
       if (payment.status !== PaymentStatus.PAID) {
-        await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerTxId: providerTxId ?? payment.providerTxId, providerDetails: payload as any } });
-        await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-        await this.auditoria.registar('system-bridpay-webhook', 'webhook_pagamento_confirmado', 'pagamento', payment.id, payload).catch(() => {});
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: PaymentStatus.PAID,
+            providerTxId: providerTxId ?? payment.providerTxId,
+            providerDetails: payload as any,
+          },
+        });
+        await this.prisma.order.update({
+          where: { id: payment.orderId },
+          data: { status: OrderStatus.PAID },
+        });
+        await this.auditoria
+          .registar(
+            'system-bridpay-webhook',
+            'webhook_pagamento_confirmado',
+            'pagamento',
+            payment.id,
+            payload,
+          )
+          .catch(() => {});
         await this.prisma.walletTransaction.create({
           data: {
             type: 'credit',
@@ -548,7 +687,11 @@ export class PaymentsService {
         try {
           const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
           if (order) {
-            await this.notificationsService.criar(order.buyerId, 'Pagamento confirmado', `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via BridPay`);
+            await this.notificationsService.criar(
+              order.buyerId,
+              'Pagamento confirmado',
+              `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via BridPay`,
+            );
           }
         } catch {}
       }
@@ -556,25 +699,37 @@ export class PaymentsService {
     }
 
     if (isFailed) {
-      await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.FAILED, providerDetails: payload as any } });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.FAILED, providerDetails: payload as any },
+      });
       return { ok: true, status: 'failed' };
     }
 
     // processing/pending – atualiza para PROCESSING se necessário
     if (payment.status === PaymentStatus.PENDING) {
-      await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PROCESSING, providerDetails: payload as any } });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.PROCESSING, providerDetails: payload as any },
+      });
     }
     return { ok: true, status: 'processing' };
   }
 
   async handleAppPayWebhook(rawBody: string, headers: Record<string, string>) {
     // Valida HMAC x-signature com APPYPAY_WEBHOOK_SECRET (mesma lógica da BridPay)
-    const secret = this.config.get<string>('appypay.webhookSecret') || this.config.get<string>('APPYPAY_WEBHOOK_SECRET');
-    const received = headers['x-signature'] ?? (headers as any)['X-Signature'] ?? headers['x-Signature'];
+    const secret =
+      this.config.get<string>('appypay.webhookSecret') ||
+      this.config.get<string>('APPYPAY_WEBHOOK_SECRET');
+    const received =
+      headers['x-signature'] ?? (headers as any)['X-Signature'] ?? headers['x-Signature'];
     if (secret && received) {
       const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
       try {
-        if (expected.length !== received.length || !timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(received, 'hex'))) {
+        if (
+          expected.length !== received.length ||
+          !timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(received, 'hex'))
+        ) {
           this.logger.warn('AppPay webhook assinatura inválida');
           // Não bloqueia em dev, mas loga
         }
@@ -597,21 +752,34 @@ export class PaymentsService {
 
     let payment: any = null;
     if (merchantTxDerived) {
-      payment = await this.prisma.payment.findFirst({ where: { providerTxId: String(merchantTxDerived) } });
+      payment = await this.prisma.payment.findFirst({
+        where: { providerTxId: String(merchantTxDerived) },
+      });
       if (!payment) {
         // tenta por bridpayMerchantTxId derivado
-        const all = await this.prisma.payment.findMany({ where: { status: { not: PaymentStatus.PAID } }, take: 100 });
+        const all = await this.prisma.payment.findMany({
+          where: { status: { not: PaymentStatus.PAID } },
+          take: 100,
+        });
         for (const p of all) {
-          if (p.bridpayMerchantTxId && this.deriveMerchantTransactionId(p.bridpayMerchantTxId) === String(merchantTxDerived)) {
+          if (
+            p.bridpayMerchantTxId &&
+            this.deriveMerchantTransactionId(p.bridpayMerchantTxId) === String(merchantTxDerived)
+          ) {
             payment = p;
             break;
           }
         }
       }
-      if (!payment) payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: String(merchantTxDerived) } });
+      if (!payment)
+        payment = await this.prisma.payment.findFirst({
+          where: { bridpayMerchantTxId: String(merchantTxDerived) },
+        });
     }
     if (!payment && providerTxId) {
-      payment = await this.prisma.payment.findFirst({ where: { providerTxId: String(providerTxId) } });
+      payment = await this.prisma.payment.findFirst({
+        where: { providerTxId: String(providerTxId) },
+      });
     }
     if (!payment) {
       this.logger.warn(`AppPay webhook sem payment: ${rawBody}`);
@@ -620,31 +788,71 @@ export class PaymentsService {
 
     if (isSuccess) {
       if (payment.status !== PaymentStatus.PAID) {
-        await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerDetails: payload } });
-        await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-        await this.auditoria.registar('system-appypay-webhook', 'webhook_appypay_sucesso', 'pagamento', payment.id, payload).catch(() => {});
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.PAID, providerDetails: payload },
+        });
+        await this.prisma.order.update({
+          where: { id: payment.orderId },
+          data: { status: OrderStatus.PAID },
+        });
+        await this.auditoria
+          .registar(
+            'system-appypay-webhook',
+            'webhook_appypay_sucesso',
+            'pagamento',
+            payment.id,
+            payload,
+          )
+          .catch(() => {});
         await this.prisma.walletTransaction.create({
-          data: { type: 'credit', amount: payment.amount, balanceBefore: 0, balanceAfter: 0, status: 'settled', referenceType: 'payment_intent', referenceId: payment.id, description: `Webhook AppPay sucesso ${merchantTxDerived}`, orderId: payment.orderId, paymentId: payment.id, bridpayTxId: payment.bridpayMerchantTxId ?? undefined },
+          data: {
+            type: 'credit',
+            amount: payment.amount,
+            balanceBefore: 0,
+            balanceAfter: 0,
+            status: 'settled',
+            referenceType: 'payment_intent',
+            referenceId: payment.id,
+            description: `Webhook AppPay sucesso ${merchantTxDerived}`,
+            orderId: payment.orderId,
+            paymentId: payment.id,
+            bridpayTxId: payment.bridpayMerchantTxId ?? undefined,
+          },
         });
         try {
           const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
-          if (order) await this.notificationsService.criar(order.buyerId, 'Pagamento confirmado', `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via AppPay`);
+          if (order)
+            await this.notificationsService.criar(
+              order.buyerId,
+              'Pagamento confirmado',
+              `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via AppPay`,
+            );
         } catch {}
       }
       return { ok: true, status: 'settled' };
     }
     if (isFailed) {
-      await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.FAILED, providerDetails: payload } });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.FAILED, providerDetails: payload },
+      });
       return { ok: true, status: 'failed' };
     }
     return { ok: true, status: 'pending' };
   }
 
   async handleEkwanzaWebhook(rawBody: string, headers: Record<string, string>) {
-    const apiKey = this.config.get<string>('ekwanza.apiKey') || this.config.get<string>('EKWANZA_API_KEY');
-    const registrationNumber = this.config.get<string>('ekwanza.merchantRegistrationNumber') || this.config.get<string>('EKWANZA_MERCHANT_REGISTRATION_NUMBER');
-    const token = this.config.get<string>('ekwanza.notificationToken') || this.config.get<string>('EKWANZA_NOTIFICATION_TOKEN');
-    const received = headers['x-signature'] ?? (headers as any)['X-Signature'] ?? headers['x-Signature'];
+    const apiKey =
+      this.config.get<string>('ekwanza.apiKey') || this.config.get<string>('EKWANZA_API_KEY');
+    const registrationNumber =
+      this.config.get<string>('ekwanza.merchantRegistrationNumber') ||
+      this.config.get<string>('EKWANZA_MERCHANT_REGISTRATION_NUMBER');
+    const token =
+      this.config.get<string>('ekwanza.notificationToken') ||
+      this.config.get<string>('EKWANZA_NOTIFICATION_TOKEN');
+    const received =
+      headers['x-signature'] ?? (headers as any)['X-Signature'] ?? headers['x-Signature'];
     let payload: any;
     try {
       payload = JSON.parse(rawBody);
@@ -655,9 +863,14 @@ export class PaymentsService {
     if (apiKey && registrationNumber && token && received) {
       const code = payload.code ?? '';
       const operationCode = payload.operationCode ?? payload.operation_code ?? '';
-      const expected = createHmac('sha256', apiKey).update([code, operationCode, registrationNumber, token].join('')).digest('hex');
+      const expected = createHmac('sha256', apiKey)
+        .update([code, operationCode, registrationNumber, token].join(''))
+        .digest('hex');
       try {
-        if (expected.length !== received.length || !timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(received, 'utf8'))) {
+        if (
+          expected.length !== received.length ||
+          !timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(received, 'utf8'))
+        ) {
           this.logger.warn('E-Kwanza webhook assinatura inválida');
         }
       } catch {}
@@ -671,13 +884,22 @@ export class PaymentsService {
     let payment: any = null;
     let payout: any = null;
     if (operationCode) {
-      payment = await this.prisma.payment.findFirst({ where: { externalReference: String(operationCode) } });
-      if (!payment) payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: String(operationCode) } });
-      if (!payment) payout = await this.prisma.payout.findFirst({ where: { externalReference: String(operationCode) } });
+      payment = await this.prisma.payment.findFirst({
+        where: { externalReference: String(operationCode) },
+      });
+      if (!payment)
+        payment = await this.prisma.payment.findFirst({
+          where: { bridpayMerchantTxId: String(operationCode) },
+        });
+      if (!payment)
+        payout = await this.prisma.payout.findFirst({
+          where: { externalReference: String(operationCode) },
+        });
     }
     if (!payment && !payout && code) {
       payment = await this.prisma.payment.findFirst({ where: { providerTxId: String(code) } });
-      if (!payment) payout = await this.prisma.payout.findFirst({ where: { providerTxId: String(code) } });
+      if (!payment)
+        payout = await this.prisma.payout.findFirst({ where: { providerTxId: String(code) } });
     }
     if (!payment && !payout) {
       this.logger.warn(`E-Kwanza webhook sem payment/payout: ${rawBody}`);
@@ -687,34 +909,84 @@ export class PaymentsService {
     if (payment) {
       if (isSuccess) {
         if (payment.status !== PaymentStatus.PAID) {
-          await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.PAID, providerDetails: payload } });
-          await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-          await this.auditoria.registar('system-ekwanza-webhook', 'webhook_ekwanza_sucesso', 'pagamento', payment.id, payload).catch(() => {});
+          await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: PaymentStatus.PAID, providerDetails: payload },
+          });
+          await this.prisma.order.update({
+            where: { id: payment.orderId },
+            data: { status: OrderStatus.PAID },
+          });
+          await this.auditoria
+            .registar(
+              'system-ekwanza-webhook',
+              'webhook_ekwanza_sucesso',
+              'pagamento',
+              payment.id,
+              payload,
+            )
+            .catch(() => {});
           await this.prisma.walletTransaction.create({
-            data: { type: 'credit', amount: payment.amount, balanceBefore: 0, balanceAfter: 0, status: 'settled', referenceType: 'payment_intent', referenceId: payment.id, description: `Webhook E-Kwanza sucesso ${code}`, orderId: payment.orderId, paymentId: payment.id },
+            data: {
+              type: 'credit',
+              amount: payment.amount,
+              balanceBefore: 0,
+              balanceAfter: 0,
+              status: 'settled',
+              referenceType: 'payment_intent',
+              referenceId: payment.id,
+              description: `Webhook E-Kwanza sucesso ${code}`,
+              orderId: payment.orderId,
+              paymentId: payment.id,
+            },
           });
           try {
             const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
-            if (order) await this.notificationsService.criar(order.buyerId, 'Pagamento confirmado', `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via E-Kwanza`);
+            if (order)
+              await this.notificationsService.criar(
+                order.buyerId,
+                'Pagamento confirmado',
+                `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via E-Kwanza`,
+              );
           } catch {}
         }
         return { ok: true, status: 'settled' };
       }
       if (isFailed) {
-        await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.FAILED, providerDetails: payload } });
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.FAILED, providerDetails: payload },
+        });
         return { ok: true, status: 'failed' };
       }
     }
     if (payout) {
       if (isSuccess) {
-        await this.prisma.payout.update({ where: { id: payout.id }, data: { status: PaymentStatus.PAID } });
+        await this.prisma.payout.update({
+          where: { id: payout.id },
+          data: { status: PaymentStatus.PAID },
+        });
         await this.prisma.walletTransaction.create({
-          data: { type: 'debit', amount: payout.amount, balanceBefore: 0, balanceAfter: 0, status: 'settled', referenceType: 'payout', referenceId: payout.id, description: `Webhook E-Kwanza KWiK sucesso ${code}`, orderId: payout.orderId ?? undefined, bridpayTxId: operationCode },
+          data: {
+            type: 'debit',
+            amount: payout.amount,
+            balanceBefore: 0,
+            balanceAfter: 0,
+            status: 'settled',
+            referenceType: 'payout',
+            referenceId: payout.id,
+            description: `Webhook E-Kwanza KWiK sucesso ${code}`,
+            orderId: payout.orderId ?? undefined,
+            bridpayTxId: operationCode,
+          },
         });
         return { ok: true, status: 'settled' };
       }
       if (isFailed) {
-        await this.prisma.payout.update({ where: { id: payout.id }, data: { status: PaymentStatus.FAILED } });
+        await this.prisma.payout.update({
+          where: { id: payout.id },
+          data: { status: PaymentStatus.FAILED },
+        });
         return { ok: true, status: 'failed' };
       }
     }
@@ -722,7 +994,12 @@ export class PaymentsService {
   }
 
   // ─── Webhook genérico POST /webhooks/pagamento/:gateway (público, HMAC, idempotente) ───
-  async handlePagamentoWebhook(gateway: string, rawBody: string, headers: Record<string, string>, payload: any) {
+  async handlePagamentoWebhook(
+    gateway: string,
+    rawBody: string,
+    headers: Record<string, string>,
+    payload: any,
+  ) {
     const gatewayNorm = String(gateway).toLowerCase().trim();
 
     // 1. Validação HMAC genérica configurável por env
@@ -748,20 +1025,35 @@ export class PaymentsService {
         headers['x-hub-signature'] ??
         (headers as any)['X-Signature'];
       if (!signatureHeader) {
-        throw new BadRequestException({ erro: { codigo: 'ASSINATURA_EM_FALTA', mensagem: 'Assinatura HMAC em falta (x-signature)' } });
+        throw new BadRequestException({
+          erro: {
+            codigo: 'ASSINATURA_EM_FALTA',
+            mensagem: 'Assinatura HMAC em falta (x-signature)',
+          },
+        });
       }
-      const received = String(signatureHeader).replace(/^sha256=/, '').trim();
+      const received = String(signatureHeader)
+        .replace(/^sha256=/, '')
+        .trim();
       const expected = createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
       // também tenta HMAC do payload JSON normalizado (sem espaços) para compatibilidade
-      const altExpected = createHmac('sha256', webhookSecret).update(JSON.stringify(payload)).digest('hex');
+      const altExpected = createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(payload))
+        .digest('hex');
       const isValid =
-        (received.length === expected.length && timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(expected, 'utf8'))) ||
-        (received.length === altExpected.length && timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(altExpected, 'utf8')));
+        (received.length === expected.length &&
+          timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(expected, 'utf8'))) ||
+        (received.length === altExpected.length &&
+          timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(altExpected, 'utf8')));
       if (!isValid) {
-        throw new BadRequestException({ erro: { codigo: 'ASSINATURA_INVALIDA', mensagem: 'Assinatura HMAC inválida' } });
+        throw new BadRequestException({
+          erro: { codigo: 'ASSINATURA_INVALIDA', mensagem: 'Assinatura HMAC inválida' },
+        });
       }
     } else {
-      this.logger.warn(`Webhook pagamento/${gatewayNorm} sem PAYMENT_WEBHOOK_SECRET configurado – validação HMAC ignorada (dev only)`);
+      this.logger.warn(
+        `Webhook pagamento/${gatewayNorm} sem PAYMENT_WEBHOOK_SECRET configurado – validação HMAC ignorada (dev only)`,
+      );
     }
 
     // 2. Extrai referencia_externa como chave idempotente
@@ -779,7 +1071,12 @@ export class PaymentsService {
       payload.id;
 
     if (!referenciaExterna) {
-      throw new BadRequestException({ erro: { codigo: 'REFERENCIA_EM_FALTA', mensagem: 'referencia_externa é obrigatória no payload do webhook' } });
+      throw new BadRequestException({
+        erro: {
+          codigo: 'REFERENCIA_EM_FALTA',
+          mensagem: 'referencia_externa é obrigatória no payload do webhook',
+        },
+      });
     }
     const referencia = String(referenciaExterna).trim();
     const redisKey = `webhook:pagamento:${gatewayNorm}:${referencia}`;
@@ -788,7 +1085,9 @@ export class PaymentsService {
     try {
       const alreadyInRedis = await this.redis.exists(redisKey);
       if (alreadyInRedis) {
-        this.logger.log(`Webhook idempotente já processado (Redis) gateway=${gatewayNorm} ref=${referencia}`);
+        this.logger.log(
+          `Webhook idempotente já processado (Redis) gateway=${gatewayNorm} ref=${referencia}`,
+        );
         return { ok: true, idempotente: true, message: 'Já processado (Redis)' };
       }
     } catch (e: any) {
@@ -796,9 +1095,13 @@ export class PaymentsService {
     }
 
     // Tenta encontrar pagamento por referencia_externa
-    let payment: any = await this.prisma.payment.findFirst({ where: { externalReference: referencia } });
-    if (!payment) payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: referencia } });
-    if (!payment) payment = await this.prisma.payment.findFirst({ where: { providerTxId: referencia } });
+    let payment: any = await this.prisma.payment.findFirst({
+      where: { externalReference: referencia },
+    });
+    if (!payment)
+      payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: referencia } });
+    if (!payment)
+      payment = await this.prisma.payment.findFirst({ where: { providerTxId: referencia } });
     if (!payment) payment = await this.prisma.payment.findFirst({ where: { id: referencia } });
     if (!payment) {
       // também tenta por orderId
@@ -808,7 +1111,12 @@ export class PaymentsService {
       }
     }
     if (!payment) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: `Pagamento não encontrado para referencia_externa=${referencia}` } });
+      throw new NotFoundException({
+        erro: {
+          codigo: 'NAO_ENCONTRADO',
+          mensagem: `Pagamento não encontrado para referencia_externa=${referencia}`,
+        },
+      });
     }
 
     if (payment.webhookProcessedAt) {
@@ -816,24 +1124,51 @@ export class PaymentsService {
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
-      this.logger.log(`Webhook idempotente já processado (DB) pagamento=${payment.id} ref=${referencia}`);
+      this.logger.log(
+        `Webhook idempotente já processado (DB) pagamento=${payment.id} ref=${referencia}`,
+      );
       return { ok: true, idempotente: true, message: 'Já processado (DB)' };
     }
     if (payment.status === PaymentStatus.PAID) {
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
-        await this.prisma.payment.update({ where: { id: payment.id }, data: { webhookProcessedAt: new Date() } });
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { webhookProcessedAt: new Date() },
+        });
       } catch {}
       return { ok: true, idempotente: true, message: 'Pagamento já pago' };
     }
 
     // 4. Confirma pagamento: atualiza Pagamento e Pedido, dispara notificação, enfileira BullMQ
     const statusPayload = String(payload.status ?? payload.estado ?? 'paid').toLowerCase();
-    const isSuccess = ['paid', 'pago', 'settled', 'success', 'confirmed', 'confirmado', 'approved'].includes(statusPayload);
-    const isFailed = ['failed', 'falhado', 'rejected', 'rejeitado', 'cancelled', 'cancelado'].includes(statusPayload);
+    const isSuccess = [
+      'paid',
+      'pago',
+      'settled',
+      'success',
+      'confirmed',
+      'confirmado',
+      'approved',
+    ].includes(statusPayload);
+    const isFailed = [
+      'failed',
+      'falhado',
+      'rejected',
+      'rejeitado',
+      'cancelled',
+      'cancelado',
+    ].includes(statusPayload);
 
     if (isFailed) {
-      await this.prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.FAILED, providerDetails: payload, webhookProcessedAt: new Date() } });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.FAILED,
+          providerDetails: payload,
+          webhookProcessedAt: new Date(),
+        },
+      });
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
@@ -843,10 +1178,25 @@ export class PaymentsService {
     // sucesso (default)
     await this.prisma.payment.update({
       where: { id: payment.id },
-      data: { status: PaymentStatus.PAID, providerDetails: payload, webhookProcessedAt: new Date() },
+      data: {
+        status: PaymentStatus.PAID,
+        providerDetails: payload,
+        webhookProcessedAt: new Date(),
+      },
     });
-    await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
-    await this.auditoria.registar(`system-webhook-${gatewayNorm}`, `webhook_pagamento_${gatewayNorm}_confirmado`, 'pagamento', payment.id, { gateway: gatewayNorm, referencia_externa: referencia, payload }).catch(() => {});
+    await this.prisma.order.update({
+      where: { id: payment.orderId },
+      data: { status: OrderStatus.PAID },
+    });
+    await this.auditoria
+      .registar(
+        `system-webhook-${gatewayNorm}`,
+        `webhook_pagamento_${gatewayNorm}_confirmado`,
+        'pagamento',
+        payment.id,
+        { gateway: gatewayNorm, referencia_externa: referencia, payload },
+      )
+      .catch(() => {});
     await this.prisma.walletTransaction.create({
       data: {
         type: 'credit',
@@ -868,7 +1218,11 @@ export class PaymentsService {
     try {
       const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
       if (order) {
-        await this.notificationsService.criar(order.buyerId, 'Pagamento confirmado', `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via ${gatewayNorm} (ref ${referencia})`);
+        await this.notificationsService.criar(
+          order.buyerId,
+          'Pagamento confirmado',
+          `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via ${gatewayNorm} (ref ${referencia})`,
+        );
       }
     } catch (e: any) {
       this.logger.warn(`Notificação falhou: ${e.message}`);
@@ -877,7 +1231,8 @@ export class PaymentsService {
       await this.paymentQueue.enqueuePaymentConfirmed({
         paymentId: payment.id,
         orderId: payment.orderId,
-        buyerId: (await this.prisma.order.findUnique({ where: { id: payment.orderId } }))?.buyerId ?? '',
+        buyerId:
+          (await this.prisma.order.findUnique({ where: { id: payment.orderId } }))?.buyerId ?? '',
         gateway: gatewayNorm,
         referenciaExterna: referencia,
         amount: payment.amount,

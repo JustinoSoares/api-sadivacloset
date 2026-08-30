@@ -7,7 +7,9 @@ describe('AuditoriaController', () => {
   let service: any;
 
   beforeEach(async () => {
-    service = { listar: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }) };
+    service = {
+      listar: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
+    };
     const mod = await Test.createTestingModule({
       controllers: [AuditoriaController],
       providers: [{ provide: AuditoriaService, useValue: service }],

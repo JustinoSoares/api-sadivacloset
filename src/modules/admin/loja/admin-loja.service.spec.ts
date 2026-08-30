@@ -21,7 +21,10 @@ describe('AdminLojaService', () => {
     };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: AuditoriaService, useValue: { registar: jest.fn().mockResolvedValue({}) } },AdminLojaService, { provide: PrismaService, useValue: prisma }],
+        { provide: AuditoriaService, useValue: { registar: jest.fn().mockResolvedValue({}) } },
+        AdminLojaService,
+        { provide: PrismaService, useValue: prisma },
+      ],
     }).compile();
     service = module.get<AdminLojaService>(AdminLojaService);
   });
@@ -43,10 +46,16 @@ describe('AdminLojaService', () => {
   });
 
   it('PATCH deve atualizar via upsert com aliases', async () => {
-    prisma.storeConfig.upsert.mockResolvedValue({ ...lojaMock, name: 'Nova Loja', phone: '+244 911' });
+    prisma.storeConfig.upsert.mockResolvedValue({
+      ...lojaMock,
+      name: 'Nova Loja',
+      phone: '+244 911',
+    });
     const result = await service.updateLoja({ nome: 'Nova Loja', telefone: '+244 911' });
     expect(prisma.storeConfig.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ update: expect.objectContaining({ name: 'Nova Loja', phone: '+244 911' }) }),
+      expect.objectContaining({
+        update: expect.objectContaining({ name: 'Nova Loja', phone: '+244 911' }),
+      }),
     );
     expect(result.nome).toBe('Nova Loja');
   });

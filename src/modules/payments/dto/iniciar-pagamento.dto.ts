@@ -17,7 +17,10 @@ export class IniciarPagamentoDto {
   @Trim()
   method?: string;
 
-  @ApiPropertyOptional({ description: 'Telefone para GPO (Multicaixa Express)', example: '923456789' })
+  @ApiPropertyOptional({
+    description: 'Telefone para GPO (Multicaixa Express)',
+    example: '923456789',
+  })
   @IsOptional()
   @IsString({ message: 'phoneNumber deve ser texto' })
   @Trim()

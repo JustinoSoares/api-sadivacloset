@@ -82,7 +82,9 @@ export class ProductsAdminService {
     });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.auditoria.registar(adminId, 'criar_produto', 'produto', product.id, { nome: name, preco: price }).catch(() => {});
+      await this.auditoria
+        .registar(adminId, 'criar_produto', 'produto', product.id, { nome: name, preco: price })
+        .catch(() => {});
     }
     return product;
   }
@@ -120,7 +122,9 @@ export class ProductsAdminService {
     });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.auditoria.registar(adminId, 'atualizar_produto', 'produto', id, { antes: exists, depois: updated }).catch(() => {});
+      await this.auditoria
+        .registar(adminId, 'atualizar_produto', 'produto', id, { antes: exists, depois: updated })
+        .catch(() => {});
     }
     return updated;
   }
@@ -136,7 +140,9 @@ export class ProductsAdminService {
     await this.prisma.product.delete({ where: { id } });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.auditoria.registar(adminId, 'remover_produto', 'produto', id, { nome: exists.name }).catch(() => {});
+      await this.auditoria
+        .registar(adminId, 'remover_produto', 'produto', id, { nome: exists.name })
+        .catch(() => {});
     }
     return { message: 'Product removed successfully', mensagem: 'Produto removido com sucesso' };
   }

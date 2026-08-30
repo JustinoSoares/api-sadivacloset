@@ -20,9 +20,13 @@ export class PaymentQueueService implements OnModuleDestroy {
       this.queue = new Queue(this.queueName, { connection: this.redis as any });
       this.logger.log(`Fila BullMQ dedicada criada: ${this.queueName}`);
       // evitar warning de lidar com eventos não tratados
-      this.queue.on('error', (err) => this.logger.error(`Queue ${this.queueName} erro: ${err.message}`));
+      this.queue.on('error', (err) =>
+        this.logger.error(`Queue ${this.queueName} erro: ${err.message}`),
+      );
     } catch (e: any) {
-      this.logger.warn(`Falha ao criar fila BullMQ ${this.queueName}: ${e.message} – fallback para log apenas`);
+      this.logger.warn(
+        `Falha ao criar fila BullMQ ${this.queueName}: ${e.message} – fallback para log apenas`,
+      );
       this.queue = null;
     }
   }
@@ -37,7 +41,9 @@ export class PaymentQueueService implements OnModuleDestroy {
     confirmedAt: string;
   }): Promise<void> {
     if (!this.queue) {
-      this.logger.log(`[MOCK QUEUE ${this.queueName}] pagamento-confirmado: ${JSON.stringify(payload)}`);
+      this.logger.log(
+        `[MOCK QUEUE ${this.queueName}] pagamento-confirmado: ${JSON.stringify(payload)}`,
+      );
       return;
     }
     try {
@@ -47,7 +53,9 @@ export class PaymentQueueService implements OnModuleDestroy {
         removeOnComplete: 1000,
         removeOnFail: 5000,
       });
-      this.logger.log(`Evento enfileirado ${this.queueName} -> pagamento ${payload.paymentId} gateway ${payload.gateway}`);
+      this.logger.log(
+        `Evento enfileirado ${this.queueName} -> pagamento ${payload.paymentId} gateway ${payload.gateway}`,
+      );
     } catch (e: any) {
       this.logger.error(`Falha ao enfileirar pagamento-confirmado: ${e.message}`);
       // não propaga – webhook já confirmou pagamento, fila é best-effort

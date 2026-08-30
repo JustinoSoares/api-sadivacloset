@@ -6,7 +6,13 @@ import { PrismaService } from '../prisma/prisma.service';
 describe('CartService', () => {
   let service: CartService;
   let prisma: {
-    cartItem: { findMany: jest.Mock; findUnique: jest.Mock; create: jest.Mock; update: jest.Mock; delete: jest.Mock };
+    cartItem: {
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
     product: { findUnique: jest.Mock };
   };
 
@@ -102,7 +108,13 @@ describe('CartService', () => {
     it('should create new item when not exists', async () => {
       prisma.product.findUnique.mockResolvedValue(productMock);
       prisma.cartItem.findUnique.mockResolvedValue(null);
-      prisma.cartItem.create.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 2, product: productMock });
+      prisma.cartItem.create.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 2,
+        product: productMock,
+      });
 
       const result = await service.addItem(buyerId, productId, 2);
 
@@ -116,8 +128,19 @@ describe('CartService', () => {
 
     it('should increment quantity if already exists (idempotent additive)', async () => {
       prisma.product.findUnique.mockResolvedValue(productMock);
-      prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 3 });
-      prisma.cartItem.update.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 5, product: productMock });
+      prisma.cartItem.findUnique.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 3,
+      });
+      prisma.cartItem.update.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 5,
+        product: productMock,
+      });
 
       const result = await service.addItem(buyerId, productId, 2);
 
@@ -131,12 +154,16 @@ describe('CartService', () => {
 
     it('should throw 404 if product not found', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
-      await expect(service.addItem(buyerId, productId, 1)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.addItem(buyerId, productId, 1)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('should throw 400 if quantidade > stock (new item)', async () => {
       prisma.product.findUnique.mockResolvedValue({ ...productMock, stock: 1 });
-      await expect(service.addItem(buyerId, productId, 2)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.addItem(buyerId, productId, 2)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
       await expect(service.addItem(buyerId, productId, 2)).rejects.toMatchObject({
         response: { erro: { codigo: 'STOCK_INSUFICIENTE' } },
       });
@@ -144,15 +171,34 @@ describe('CartService', () => {
 
     it('should throw 400 if total quantidade exceeds stock on increment', async () => {
       prisma.product.findUnique.mockResolvedValue({ ...productMock, stock: 4 });
-      prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 3 });
-      await expect(service.addItem(buyerId, productId, 2)).rejects.toBeInstanceOf(BadRequestException);
+      prisma.cartItem.findUnique.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 3,
+      });
+      await expect(service.addItem(buyerId, productId, 2)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 
   describe('updateItem', () => {
     it('should update quantity with stock validation', async () => {
-      prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 1, product: productMock });
-      prisma.cartItem.update.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 5, product: productMock });
+      prisma.cartItem.findUnique.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 1,
+        product: productMock,
+      });
+      prisma.cartItem.update.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 5,
+        product: productMock,
+      });
 
       const result = await service.updateItem(buyerId, cartItemId, 5);
       expect(result.quantidade).toBe(5);
@@ -161,15 +207,33 @@ describe('CartService', () => {
 
     it('should throw 404 if item not found or not owner', async () => {
       prisma.cartItem.findUnique.mockResolvedValue(null);
-      await expect(service.updateItem(buyerId, cartItemId, 2)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.updateItem(buyerId, cartItemId, 2)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
 
-      prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId: 'other', productId, quantity: 1, product: productMock });
-      await expect(service.updateItem(buyerId, cartItemId, 2)).rejects.toBeInstanceOf(NotFoundException);
+      prisma.cartItem.findUnique.mockResolvedValue({
+        id: cartItemId,
+        buyerId: 'other',
+        productId,
+        quantity: 1,
+        product: productMock,
+      });
+      await expect(service.updateItem(buyerId, cartItemId, 2)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('should throw 400 if quantidade > stock', async () => {
-      prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId, productId, quantity: 1, product: { ...productMock, stock: 2 } });
-      await expect(service.updateItem(buyerId, cartItemId, 5)).rejects.toBeInstanceOf(BadRequestException);
+      prisma.cartItem.findUnique.mockResolvedValue({
+        id: cartItemId,
+        buyerId,
+        productId,
+        quantity: 1,
+        product: { ...productMock, stock: 2 },
+      });
+      await expect(service.updateItem(buyerId, cartItemId, 5)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
       await expect(service.updateItem(buyerId, cartItemId, 5)).rejects.toMatchObject({
         response: { erro: { codigo: 'STOCK_INSUFICIENTE' } },
       });
@@ -186,9 +250,13 @@ describe('CartService', () => {
 
     it('should throw 404 if not found or not owner', async () => {
       prisma.cartItem.findUnique.mockResolvedValue(null);
-      await expect(service.removeItem(buyerId, cartItemId)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.removeItem(buyerId, cartItemId)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       prisma.cartItem.findUnique.mockResolvedValue({ id: cartItemId, buyerId: 'other', productId });
-      await expect(service.removeItem(buyerId, cartItemId)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.removeItem(buyerId, cartItemId)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 

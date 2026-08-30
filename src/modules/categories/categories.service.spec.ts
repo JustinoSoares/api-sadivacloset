@@ -32,7 +32,10 @@ describe('CategoriesService', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('should return from cache when exists (english)', async () => {
-    const cached = { data: [{ category: Category.SUITS, total: 5 }], dados: [{ categoria: Category.SUITS, total: 5 }] };
+    const cached = {
+      data: [{ category: Category.SUITS, total: 5 }],
+      dados: [{ categoria: Category.SUITS, total: 5 }],
+    };
     redis.get.mockResolvedValue(JSON.stringify(cached));
     const result = await service.findAll();
     expect(result).toEqual(cached);
@@ -77,7 +80,11 @@ describe('CategoriesService', () => {
   it('should cache result for 60s', async () => {
     prisma.product.groupBy.mockResolvedValue([]);
     await service.findAll();
-    expect(redis.set).toHaveBeenCalledWith('cache:categories', expect.stringContaining('"data"'), 60);
+    expect(redis.set).toHaveBeenCalledWith(
+      'cache:categories',
+      expect.stringContaining('"data"'),
+      60,
+    );
   });
 
   it('should ignore parse error and fetch from DB', async () => {

@@ -97,7 +97,12 @@ export class AdminDeliveriesService {
         erro: {
           codigo: 'ERRO_VALIDACAO',
           mensagem: 'Estado inválido',
-          detalhes: [{ campo: 'estado', erros: [`estado deve ser um de: agendada, a_caminho, entregue, falhada, cancelada`] }],
+          detalhes: [
+            {
+              campo: 'estado',
+              erros: [`estado deve ser um de: agendada, a_caminho, entregue, falhada, cancelada`],
+            },
+          ],
         },
       });
     }
@@ -123,7 +128,14 @@ export class AdminDeliveriesService {
       include: { order: true, address: true },
     });
 
-    await this.audit.register(adminId, 'update_delivery_status', 'delivery', deliveryId, { from: delivery.status, to: newStatus, status: newStatus, de: delivery.status, para: newStatus, estado: newStatus });
+    await this.audit.register(adminId, 'update_delivery_status', 'delivery', deliveryId, {
+      from: delivery.status,
+      to: newStatus,
+      status: newStatus,
+      de: delivery.status,
+      para: newStatus,
+      estado: newStatus,
+    });
 
     try {
       const notif: any = this.notificationsService as any;

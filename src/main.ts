@@ -122,12 +122,32 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
       `.trim(),
     )
     .setVersion('0.1.0')
-    .setContact('SadivaCloset Team', 'https://github.com/sadivacloset', 'contacto@sadivacloset.co.ao')
+    .setContact(
+      'SadivaCloset Team',
+      'https://github.com/sadivacloset',
+      'contacto@sadivacloset.co.ao',
+    )
     .setLicense('Proprietary', 'https://sadivacloset.co.ao/terms')
     .addServer('http://localhost:3001', 'Local (Docker host)')
     .addServer('http://localhost:3002', 'Local alt (host .env PORT=3002)')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Colar access_token obtido em POST /auth/login' }, 'bearer')
-    .addApiKey({ type: 'apiKey', in: 'header', name: 'x-signature', description: 'HMAC SHA256 do rawBody com PAYMENT_WEBHOOK_SECRET (apenas webhooks)' }, 'x-signature')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Colar access_token obtido em POST /auth/login',
+      },
+      'bearer',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-signature',
+        description: 'HMAC SHA256 do rawBody com PAYMENT_WEBHOOK_SECRET (apenas webhooks)',
+      },
+      'x-signature',
+    )
     .addTag('auth', 'Registo, login, refresh, forgot/reset, perfil')
     .addTag('products', 'Catálogo público (cache 60s, filtros, ordenação)')
     .addTag('categories', 'Categorias')
@@ -164,10 +184,7 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
   });
 
   const configService = app.get(ConfigService);
-  const port =
-    configService.get<number>('port') ??
-    parseInt(configService.get<string>('PORT') ?? '', 10) ??
-    3001;
+  const port = configService.getOrThrow<number>('port');
 
   await app.listen(port, '0.0.0.0');
   logger.log(`🚀 SadivaCloset API a correr em http://localhost:${port}`);
@@ -175,6 +192,14 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
   logger.log(`   Docs:   http://localhost:${port}/api/docs`);
 }
 bootstrap().catch((err) => {
+  // Erro de validação de .env já vem formatado pelo validateEnv
+  if (
+    err?.message?.includes('variáveis de ambiente') ||
+    err?.message?.includes('variaveis de ambiente')
+  ) {
+    console.error(err.message);
+    process.exit(1);
+  }
   if (err?.code === 'EADDRINUSE') {
     console.error(
       `❌ Porta ${err.port} já em uso (EADDRINUSE). ` +

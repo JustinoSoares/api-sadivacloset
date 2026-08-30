@@ -52,8 +52,20 @@ describe('DeliveryZonesService', () => {
     expect(result.data).toHaveLength(3);
     expect(result.dados).toHaveLength(3);
     // bilingual shape
-    expect(result.data[0]).toEqual({ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 });
-    expect(result.dados[0]).toEqual({ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 });
+    expect(result.data[0]).toEqual({
+      id: '1',
+      neighborhood: 'Talatona',
+      bairro: 'Talatona',
+      price: 2500,
+      preco: 2500,
+    });
+    expect(result.dados[0]).toEqual({
+      id: '1',
+      neighborhood: 'Talatona',
+      bairro: 'Talatona',
+      price: 2500,
+      preco: 2500,
+    });
     expect(redis.set).toHaveBeenCalledWith('cache:delivery-zones', expect.any(String), 60);
     expect(redis.set).toHaveBeenCalledWith('cache:zonas-entrega', expect.any(String), 60);
   });
@@ -66,7 +78,9 @@ describe('DeliveryZonesService', () => {
   });
 
   it('should support legacy plain array cache', async () => {
-    const arr = [{ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 }];
+    const arr = [
+      { id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 },
+    ];
     redis.get.mockResolvedValue(JSON.stringify(arr));
     const result = await service.findAll();
     expect(result.data).toEqual(arr);

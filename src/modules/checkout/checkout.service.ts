@@ -38,7 +38,11 @@ export class CheckoutService {
     else if (tipoNorm === 'levantamento_loja') deliveryType = DeliveryType.STORE_PICKUP;
     else {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'tipo', erros: ['tipo deve ser domicilio ou levantamento_loja'] }] },
+        erro: {
+          codigo: 'ERRO_VALIDACAO',
+          mensagem: 'Erro de validação',
+          detalhes: [{ campo: 'tipo', erros: ['tipo deve ser domicilio ou levantamento_loja'] }],
+        },
       });
     }
 
@@ -46,7 +50,11 @@ export class CheckoutService {
     const scheduledDate = new Date(input.dataAgendada);
     if (isNaN(scheduledDate.getTime())) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'data_agendada', erros: ['data_agendada inválida'] }] },
+        erro: {
+          codigo: 'ERRO_VALIDACAO',
+          mensagem: 'Erro de validação',
+          detalhes: [{ campo: 'data_agendada', erros: ['data_agendada inválida'] }],
+        },
       });
     }
     // normaliza para meia-noite UTC para comparar datas
@@ -56,14 +64,22 @@ export class CheckoutService {
     schedOnly.setHours(0, 0, 0, 0);
     if (schedOnly < today) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'data_agendada', erros: ['data_agendada não pode ser no passado'] }] },
+        erro: {
+          codigo: 'ERRO_VALIDACAO',
+          mensagem: 'Erro de validação',
+          detalhes: [{ campo: 'data_agendada', erros: ['data_agendada não pode ser no passado'] }],
+        },
       });
     }
 
     // Validar janela_horario já feita pelo DTO, mas garante não vazia
     if (!input.janelaHorario || !input.janelaHorario.trim()) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'janela_horario', erros: ['janela_horario não pode ser vazia'] }] },
+        erro: {
+          codigo: 'ERRO_VALIDACAO',
+          mensagem: 'Erro de validação',
+          detalhes: [{ campo: 'janela_horario', erros: ['janela_horario não pode ser vazia'] }],
+        },
       });
     }
 
@@ -87,7 +103,9 @@ export class CheckoutService {
         addressId = address.id;
         // tenta zona pelo bairro do endereço
         if (input.zonaEntregaId) {
-          const zone = await this.prisma.deliveryZone.findUnique({ where: { id: input.zonaEntregaId } });
+          const zone = await this.prisma.deliveryZone.findUnique({
+            where: { id: input.zonaEntregaId },
+          });
           if (!zone) {
             throw new NotFoundException({
               erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Zona de entrega não encontrada' },
@@ -95,15 +113,21 @@ export class CheckoutService {
           }
           deliveryFee = zone.price;
         } else {
-          const zoneByNeighborhood = await this.prisma.deliveryZone.findUnique({ where: { neighborhood: address.neighborhood } });
+          const zoneByNeighborhood = await this.prisma.deliveryZone.findUnique({
+            where: { neighborhood: address.neighborhood },
+          });
           if (zoneByNeighborhood) deliveryFee = zoneByNeighborhood.price;
           else {
-            const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+            const prefs = await this.prisma.adminPreferences.findUnique({
+              where: { id: 'singleton' },
+            });
             deliveryFee = prefs?.defaultDeliveryFee ?? 0;
           }
         }
       } else if (input.zonaEntregaId) {
-        const zone = await this.prisma.deliveryZone.findUnique({ where: { id: input.zonaEntregaId } });
+        const zone = await this.prisma.deliveryZone.findUnique({
+          where: { id: input.zonaEntregaId },
+        });
         if (!zone) {
           throw new NotFoundException({
             erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Zona de entrega não encontrada' },
@@ -113,18 +137,26 @@ export class CheckoutService {
         addressId = null;
       } else {
         // nenhum dos dois fornecido: tenta usar endereço predefinido
-        const defaultAddress = await this.prisma.address.findFirst({ where: { buyerId, isDefault: true } });
+        const defaultAddress = await this.prisma.address.findFirst({
+          where: { buyerId, isDefault: true },
+        });
         if (defaultAddress) {
           addressId = defaultAddress.id;
-          const zoneByNeighborhood = await this.prisma.deliveryZone.findUnique({ where: { neighborhood: defaultAddress.neighborhood } });
+          const zoneByNeighborhood = await this.prisma.deliveryZone.findUnique({
+            where: { neighborhood: defaultAddress.neighborhood },
+          });
           if (zoneByNeighborhood) deliveryFee = zoneByNeighborhood.price;
           else {
-            const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+            const prefs = await this.prisma.adminPreferences.findUnique({
+              where: { id: 'singleton' },
+            });
             deliveryFee = prefs?.defaultDeliveryFee ?? 0;
           }
         } else {
           // sem endereço e sem zona: fallback taxa padrão
-          const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+          const prefs = await this.prisma.adminPreferences.findUnique({
+            where: { id: 'singleton' },
+          });
           deliveryFee = prefs?.defaultDeliveryFee ?? 0;
           addressId = null;
         }
@@ -134,14 +166,23 @@ export class CheckoutService {
     // Transação: valida stock, decrementa, cria pedido + itens + entrega, esvazia carrinho
     return await this.prisma.$transaction(async (tx) => {
       let subtotal = 0;
-      const orderItemsData: Array<{ productId: string; productName: string; unitPrice: number; discount: number; quantity: number }> = [];
+      const orderItemsData: Array<{
+        productId: string;
+        productName: string;
+        unitPrice: number;
+        discount: number;
+        quantity: number;
+      }> = [];
 
       for (const item of cartItems) {
         // revalida produto dentro da transação
         const product = await tx.product.findUnique({ where: { id: item.productId } });
         if (!product) {
           throw new NotFoundException({
-            erro: { codigo: 'NAO_ENCONTRADO', mensagem: `Produto não encontrado: ${item.productId}` },
+            erro: {
+              codigo: 'NAO_ENCONTRADO',
+              mensagem: `Produto não encontrado: ${item.productId}`,
+            },
           });
         }
         if (product.stock < item.quantity) {

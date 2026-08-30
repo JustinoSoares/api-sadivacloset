@@ -1,5 +1,14 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -15,7 +24,10 @@ export class AdminDeliveriesController {
   constructor(private readonly adminDeliveriesService: AdminDeliveriesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List deliveries (admin) paginated, filter by status and date', description: 'Returns paginated deliveries with filters' })
+  @ApiOperation({
+    summary: 'List deliveries (admin) paginated, filter by status and date',
+    description: 'Returns paginated deliveries with filters',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -26,7 +38,10 @@ export class AdminDeliveriesController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update delivery status (audit log and notify buyer)', description: 'Updates delivery status, creates audit log and notifies buyer' })
+  @ApiOperation({
+    summary: 'Update delivery status (audit log and notify buyer)',
+    description: 'Updates delivery status, creates audit log and notifies buyer',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateDeliveryStatusDto })
   @ApiResponse({ status: 200, description: 'Success' })
@@ -46,7 +61,10 @@ export class AdminDeliveriesController {
 
   @ApiExcludeEndpoint()
   @Patch(':id/estado')
-  @ApiOperation({ summary: 'Update delivery status (legacy PT alias)', description: 'Alias for updating delivery status' })
+  @ApiOperation({
+    summary: 'Update delivery status (legacy PT alias)',
+    description: 'Alias for updating delivery status',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateDeliveryStatusDto })
   @ApiResponse({ status: 200, description: 'Success' })

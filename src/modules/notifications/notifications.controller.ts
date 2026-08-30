@@ -1,5 +1,12 @@
 import { Controller, Get, Param, ParseUUIDPipe, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
@@ -12,7 +19,10 @@ export class PerfilNotificacoesController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista notificações do comprador (criadoEm ISO, lida boolean)', description: 'Returns buyer notifications' })
+  @ApiOperation({
+    summary: 'Lista notificações do comprador (criadoEm ISO, lida boolean)',
+    description: 'Returns buyer notifications',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   async findAll(@CurrentUser() user: JwtPayload) {
@@ -22,7 +32,10 @@ export class PerfilNotificacoesController {
 
   // IMPORTANTE: /lidas antes de /:id/lida para não capturar "lidas" como :id
   @Patch('lidas')
-  @ApiOperation({ summary: 'Marca todas as notificações como lidas', description: 'Marks all notifications as read' })
+  @ApiOperation({
+    summary: 'Marca todas as notificações como lidas',
+    description: 'Marks all notifications as read',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   async markAllAsRead(@CurrentUser() user: JwtPayload) {
@@ -31,7 +44,10 @@ export class PerfilNotificacoesController {
   }
 
   @Patch(':id/lida')
-  @ApiOperation({ summary: 'Marca uma notificação como lida', description: 'Marks one notification as read' })
+  @ApiOperation({
+    summary: 'Marca uma notificação como lida',
+    description: 'Marks one notification as read',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -49,7 +65,10 @@ export class ProfileNotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List buyer notifications (createdAt ISO, isRead boolean)', description: 'Returns buyer notifications' })
+  @ApiOperation({
+    summary: 'List buyer notifications (createdAt ISO, isRead boolean)',
+    description: 'Returns buyer notifications',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -60,7 +79,10 @@ export class ProfileNotificationsController {
   }
 
   @Patch('read')
-  @ApiOperation({ summary: 'Mark all notifications as read (alias)', description: 'Marks all notifications as read' })
+  @ApiOperation({
+    summary: 'Mark all notifications as read (alias)',
+    description: 'Marks all notifications as read',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -71,7 +93,10 @@ export class ProfileNotificationsController {
   }
 
   @Patch(':id/read')
-  @ApiOperation({ summary: 'Mark one notification as read', description: 'Marks one notification as read' })
+  @ApiOperation({
+    summary: 'Mark one notification as read',
+    description: 'Marks one notification as read',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

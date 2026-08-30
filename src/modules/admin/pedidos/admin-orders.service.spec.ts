@@ -37,8 +37,14 @@ describe('AdminOrdersService', () => {
       order: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
-    notifications = { criar: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({}) };
-    auditoria = { registar: jest.fn().mockResolvedValue({}), register: jest.fn().mockResolvedValue({}) };
+    notifications = {
+      criar: jest.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({}),
+    };
+    auditoria = {
+      registar: jest.fn().mockResolvedValue({}),
+      register: jest.fn().mockResolvedValue({}),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -87,23 +93,39 @@ describe('AdminOrdersService', () => {
     const dto = new UpdateOrderStatusDto();
     dto.estado = 'pago';
     const result = await service.updateStatus(adminId, orderId, dto);
-    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: OrderStatus.PAID } }));
-    expect(auditoria.registar).toHaveBeenCalledWith(adminId, 'atualizar_estado_pedido', 'pedido', orderId, expect.any(Object));
-    expect(notifications.criar).toHaveBeenCalledWith(buyerId, expect.any(String), expect.stringContaining('pago'));
+    expect(prisma.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: OrderStatus.PAID } }),
+    );
+    expect(auditoria.registar).toHaveBeenCalledWith(
+      adminId,
+      'atualizar_estado_pedido',
+      'pedido',
+      orderId,
+      expect.any(Object),
+    );
+    expect(notifications.criar).toHaveBeenCalledWith(
+      buyerId,
+      expect.any(String),
+      expect.stringContaining('pago'),
+    );
     expect(result.estado).toBe(OrderStatus.PAID);
   });
 
   it('should throw 400 for estado inválido', async () => {
     const dto = new UpdateOrderStatusDto();
     dto.estado = 'invalido';
-    await expect(service.updateStatus(adminId, orderId, dto)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateStatus(adminId, orderId, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('should throw 404 if pedido não existe', async () => {
     prisma.order.findUnique.mockResolvedValue(null);
     const dto = new UpdateOrderStatusDto();
     dto.estado = 'pago';
-    await expect(service.updateStatus(adminId, 'no-id', dto)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.updateStatus(adminId, 'no-id', dto)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('should accept english alias status', async () => {

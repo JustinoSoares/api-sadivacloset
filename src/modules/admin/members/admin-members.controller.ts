@@ -1,5 +1,13 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiExcludeController,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { AdminMembersService } from './admin-members.service';
 import { FilterMembersDto } from './dto/filter-members.dto';
@@ -14,8 +22,10 @@ export class AdminMembersController {
 
   @Get()
   @ApiOperation({
-    summary: 'Paginated list of buyers (members), search by name/email, with order count and total spent via join by buyerId',
-    description: 'Filters by ?q / ?search / ?pesquisa (LIKE insensitive on name and email). Aggregates via Order.groupBy buyerId – sum total spent (paid/completed) and total order count.',
+    summary:
+      'Paginated list of buyers (members), search by name/email, with order count and total spent via join by buyerId',
+    description:
+      'Filters by ?q / ?search / ?pesquisa (LIKE insensitive on name and email). Aggregates via Order.groupBy buyerId – sum total spent (paid/completed) and total order count.',
   })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -27,7 +37,10 @@ export class AdminMembersController {
   }
 
   @Get(':id/orders')
-  @ApiOperation({ summary: 'Order history of a member (buyer)', description: 'Returns order history for member' })
+  @ApiOperation({
+    summary: 'Order history of a member (buyer)',
+    description: 'Returns order history for member',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -40,7 +53,10 @@ export class AdminMembersController {
 
   @ApiExcludeEndpoint()
   @Get(':id/pedidos')
-  @ApiOperation({ summary: 'Order history of a member (buyer) [legacy alias]', description: 'Alias for member order history' })
+  @ApiOperation({
+    summary: 'Order history of a member (buyer) [legacy alias]',
+    description: 'Alias for member order history',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

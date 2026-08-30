@@ -10,7 +10,10 @@ export class CategoriesController {
 
   @Public()
   @Get()
-  @ApiOperation({ summary: 'List categories with product counts', description: 'Returns categories with product counts' })
+  @ApiOperation({
+    summary: 'List categories with product counts',
+    description: 'Returns categories with product counts',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })

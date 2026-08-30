@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -15,7 +22,10 @@ export class AdminLojaController {
   constructor(private readonly lojaService: AdminLojaService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Obtém configuração da loja (LojaConfig)', description: 'Returns store configuration' })
+  @ApiOperation({
+    summary: 'Obtém configuração da loja (LojaConfig)',
+    description: 'Returns store configuration',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -25,7 +35,10 @@ export class AdminLojaController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Atualiza configuração da loja', description: 'Updates store configuration' })
+  @ApiOperation({
+    summary: 'Atualiza configuração da loja',
+    description: 'Updates store configuration',
+  })
   @ApiBody({ type: UpdateLojaDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })

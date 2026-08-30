@@ -1,5 +1,25 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
@@ -13,7 +33,10 @@ export class CarrinhoController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista itens do carrinho com subtotal (preço com desconto * quantidade)', description: 'Returns cart items with subtotal' })
+  @ApiOperation({
+    summary: 'Lista itens do carrinho com subtotal (preço com desconto * quantidade)',
+    description: 'Returns cart items with subtotal',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -24,7 +47,10 @@ export class CarrinhoController {
 
   @Post('itens')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Adiciona item ao carrinho (valida stock)', description: 'Adds item to cart validating stock' })
+  @ApiOperation({
+    summary: 'Adiciona item ao carrinho (valida stock)',
+    description: 'Adds item to cart validating stock',
+  })
   @ApiBody({ type: AddCartItemDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -57,7 +83,10 @@ export class CarrinhoController {
   }
 
   @Patch('itens/:id')
-  @ApiOperation({ summary: 'Actualiza quantidade do item (valida stock)', description: 'Updates cart item quantity validating stock' })
+  @ApiOperation({
+    summary: 'Actualiza quantidade do item (valida stock)',
+    description: 'Updates cart item quantity validating stock',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateCartItemDto })
   @ApiResponse({ status: 200, description: 'Success' })
@@ -103,7 +132,10 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List cart items with subtotal (discounted price * quantity)', description: 'Returns cart items with subtotal' })
+  @ApiOperation({
+    summary: 'List cart items with subtotal (discounted price * quantity)',
+    description: 'Returns cart items with subtotal',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -115,7 +147,10 @@ export class CartController {
 
   @Post('items')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Add item to cart (validates stock)', description: 'Adds item to cart validating stock' })
+  @ApiOperation({
+    summary: 'Add item to cart (validates stock)',
+    description: 'Adds item to cart validating stock',
+  })
   @ApiBody({ type: AddCartItemDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -143,12 +178,19 @@ export class CartController {
         },
       });
     }
-    const item = await this.cartService.addItem(user.sub, productId as string, quantidade as number);
+    const item = await this.cartService.addItem(
+      user.sub,
+      productId as string,
+      quantidade as number,
+    );
     return { data: item, dados: item };
   }
 
   @Patch('items/:id')
-  @ApiOperation({ summary: 'Update cart item quantity (validates stock)', description: 'Updates cart item quantity validating stock' })
+  @ApiOperation({
+    summary: 'Update cart item quantity (validates stock)',
+    description: 'Updates cart item quantity validating stock',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateCartItemDto })
   @ApiResponse({ status: 200, description: 'Success' })
@@ -184,6 +226,11 @@ export class CartController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   async removeItem(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.cartService.removeItem(user.sub, id);
-    return { message: 'Cart item removed', mensagem: 'Item removido do carrinho', data: null, dados: null };
+    return {
+      message: 'Cart item removed',
+      mensagem: 'Item removido do carrinho',
+      data: null,
+      dados: null,
+    };
   }
 }

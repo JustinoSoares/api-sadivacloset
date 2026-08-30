@@ -4,12 +4,37 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { QueryStatisticsDto } from './dto/query-statistics.dto';
 import { buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 
-function calcVariation(current: number, previous: number): { percentage: number | null; grew: boolean | null; difference: number; percentual: number | null; crescimento: boolean | null; diferenca: number } {
+function calcVariation(
+  current: number,
+  previous: number,
+): {
+  percentage: number | null;
+  grew: boolean | null;
+  difference: number;
+  percentual: number | null;
+  crescimento: boolean | null;
+  diferenca: number;
+} {
   const difference = current - previous;
   const diferenca = difference;
   if (previous === 0) {
-    if (current === 0) return { percentage: 0, grew: null, difference: 0, percentual: 0, crescimento: null, diferenca: 0 };
-    return { percentage: 100, grew: true, difference, percentual: 100, crescimento: true, diferenca };
+    if (current === 0)
+      return {
+        percentage: 0,
+        grew: null,
+        difference: 0,
+        percentual: 0,
+        crescimento: null,
+        diferenca: 0,
+      };
+    return {
+      percentage: 100,
+      grew: true,
+      difference,
+      percentual: 100,
+      crescimento: true,
+      diferenca,
+    };
   }
   const percentage = Number(((difference / previous) * 100).toFixed(1));
   const percentual = percentage;
@@ -102,8 +127,12 @@ export class AdminStatisticsService {
       this.prisma.product.count({ where: { createdAt: { gte: currentStart, lte: currentEnd } } }),
       this.prisma.product.count({ where: { createdAt: { gte: previousStart, lte: previousEnd } } }),
       this.prisma.user.count({ where: { role: Role.BUYER } }),
-      this.prisma.user.count({ where: { role: Role.BUYER, createdAt: { gte: currentStart, lte: currentEnd } } }),
-      this.prisma.user.count({ where: { role: Role.BUYER, createdAt: { gte: previousStart, lte: previousEnd } } }),
+      this.prisma.user.count({
+        where: { role: Role.BUYER, createdAt: { gte: currentStart, lte: currentEnd } },
+      }),
+      this.prisma.user.count({
+        where: { role: Role.BUYER, createdAt: { gte: previousStart, lte: previousEnd } },
+      }),
       this.prisma.order.count(),
       this.prisma.order.count({ where: { createdAt: { gte: currentStart, lte: currentEnd } } }),
       this.prisma.order.count({ where: { createdAt: { gte: previousStart, lte: previousEnd } } }),
@@ -118,7 +147,12 @@ export class AdminStatisticsService {
       this.prisma.order.count({ where: whereRecent }),
       this.prisma.order.findMany({
         where: whereRecent,
-        include: { buyer: { select: { id: true, name: true, email: true } }, items: true, delivery: true, payment: true },
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          items: true,
+          delivery: true,
+          payment: true,
+        },
         orderBy: { createdAt: 'desc' },
         skip: dto.skip,
         take: dto.take,

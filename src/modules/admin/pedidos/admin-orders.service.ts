@@ -25,7 +25,9 @@ function toOrderResponse(order: any) {
     criado_em: order.createdAt,
     created_at: order.createdAt,
     createdAt: order.createdAt,
-    comprador: order.buyer ? { id: order.buyer.id, nome: order.buyer.name, email: order.buyer.email } : undefined,
+    comprador: order.buyer
+      ? { id: order.buyer.id, nome: order.buyer.name, email: order.buyer.email }
+      : undefined,
     buyer: order.buyer,
     itens: (order.items ?? []).map((it: any) => ({
       id: it.id,
@@ -116,7 +118,14 @@ export class AdminOrdersService {
         erro: {
           codigo: 'ERRO_VALIDACAO',
           mensagem: 'Estado inválido',
-          detalhes: [{ campo: 'estado', erros: [`estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`] }],
+          detalhes: [
+            {
+              campo: 'estado',
+              erros: [
+                `estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`,
+              ],
+            },
+          ],
         },
       });
     }
@@ -143,7 +152,11 @@ export class AdminOrdersService {
     });
 
     // Audit log via AuditoriaService
-    await this.auditoria.registar(adminId, 'atualizar_estado_pedido', 'pedido', orderId, { de: order.status, para: newStatus, estado: newStatus });
+    await this.auditoria.registar(adminId, 'atualizar_estado_pedido', 'pedido', orderId, {
+      de: order.status,
+      para: newStatus,
+      estado: newStatus,
+    });
 
     // Notificação ao comprador
     try {

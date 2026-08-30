@@ -4,7 +4,12 @@ import { PedidosController, OrdersController } from './orders.controller';
 import { PerfilPedidosController, ProfileOrdersController } from './perfil-pedidos.controller';
 
 @Module({
-  controllers: [PedidosController, OrdersController, PerfilPedidosController, ProfileOrdersController],
+  controllers: [
+    PedidosController,
+    OrdersController,
+    PerfilPedidosController,
+    ProfileOrdersController,
+  ],
   providers: [OrdersService],
   exports: [OrdersService],
 })

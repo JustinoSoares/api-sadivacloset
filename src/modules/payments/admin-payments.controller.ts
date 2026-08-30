@@ -1,5 +1,12 @@
 import { Controller, Param, ParseUUIDPipe, Patch, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
@@ -15,7 +22,10 @@ export class AdminPagamentosController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Patch(':id/validar')
-  @ApiOperation({ summary: 'Validação manual de pagamento (só aqui pedido passa a pago) – cria audit e notifica', description: 'Manually validates payment, marks order as paid, creates audit and notifies' })
+  @ApiOperation({
+    summary: 'Validação manual de pagamento (só aqui pedido passa a pago) – cria audit e notifica',
+    description: 'Manually validates payment, marks order as paid, creates audit and notifies',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid', description: 'Payment ID' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -24,11 +34,18 @@ export class AdminPagamentosController {
   @ApiResponse({ status: 409, description: 'Conflict' })
   async validar(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const result = await this.paymentsService.validarAdmin(user.sub, id);
-    return { data: result, dados: result, mensagem: 'Pagamento validado, pedido marcado como pago' };
+    return {
+      data: result,
+      dados: result,
+      mensagem: 'Pagamento validado, pedido marcado como pago',
+    };
   }
 
   @Get('historico')
-  @ApiOperation({ summary: 'Histórico global de pagamentos (admin)', description: 'Returns global payment history' })
+  @ApiOperation({
+    summary: 'Histórico global de pagamentos (admin)',
+    description: 'Returns global payment history',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -37,7 +54,10 @@ export class AdminPagamentosController {
   }
 
   @Get('carteira/historico')
-  @ApiOperation({ summary: 'Histórico global da carteira (entradas/saídas) – admin', description: 'Returns global wallet history' })
+  @ApiOperation({
+    summary: 'Histórico global da carteira (entradas/saídas) – admin',
+    description: 'Returns global wallet history',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -46,7 +66,10 @@ export class AdminPagamentosController {
   }
 
   @Get('bridpay/wallet')
-  @ApiOperation({ summary: 'Proxy BridPay wallet (balance + transactions)', description: 'Proxies BridPay wallet' })
+  @ApiOperation({
+    summary: 'Proxy BridPay wallet (balance + transactions)',
+    description: 'Proxies BridPay wallet',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })

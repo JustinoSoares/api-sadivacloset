@@ -7,7 +7,13 @@ import { CreateAddressDto, UpdateAddressDto } from './dto/create-address.dto';
 describe('PerfilEnderecosController', () => {
   let perfilController: PerfilEnderecosController;
   let profileController: ProfileAddressesController;
-  let service: { findAll: jest.Mock; create: jest.Mock; update: jest.Mock; remove: jest.Mock; setDefault: jest.Mock };
+  let service: {
+    findAll: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    remove: jest.Mock;
+    setDefault: jest.Mock;
+  };
 
   const buyerId = '11111111-1111-1111-1111-111111111111';
   const addressId = '22222222-2222-2222-2222-222222222222';
@@ -67,7 +73,10 @@ describe('PerfilEnderecosController', () => {
     dto.bairro = 'Benfica';
     dto.rua = 'Rua 1';
     const result = await perfilController.create(user, dto);
-    expect(service.create).toHaveBeenCalledWith(buyerId, expect.objectContaining({ etiqueta: 'Casa' }));
+    expect(service.create).toHaveBeenCalledWith(
+      buyerId,
+      expect.objectContaining({ etiqueta: 'Casa' }),
+    );
     expect(result).toEqual({ data: addressMock, dados: addressMock });
   });
 
@@ -82,7 +91,11 @@ describe('PerfilEnderecosController', () => {
     const dto = new UpdateAddressDto();
     dto.etiqueta = 'Casa Nova';
     await perfilController.update(user, addressId, dto);
-    expect(service.update).toHaveBeenCalledWith(buyerId, addressId, expect.objectContaining({ etiqueta: 'Casa Nova' }));
+    expect(service.update).toHaveBeenCalledWith(
+      buyerId,
+      addressId,
+      expect.objectContaining({ etiqueta: 'Casa Nova' }),
+    );
   });
 
   it('DELETE /perfil/enderecos/:id should remove', async () => {

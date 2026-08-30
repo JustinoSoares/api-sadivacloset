@@ -1,6 +1,25 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiConsumes, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiConsumes,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { PaymentsService } from './payments.service';
@@ -15,7 +34,11 @@ export class PagamentosController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('iniciar')
-  @ApiOperation({ summary: 'Inicia pagamento (cria registo PENDENTE/PROCESSANDO). Para GPO/GPR chama BridPay (/gpo,/gpr); para KWIK cria saída', description: 'Initiates payment creating PENDING/PROCESSING record' })
+  @ApiOperation({
+    summary:
+      'Inicia pagamento (cria registo PENDENTE/PROCESSANDO). Para GPO/GPR chama BridPay (/gpo,/gpr); para KWIK cria saída',
+    description: 'Initiates payment creating PENDING/PROCESSING record',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: IniciarPagamentoDto })
   @ApiResponse({ status: 201, description: 'Created' })
@@ -39,7 +62,10 @@ export class PagamentosController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Estado actual do pagamento do pedido', description: 'Returns current payment status for order' })
+  @ApiOperation({
+    summary: 'Estado actual do pagamento do pedido',
+    description: 'Returns current payment status for order',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -52,7 +78,11 @@ export class PagamentosController {
   @Post('comprovativo')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload comprovativo (transferência bancária) – muda para PROCESSANDO, aguarda validação admin', description: 'Uploads receipt, sets to PROCESSING awaiting admin validation' })
+  @ApiOperation({
+    summary:
+      'Upload comprovativo (transferência bancária) – muda para PROCESSANDO, aguarda validação admin',
+    description: 'Uploads receipt, sets to PROCESSING awaiting admin validation',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -142,7 +172,10 @@ export class PagamentosHistoricoController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get('historico')
-  @ApiOperation({ summary: 'Histórico de pagamentos do comprador (entradas)', description: 'Returns buyer payment history' })
+  @ApiOperation({
+    summary: 'Histórico de pagamentos do comprador (entradas)',
+    description: 'Returns buyer payment history',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   async historico(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
@@ -168,7 +201,10 @@ export class PagamentosHistoricoController {
   }
 
   @Get('carteira/historico')
-  @ApiOperation({ summary: 'Histórico completo da carteira (entradas e saídas)', description: 'Returns complete wallet history' })
+  @ApiOperation({
+    summary: 'Histórico completo da carteira (entradas e saídas)',
+    description: 'Returns complete wallet history',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   async carteira(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
@@ -183,7 +219,10 @@ export class WalletController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get('historico')
-  @ApiOperation({ summary: 'Wallet historico (proxy BridPay + local)', description: 'Returns wallet history proxy BridPay + local' })
+  @ApiOperation({
+    summary: 'Wallet historico (proxy BridPay + local)',
+    description: 'Returns wallet history proxy BridPay + local',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })

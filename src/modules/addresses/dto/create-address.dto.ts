@@ -2,8 +2,7 @@ import { IsNumber, IsOptional, IsString, Max, Min, IsNotEmpty } from 'class-vali
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-const Trim = () =>
-  Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
+const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 function normalizeStr(v?: string): string | undefined {
   if (v === undefined || v === null) return undefined;

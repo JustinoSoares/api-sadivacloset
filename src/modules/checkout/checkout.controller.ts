@@ -16,7 +16,12 @@ export class CheckoutController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create order from cart (transaction: validate stock, decrement, create order+delivery, clear cart)', description: 'Creates order from cart in a transaction, validates stock, creates delivery and clears cart' })
+  @ApiOperation({
+    summary:
+      'Create order from cart (transaction: validate stock, decrement, create order+delivery, clear cart)',
+    description:
+      'Creates order from cart in a transaction, validates stock, creates delivery and clears cart',
+  })
   @ApiBody({ type: CheckoutDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -31,10 +36,20 @@ export class CheckoutController {
 
     // validação obrigatórios — bilíngue
     const detalhes: { campo: string; erros: string[] }[] = [];
-    if (!tipo) detalhes.push({ campo: 'tipo', erros: ['tipo é obrigatório (domicilio | levantamento_loja)'] });
-    else if (!['domicilio', 'levantamento_loja'].includes(tipo)) detalhes.push({ campo: 'tipo', erros: ['tipo deve ser domicilio ou levantamento_loja'] });
-    if (!dataAgendada) detalhes.push({ campo: 'data_agendada', erros: ['data_agendada é obrigatória (YYYY-MM-DD)'] });
-    if (!janelaHorario) detalhes.push({ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] });
+    if (!tipo)
+      detalhes.push({
+        campo: 'tipo',
+        erros: ['tipo é obrigatório (domicilio | levantamento_loja)'],
+      });
+    else if (!['domicilio', 'levantamento_loja'].includes(tipo))
+      detalhes.push({ campo: 'tipo', erros: ['tipo deve ser domicilio ou levantamento_loja'] });
+    if (!dataAgendada)
+      detalhes.push({
+        campo: 'data_agendada',
+        erros: ['data_agendada é obrigatória (YYYY-MM-DD)'],
+      });
+    if (!janelaHorario)
+      detalhes.push({ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] });
     if (detalhes.length) {
       throw new BadRequestException({
         erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes },

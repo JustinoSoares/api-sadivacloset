@@ -8,7 +8,10 @@ function toArray<T>(value: unknown): T[] | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   if (Array.isArray(value)) return value as T[];
   if (typeof value === 'string' && value.includes(',')) {
-    return value.split(',').map((v) => v.trim()).filter(Boolean) as unknown as T[];
+    return value
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean) as unknown as T[];
   }
   return [value as T];
 }
@@ -68,7 +71,10 @@ export class FilterProductsDto extends PaginationDto {
   @ApiPropertyOptional({ enum: Category, isArray: true, description: 'Filter by categories' })
   @IsOptional()
   @Transform(({ value }) => mapCategoryArray(value))
-  @IsEnum(Category, { each: true, message: `category must be one of: ${Object.values(Category).join(', ')}` })
+  @IsEnum(Category, {
+    each: true,
+    message: `category must be one of: ${Object.values(Category).join(', ')}`,
+  })
   category?: Category[];
 
   // legacy alias: categoria
@@ -89,10 +95,17 @@ export class FilterProductsDto extends PaginationDto {
   @IsString({ each: true })
   tamanho?: string[];
 
-  @ApiPropertyOptional({ enum: ProductCondition, isArray: true, description: 'Filter by condition' })
+  @ApiPropertyOptional({
+    enum: ProductCondition,
+    isArray: true,
+    description: 'Filter by condition',
+  })
   @IsOptional()
   @Transform(({ value }) => mapConditionArray(value))
-  @IsEnum(ProductCondition, { each: true, message: `condition must be: ${Object.values(ProductCondition).join(', ')}` })
+  @IsEnum(ProductCondition, {
+    each: true,
+    message: `condition must be: ${Object.values(ProductCondition).join(', ')}`,
+  })
   condition?: ProductCondition[];
 
   // legacy alias

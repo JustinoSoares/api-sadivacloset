@@ -6,7 +6,12 @@ import { CartService } from './cart.service';
 describe('CarrinhoController', () => {
   let carrinhoController: CarrinhoController;
   let cartController: CartController;
-  let service: { getCart: jest.Mock; addItem: jest.Mock; updateItem: jest.Mock; removeItem: jest.Mock };
+  let service: {
+    getCart: jest.Mock;
+    addItem: jest.Mock;
+    updateItem: jest.Mock;
+    removeItem: jest.Mock;
+  };
 
   const buyerId = '11111111-1111-1111-1111-111111111111';
   const productId = '22222222-2222-2222-2222-222222222222';
@@ -14,13 +19,35 @@ describe('CarrinhoController', () => {
   const user = { sub: buyerId, email: 'buyer@test.com', role: 'buyer' } as any;
 
   const cartMock = {
-    itens: [{ id: cartItemId, produto_id: productId, quantidade: 2, preco_com_desconto: 40500, subtotal_item: 81000 }],
-    items: [{ id: cartItemId, produto_id: productId, quantidade: 2, preco_com_desconto: 40500, subtotal_item: 81000 }],
+    itens: [
+      {
+        id: cartItemId,
+        produto_id: productId,
+        quantidade: 2,
+        preco_com_desconto: 40500,
+        subtotal_item: 81000,
+      },
+    ],
+    items: [
+      {
+        id: cartItemId,
+        produto_id: productId,
+        quantidade: 2,
+        preco_com_desconto: 40500,
+        subtotal_item: 81000,
+      },
+    ],
     subtotal: 81000,
     total_itens: 1,
     totalItens: 1,
   };
-  const itemMock = { id: cartItemId, produto_id: productId, quantidade: 2, preco_com_desconto: 40500, subtotal_item: 81000 };
+  const itemMock = {
+    id: cartItemId,
+    produto_id: productId,
+    quantidade: 2,
+    preco_com_desconto: 40500,
+    subtotal_item: 81000,
+  };
 
   beforeEach(async () => {
     service = {
@@ -46,7 +73,12 @@ describe('CarrinhoController', () => {
   });
 
   it('POST /carrinho/itens should handle produto_id and quantidade', async () => {
-    const dto: any = { produto_id: productId, quantidade: 2, productIdNormalized: productId, quantityNormalized: 2 };
+    const dto: any = {
+      produto_id: productId,
+      quantidade: 2,
+      productIdNormalized: productId,
+      quantityNormalized: 2,
+    };
     // need to mimic getter
     Object.defineProperty(dto, 'productIdNormalized', { get: () => productId });
     Object.defineProperty(dto, 'quantityNormalized', { get: () => 2 });
@@ -81,7 +113,9 @@ describe('CarrinhoController', () => {
   it('PATCH should throw if quantidade missing', async () => {
     const dto: any = {};
     Object.defineProperty(dto, 'quantityNormalized', { get: () => undefined });
-    await expect(carrinhoController.updateItem(user, cartItemId, dto)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(carrinhoController.updateItem(user, cartItemId, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('DELETE /carrinho/itens/:id should remove', async () => {

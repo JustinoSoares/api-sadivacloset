@@ -1,5 +1,25 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  HttpCode,
+  HttpStatus,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/guards/jwt-auth.guard';
 import { AddressesService } from './addresses.service';
@@ -23,7 +43,10 @@ export class PerfilEnderecosController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Cria endereço (primeiro fica predefinido automaticamente)', description: 'Creates address, first becomes default' })
+  @ApiOperation({
+    summary: 'Cria endereço (primeiro fica predefinido automaticamente)',
+    description: 'Creates address, first becomes default',
+  })
   @ApiBody({ type: CreateAddressDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -39,8 +62,10 @@ export class PerfilEnderecosController {
     if (!etiqueta || !provincia || !municipio || !bairro || !rua) {
       const detalhes: { campo: string; erros: string[] }[] = [];
       if (!etiqueta) detalhes.push({ campo: 'etiqueta', erros: ['etiqueta não pode ser vazia'] });
-      if (!provincia) detalhes.push({ campo: 'provincia', erros: ['provincia não pode ser vazia'] });
-      if (!municipio) detalhes.push({ campo: 'municipio', erros: ['municipio não pode ser vazio'] });
+      if (!provincia)
+        detalhes.push({ campo: 'provincia', erros: ['provincia não pode ser vazia'] });
+      if (!municipio)
+        detalhes.push({ campo: 'municipio', erros: ['municipio não pode ser vazio'] });
       if (!bairro) detalhes.push({ campo: 'bairro', erros: ['bairro não pode ser vazio'] });
       if (!rua) detalhes.push({ campo: 'rua', erros: ['rua não pode ser vazia'] });
       throw new BadRequestException({
@@ -69,7 +94,11 @@ export class PerfilEnderecosController {
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 404, description: 'Not Found' })
-  async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
+  async update(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAddressDto,
+  ) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
     const municipio = dto.municipalityNormalized;
@@ -104,7 +133,10 @@ export class PerfilEnderecosController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Remove endereço (impede se único com pedidos pendentes)', description: 'Removes address, prevents if last with pending orders' })
+  @ApiOperation({
+    summary: 'Remove endereço (impede se único com pedidos pendentes)',
+    description: 'Removes address, prevents if last with pending orders',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200, description: 'Success' })
@@ -117,7 +149,10 @@ export class PerfilEnderecosController {
   }
 
   @Patch(':id/predefinir')
-  @ApiOperation({ summary: 'Marca endereço como predefinido e desmarca restantes', description: 'Sets address as default' })
+  @ApiOperation({
+    summary: 'Marca endereço como predefinido e desmarca restantes',
+    description: 'Sets address as default',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -147,7 +182,10 @@ export class ProfileAddressesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create address (first becomes default)', description: 'Creates address, first becomes default' })
+  @ApiOperation({
+    summary: 'Create address (first becomes default)',
+    description: 'Creates address, first becomes default',
+  })
   @ApiBody({ type: CreateAddressDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -192,7 +230,11 @@ export class ProfileAddressesController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
-  async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAddressDto) {
+  async update(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAddressDto,
+  ) {
     const etiqueta = dto.labelNormalized;
     const provincia = dto.provinceNormalized;
     const municipio = dto.municipalityNormalized;
@@ -241,7 +283,10 @@ export class ProfileAddressesController {
   }
 
   @Patch(':id/default')
-  @ApiOperation({ summary: 'Set address as default', description: 'Sets address as default and unsets others' })
+  @ApiOperation({
+    summary: 'Set address as default',
+    description: 'Sets address as default and unsets others',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

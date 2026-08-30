@@ -43,7 +43,11 @@ describe('Payments Controllers', () => {
     const dto = new IniciarPagamentoDto();
     dto.metodo = 'transferencia';
     const result = await controller.iniciar(user, orderId, dto);
-    expect(service.iniciar).toHaveBeenCalledWith(buyerId, orderId, expect.objectContaining({ metodo: 'transferencia' }));
+    expect(service.iniciar).toHaveBeenCalledWith(
+      buyerId,
+      orderId,
+      expect.objectContaining({ metodo: 'transferencia' }),
+    );
     expect(result.data).toEqual(paymentMock);
   });
 
@@ -54,7 +58,12 @@ describe('Payments Controllers', () => {
   });
 
   it('POST /pedidos/:id/pagamento/comprovativo should upload', async () => {
-    const file = { originalname: 'comp.jpg', mimetype: 'image/jpeg', size: 1000, buffer: Buffer.from('x') } as any;
+    const file = {
+      originalname: 'comp.jpg',
+      mimetype: 'image/jpeg',
+      size: 1000,
+      buffer: Buffer.from('x'),
+    } as any;
     const result = await controller.comprovativo(user, orderId, file);
     expect(service.comprovativo).toHaveBeenCalledWith(buyerId, orderId, file);
     expect(result.data.estado).toBe('processando');

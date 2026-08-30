@@ -41,7 +41,10 @@ export class BridpayClient {
   private readonly environment: string;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = (this.config.get<string>('bridpay.baseUrl') || 'http://localhost:3000').replace(/\/$/, '');
+    this.baseUrl = (this.config.get<string>('bridpay.baseUrl') || 'http://localhost:3000').replace(
+      /\/$/,
+      '',
+    );
     this.apiKey = this.config.get<string>('bridpay.apiKey') || '';
     this.environment = this.config.get<string>('bridpay.environment') || 'sandbox';
   }
@@ -57,7 +60,12 @@ export class BridpayClient {
     return h;
   }
 
-  private async request<T>(method: string, path: string, body?: any, idempotencyKey?: string): Promise<T | null> {
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: any,
+    idempotencyKey?: string,
+  ): Promise<T | null> {
     if (!this.apiKey) {
       this.logger.warn(`BridPay API key not configured – skipping ${method} ${path} (mock mode)`);
       return null;
@@ -90,7 +98,12 @@ export class BridpayClient {
     }
   }
 
-  async createGpo(amount: number, phoneNumber: string, description?: string, expiresInSeconds?: number): Promise<BridpayGpoResult | null> {
+  async createGpo(
+    amount: number,
+    phoneNumber: string,
+    description?: string,
+    expiresInSeconds?: number,
+  ): Promise<BridpayGpoResult | null> {
     return this.request<BridpayGpoResult>('POST', '/v1/payments/gpo', {
       amount,
       phoneNumber,
@@ -106,7 +119,11 @@ export class BridpayClient {
     });
   }
 
-  async createKwik(amount: number, iban: string, description?: string): Promise<BridpayKwikResult | null> {
+  async createKwik(
+    amount: number,
+    iban: string,
+    description?: string,
+  ): Promise<BridpayKwikResult | null> {
     return this.request<BridpayKwikResult>('POST', '/v1/payments/kwik', {
       amount,
       iban,
@@ -118,7 +135,9 @@ export class BridpayClient {
     return this.request('GET', `/v1/wallet/balance?environment=${this.environment}`);
   }
 
-  async getWalletTransactions(params: { page?: number; perPage?: number; type?: string } = {}): Promise<any | null> {
+  async getWalletTransactions(
+    params: { page?: number; perPage?: number; type?: string } = {},
+  ): Promise<any | null> {
     const qs = new URLSearchParams();
     qs.set('environment', this.environment);
     if (params.page) qs.set('page', String(params.page));

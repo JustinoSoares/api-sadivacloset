@@ -6,13 +6,7 @@ import { PaginationDto, buildPaginatedResponse } from '../../common/dto/paginati
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async register(
-    adminId: string,
-    action: string,
-    entity: string,
-    entityId: string,
-    details?: any,
-  ) {
+  async register(adminId: string, action: string, entity: string, entityId: string, details?: any) {
     return this.prisma.auditLog.create({
       data: {
         adminId,
@@ -35,7 +29,18 @@ export class AuditService {
     return this.register(adminId, acao, entidade, entidadeId, detalhes);
   }
 
-  async list(dto: PaginationDto & { entidade?: string; entity?: string; data_inicio?: string; dataInicio?: string; from?: string; data_fim?: string; dataFim?: string; to?: string }) {
+  async list(
+    dto: PaginationDto & {
+      entidade?: string;
+      entity?: string;
+      data_inicio?: string;
+      dataInicio?: string;
+      from?: string;
+      data_fim?: string;
+      dataFim?: string;
+      to?: string;
+    },
+  ) {
     const where: any = {};
 
     const entity = (dto as any).entity ?? (dto as any).entidade;

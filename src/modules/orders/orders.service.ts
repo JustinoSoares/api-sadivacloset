@@ -173,7 +173,10 @@ export class OrdersService {
     }
     if (order.status === OrderStatus.COMPLETED) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_NAO_CANCELAVEL', mensagem: 'Pedido já concluído não pode ser cancelado' },
+        erro: {
+          codigo: 'PEDIDO_NAO_CANCELAVEL',
+          mensagem: 'Pedido já concluído não pode ser cancelado',
+        },
       });
     }
 
@@ -239,7 +242,12 @@ export class OrdersService {
   async upsertDelivery(
     buyerId: string,
     orderId: string,
-    data: { enderecoId?: string; dataAgendada?: string; janelaHorario?: string; instrucoes?: string },
+    data: {
+      enderecoId?: string;
+      dataAgendada?: string;
+      janelaHorario?: string;
+      instrucoes?: string;
+    },
   ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -253,7 +261,10 @@ export class OrdersService {
 
     if (order.status === OrderStatus.CANCELLED) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_CANCELADO', mensagem: 'Não é possível alterar entrega de pedido cancelado' },
+        erro: {
+          codigo: 'PEDIDO_CANCELADO',
+          mensagem: 'Não é possível alterar entrega de pedido cancelado',
+        },
       });
     }
 
@@ -277,7 +288,11 @@ export class OrdersService {
       const d = new Date(data.dataAgendada);
       if (isNaN(d.getTime())) {
         throw new BadRequestException({
-          erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'data_agendada', erros: ['data_agendada inválida'] }] },
+          erro: {
+            codigo: 'ERRO_VALIDACAO',
+            mensagem: 'Erro de validação',
+            detalhes: [{ campo: 'data_agendada', erros: ['data_agendada inválida'] }],
+          },
         });
       }
       const today = new Date();
@@ -286,7 +301,13 @@ export class OrdersService {
       schedOnly.setHours(0, 0, 0, 0);
       if (schedOnly < today) {
         throw new BadRequestException({
-          erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'data_agendada', erros: ['data_agendada não pode ser no passado'] }] },
+          erro: {
+            codigo: 'ERRO_VALIDACAO',
+            mensagem: 'Erro de validação',
+            detalhes: [
+              { campo: 'data_agendada', erros: ['data_agendada não pode ser no passado'] },
+            ],
+          },
         });
       }
       scheduledDate = d;
@@ -297,7 +318,11 @@ export class OrdersService {
       const t = data.janelaHorario.trim();
       if (!t) {
         throw new BadRequestException({
-          erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes: [{ campo: 'janela_horario', erros: ['janela_horario não pode ser vazia'] }] },
+          erro: {
+            codigo: 'ERRO_VALIDACAO',
+            mensagem: 'Erro de validação',
+            detalhes: [{ campo: 'janela_horario', erros: ['janela_horario não pode ser vazia'] }],
+          },
         });
       }
       timeWindow = t;
@@ -317,8 +342,12 @@ export class OrdersService {
             codigo: 'ERRO_VALIDACAO',
             mensagem: 'Erro de validação',
             detalhes: [
-              ...(!scheduledDate ? [{ campo: 'data_agendada', erros: ['data_agendada é obrigatória'] }] : []),
-              ...(!timeWindow ? [{ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] }] : []),
+              ...(!scheduledDate
+                ? [{ campo: 'data_agendada', erros: ['data_agendada é obrigatória'] }]
+                : []),
+              ...(!timeWindow
+                ? [{ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] }]
+                : []),
             ],
           },
         });
@@ -343,7 +372,10 @@ export class OrdersService {
     }
 
     // update existente — bloqueia se já a caminho/entregue
-    if (order.delivery.status === DeliveryStatus.ON_THE_WAY || order.delivery.status === DeliveryStatus.DELIVERED) {
+    if (
+      order.delivery.status === DeliveryStatus.ON_THE_WAY ||
+      order.delivery.status === DeliveryStatus.DELIVERED
+    ) {
       throw new BadRequestException({
         erro: { codigo: 'ENTREGA_EM_CURSO', mensagem: 'Não é possível alterar entrega em curso' },
       });

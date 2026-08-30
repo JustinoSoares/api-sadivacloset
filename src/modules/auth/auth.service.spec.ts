@@ -120,8 +120,12 @@ describe('AuthService', () => {
 
     it('should throw ConflictException if email already exists', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
-      await expect(service.register('Teste', 'teste@example.com', 'password123')).rejects.toBeInstanceOf(ConflictException);
-      await expect(service.register('Teste', 'teste@example.com', 'password123')).rejects.toMatchObject({
+      await expect(
+        service.register('Teste', 'teste@example.com', 'password123'),
+      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(
+        service.register('Teste', 'teste@example.com', 'password123'),
+      ).rejects.toMatchObject({
         response: { erro: { codigo: 'EMAIL_JA_EXISTE' } },
       });
     });
@@ -139,7 +143,9 @@ describe('AuthService', () => {
 
     it('should throw Unauthorized if user not found', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
-      await expect(service.login('nao@existe.com', 'x')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.login('nao@existe.com', 'x')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
 
     it('should throw Unauthorized if account inactive', async () => {
@@ -204,7 +210,11 @@ describe('AuthService', () => {
       const token = 'valid-refresh';
       jwt.verifyAsync.mockResolvedValue({ sub: 'id' });
       const result = await service.logout(token);
-      expect(redis.set).toHaveBeenCalledWith(expect.stringContaining('blacklist:refresh:'), '1', expect.any(Number));
+      expect(redis.set).toHaveBeenCalledWith(
+        expect.stringContaining('blacklist:refresh:'),
+        '1',
+        expect.any(Number),
+      );
       expect(result).toEqual({ mensagem: 'Sessão terminada com sucesso' });
     });
 
@@ -222,8 +232,14 @@ describe('AuthService', () => {
     it('should generate token and save hash in Redis when email exists (english)', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       const result = await service.forgotPassword('teste@example.com');
-      expect(redis.set).toHaveBeenCalledWith(expect.stringContaining('reset:password:'), mockUser.id, 15 * 60);
-      expect(result).toEqual({ mensagem: 'Se o email existir, um link de redefinição foi enviado' });
+      expect(redis.set).toHaveBeenCalledWith(
+        expect.stringContaining('reset:password:'),
+        mockUser.id,
+        15 * 60,
+      );
+      expect(result).toEqual({
+        mensagem: 'Se o email existir, um link de redefinição foi enviado',
+      });
     });
 
     it('legacy esqueciPassword alias should still work', async () => {
@@ -253,7 +269,10 @@ describe('AuthService', () => {
       const result = await service.resetPassword(raw, 'novaPassword123');
       expect(redis.get).toHaveBeenCalledWith(key);
       expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: mockUser.id }, data: expect.objectContaining({ passwordHash: expect.any(String) }) }),
+        expect.objectContaining({
+          where: { id: mockUser.id },
+          data: expect.objectContaining({ passwordHash: expect.any(String) }),
+        }),
       );
       expect(redis.del).toHaveBeenCalledWith(key);
       expect(result).toEqual({ mensagem: 'Password redefinida com sucesso' });
@@ -272,7 +291,9 @@ describe('AuthService', () => {
 
     it('should throw BadRequest if token expired', async () => {
       redis.get.mockResolvedValue(null);
-      await expect(service.resetPassword('bad', 'nova12345')).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.resetPassword('bad', 'nova12345')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
       await expect(service.resetPassword('bad', 'nova12345')).rejects.toMatchObject({
         response: { erro: { codigo: 'TOKEN_EXPIRADO' } },
       });
@@ -281,7 +302,9 @@ describe('AuthService', () => {
     it('should throw NotFound if user of token not exists', async () => {
       redis.get.mockResolvedValue('id-qualquer');
       prisma.user.findUnique.mockResolvedValue(null);
-      await expect(service.resetPassword('raw', 'nova12345')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.resetPassword('raw', 'nova12345')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -305,7 +328,9 @@ describe('AuthService', () => {
 
     it('updateProfile should check email conflict', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'outro-id', email: 'taken@example.com' });
-      await expect(service.updateProfile(mockUser.id, { email: 'taken@example.com' })).rejects.toBeInstanceOf(ConflictException);
+      await expect(
+        service.updateProfile(mockUser.id, { email: 'taken@example.com' }),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('legacy atualizarPerfil alias with nome should work', async () => {

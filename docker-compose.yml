@@ -30,7 +30,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - sadiva-network
+      - web_sadiva
     command: sh -c "pnpm exec prisma generate && pnpm run start:dev"
 
   postgres:
@@ -51,7 +51,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - sadiva-network
+      - web_sadiva
 
   redis:
     image: redis:7-alpine
@@ -67,7 +67,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - sadiva-network
+      - web_sadiva
 
 volumes:
   postgres_data:
@@ -76,6 +76,6 @@ volumes:
     driver: local
 
 networks:
-  sadiva-network:
+  web_sadiva:
     driver: bridge
-    name: sadiva-network
+    name: web_sadiva

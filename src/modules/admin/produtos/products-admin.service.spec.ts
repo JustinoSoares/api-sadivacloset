@@ -52,7 +52,13 @@ describe('ProductsAdminService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: AuditoriaService, useValue: { registar: jest.fn().mockResolvedValue({}), register: jest.fn().mockResolvedValue({}) } },
+        {
+          provide: AuditoriaService,
+          useValue: {
+            registar: jest.fn().mockResolvedValue({}),
+            register: jest.fn().mockResolvedValue({}),
+          },
+        },
         ProductsAdminService,
         { provide: PrismaService, useValue: prisma },
         { provide: RedisService, useValue: redis },
@@ -69,7 +75,14 @@ describe('ProductsAdminService', () => {
       prisma.product.count.mockResolvedValue(1);
       prisma.product.findMany.mockResolvedValue([productMock]);
 
-      const query: any = { q: 'Suit', category: Category.SUITS, skip: 0, take: 20, page: 1, limit: 20 };
+      const query: any = {
+        q: 'Suit',
+        category: Category.SUITS,
+        skip: 0,
+        take: 20,
+        page: 1,
+        limit: 20,
+      };
       const result = await service.findAll(query);
 
       expect(prisma.product.count).toHaveBeenCalledWith({
@@ -107,7 +120,14 @@ describe('ProductsAdminService', () => {
     it('legacy portuguese filter categoria should still work', async () => {
       prisma.product.count.mockResolvedValue(1);
       prisma.product.findMany.mockResolvedValue([productMock]);
-      const query: any = { q: 'Fato', categoria: Category.SUITS, skip: 0, take: 20, page: 1, limit: 20 };
+      const query: any = {
+        q: 'Fato',
+        categoria: Category.SUITS,
+        skip: 0,
+        take: 20,
+        page: 1,
+        limit: 20,
+      };
       const result = await service.findAll(query as any);
       expect(result.total).toBe(1);
     });
@@ -155,7 +175,18 @@ describe('ProductsAdminService', () => {
 
     it('should use discount 0 when not provided', async () => {
       prisma.product.create.mockResolvedValue({ ...productMock, discount: 0 });
-      const dto: any = { ...productMock, discount: undefined, image: productMock.image, name: productMock.name, description: productMock.description, category: productMock.category, size: productMock.size, condition: productMock.condition, stock: productMock.stock, price: productMock.price };
+      const dto: any = {
+        ...productMock,
+        discount: undefined,
+        image: productMock.image,
+        name: productMock.name,
+        description: productMock.description,
+        category: productMock.category,
+        size: productMock.size,
+        condition: productMock.condition,
+        stock: productMock.stock,
+        price: productMock.price,
+      };
       delete dto.id;
       delete dto.createdAt;
       await service.create(dto);

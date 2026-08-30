@@ -4,14 +4,21 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { QueryEstatisticasDto } from './dto/query-estatisticas.dto';
 import { buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 
-function calcVariacao(atual: number, anterior: number): { percentual: number | null; crescimento: boolean | null; diferenca: number } {
+function calcVariacao(
+  atual: number,
+  anterior: number,
+): { percentual: number | null; crescimento: boolean | null; diferenca: number } {
   const diferenca = atual - anterior;
   if (anterior === 0) {
     if (atual === 0) return { percentual: 0, crescimento: null, diferenca: 0 };
     return { percentual: 100, crescimento: true, diferenca };
   }
   const percentual = Number(((diferenca / anterior) * 100).toFixed(1));
-  return { percentual, crescimento: diferenca > 0 ? true : diferenca < 0 ? false : null, diferenca };
+  return {
+    percentual,
+    crescimento: diferenca > 0 ? true : diferenca < 0 ? false : null,
+    diferenca,
+  };
 }
 
 function metric(valorAtual: number, valorAnterior: number, valorTotal?: number) {
@@ -97,10 +104,16 @@ export class AdminEstatisticasService {
       }),
       this.prisma.product.count(),
       this.prisma.product.count({ where: { createdAt: { gte: inicioAtual, lte: fimAtual } } }),
-      this.prisma.product.count({ where: { createdAt: { gte: inicioAnterior, lte: fimAnterior } } }),
+      this.prisma.product.count({
+        where: { createdAt: { gte: inicioAnterior, lte: fimAnterior } },
+      }),
       this.prisma.user.count({ where: { role: Role.BUYER } }),
-      this.prisma.user.count({ where: { role: Role.BUYER, createdAt: { gte: inicioAtual, lte: fimAtual } } }),
-      this.prisma.user.count({ where: { role: Role.BUYER, createdAt: { gte: inicioAnterior, lte: fimAnterior } } }),
+      this.prisma.user.count({
+        where: { role: Role.BUYER, createdAt: { gte: inicioAtual, lte: fimAtual } },
+      }),
+      this.prisma.user.count({
+        where: { role: Role.BUYER, createdAt: { gte: inicioAnterior, lte: fimAnterior } },
+      }),
       this.prisma.order.count(),
       this.prisma.order.count({ where: { createdAt: { gte: inicioAtual, lte: fimAtual } } }),
       this.prisma.order.count({ where: { createdAt: { gte: inicioAnterior, lte: fimAnterior } } }),
@@ -129,7 +142,12 @@ export class AdminEstatisticasService {
       this.prisma.order.count({ where: wherePedidosRecentes }),
       this.prisma.order.findMany({
         where: wherePedidosRecentes,
-        include: { buyer: { select: { id: true, name: true, email: true } }, items: true, delivery: true, payment: true },
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          items: true,
+          delivery: true,
+          payment: true,
+        },
         orderBy: { createdAt: 'desc' },
         skip: dto.skip,
         take: dto.take,

@@ -44,7 +44,10 @@ export class AdminStoreService {
     return this.getStore();
   }
 
-  async updateStore(data: { name?: string; email?: string; phone?: string; address?: string }, adminId?: string) {
+  async updateStore(
+    data: { name?: string; email?: string; phone?: string; address?: string },
+    adminId?: string,
+  ) {
     const payload: any = {};
     if (data.name !== undefined) payload.name = data.name;
     if (data.email !== undefined) payload.contactEmail = data.email;
@@ -64,12 +67,21 @@ export class AdminStoreService {
       },
     });
     if (adminId) {
-      await this.audit.register(adminId, 'update_store', 'store', 'singleton', { before, after: updated, changes: payload }).catch(() => {});
+      await this.audit
+        .register(adminId, 'update_store', 'store', 'singleton', {
+          before,
+          after: updated,
+          changes: payload,
+        })
+        .catch(() => {});
     }
     return toResponse(updated);
   }
 
-  async updateLoja(data: { nome?: string; email?: string; telefone?: string; morada?: string }, adminId?: string) {
+  async updateLoja(
+    data: { nome?: string; email?: string; telefone?: string; morada?: string },
+    adminId?: string,
+  ) {
     return this.updateStore(
       {
         name: data.nome,

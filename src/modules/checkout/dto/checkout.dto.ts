@@ -2,11 +2,13 @@ import { IsDateString, IsIn, IsOptional, IsString, IsUUID, IsNotEmpty } from 'cl
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
-const Trim = () =>
-  Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
+const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class CheckoutDto {
-  @ApiPropertyOptional({ description: 'ID do endereço (para entrega domicílio)', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'ID do endereço (para entrega domicílio)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsUUID('4', { message: 'endereco_id deve ser um UUID válido' })
   endereco_id?: string;
@@ -26,18 +28,26 @@ export class CheckoutDto {
   @IsUUID('4', { message: 'delivery_zone_id deve ser um UUID válido' })
   delivery_zone_id?: string;
 
-  @ApiProperty({ description: 'Tipo de entrega', example: 'domicilio', enum: ['domicilio', 'levantamento_loja'] })
+  @ApiProperty({
+    description: 'Tipo de entrega',
+    example: 'domicilio',
+    enum: ['domicilio', 'levantamento_loja'],
+  })
   @IsOptional()
   @Trim()
   @IsString({ message: 'tipo deve ser texto' })
-  @IsIn(['domicilio', 'levantamento_loja'], { message: 'tipo deve ser domicilio ou levantamento_loja' })
+  @IsIn(['domicilio', 'levantamento_loja'], {
+    message: 'tipo deve ser domicilio ou levantamento_loja',
+  })
   tipo?: string;
 
   @ApiPropertyOptional({ description: 'Alias type (HOME_DELIVERY | STORE_PICKUP)' })
   @IsOptional()
   @Trim()
   @IsString()
-  @IsIn(['domicilio', 'levantamento_loja', 'HOME_DELIVERY', 'STORE_PICKUP'], { message: 'type deve ser domicilio ou levantamento_loja' })
+  @IsIn(['domicilio', 'levantamento_loja', 'HOME_DELIVERY', 'STORE_PICKUP'], {
+    message: 'type deve ser domicilio ou levantamento_loja',
+  })
   type?: string;
 
   @ApiProperty({ description: 'Data agendada (ISO date)', example: '2026-09-01' })

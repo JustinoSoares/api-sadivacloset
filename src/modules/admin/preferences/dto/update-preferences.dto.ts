@@ -40,31 +40,41 @@ export class UpdatePreferencesDto {
 
   @ApiPropertyOptional({ description: 'Alias notificarNovosPedidos' })
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value))
+  @Transform(({ value }) =>
+    value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
+  )
   @IsBoolean({ message: 'notificarNovosPedidos deve ser booleano' })
   notificarNovosPedidos?: boolean;
 
   @ApiPropertyOptional({ description: 'Notify low stock', example: true })
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value))
+  @Transform(({ value }) =>
+    value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
+  )
   @IsBoolean()
   notifyLowStock?: boolean;
 
   @ApiPropertyOptional({ description: 'Alias notificarStockBaixo' })
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value))
+  @Transform(({ value }) =>
+    value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
+  )
   @IsBoolean({ message: 'notificarStockBaixo deve ser booleano' })
   notificarStockBaixo?: boolean;
 
   @ApiPropertyOptional({ description: 'Notify new messages', example: true })
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value))
+  @Transform(({ value }) =>
+    value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
+  )
   @IsBoolean()
   notifyNewMessages?: boolean;
 
   @ApiPropertyOptional({ description: 'Alias notificarNovasMensagens' })
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value))
+  @Transform(({ value }) =>
+    value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
+  )
   @IsBoolean({ message: 'notificarNovasMensagens deve ser booleano' })
   notificarNovasMensagens?: boolean;
 
@@ -82,7 +92,12 @@ export class UpdatePreferencesDto {
   @Min(0, { message: 'taxaEntregaPadrao não pode ser negativa' })
   taxaEntregaPadrao?: number;
 
-  @ApiPropertyOptional({ description: 'Active payment methods', example: ['multicaixa_express', 'transferencia'], enum: PaymentMethod, isArray: true })
+  @ApiPropertyOptional({
+    description: 'Active payment methods',
+    example: ['multicaixa_express', 'transferencia'],
+    enum: PaymentMethod,
+    isArray: true,
+  })
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
   @IsArray()
@@ -93,7 +108,10 @@ export class UpdatePreferencesDto {
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
   @IsArray({ message: 'metodosPagamentoAtivos deve ser array' })
-  @IsEnum(PaymentMethod, { each: true, message: `cada metodo deve ser um de: ${Object.values(PaymentMethod).join(', ')}` })
+  @IsEnum(PaymentMethod, {
+    each: true,
+    message: `cada metodo deve ser um de: ${Object.values(PaymentMethod).join(', ')}`,
+  })
   metodosPagamentoAtivos?: PaymentMethod[];
 
   get notifyNewOrdersNormalized(): boolean | undefined {

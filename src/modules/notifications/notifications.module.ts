@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PerfilNotificacoesController, ProfileNotificationsController } from './notifications.controller';
+import {
+  PerfilNotificacoesController,
+  ProfileNotificationsController,
+} from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
 @Module({

@@ -71,7 +71,10 @@ describe('NotificationsService', () => {
     });
 
     it('should be reusable by Pedido/Pagamento modules', async () => {
-      prisma.notification.create.mockResolvedValue({ ...notificationMock, title: 'Pagamento confirmado' });
+      prisma.notification.create.mockResolvedValue({
+        ...notificationMock,
+        title: 'Pagamento confirmado',
+      });
       const result = await service.criar(buyerId, 'Pagamento confirmado', 'Pagamento aprovado');
       expect(result.titulo).toBe('Pagamento confirmado');
     });
@@ -81,7 +84,12 @@ describe('NotificationsService', () => {
     it('should list ordered by criadoEm desc with bilingual fields', async () => {
       prisma.notification.findMany.mockResolvedValue([
         notificationMock,
-        { ...notificationMock, id: '3333', createdAt: new Date('2026-08-25T10:00:00.000Z'), isRead: true },
+        {
+          ...notificationMock,
+          id: '3333',
+          createdAt: new Date('2026-08-25T10:00:00.000Z'),
+          isRead: true,
+        },
       ]);
 
       const result = await service.findAll(buyerId);
@@ -102,15 +110,22 @@ describe('NotificationsService', () => {
       prisma.notification.findUnique.mockResolvedValue(notificationMock);
       prisma.notification.update.mockResolvedValue({ ...notificationMock, isRead: true });
       const result = await service.marcarComoLida(buyerId, notificationMock.id);
-      expect(prisma.notification.update).toHaveBeenCalledWith({ where: { id: notificationMock.id }, data: { isRead: true } });
+      expect(prisma.notification.update).toHaveBeenCalledWith({
+        where: { id: notificationMock.id },
+        data: { isRead: true },
+      });
       expect(result.lida).toBe(true);
     });
 
     it('should throw 404 if not found or not owner', async () => {
       prisma.notification.findUnique.mockResolvedValue(null);
-      await expect(service.marcarComoLida(buyerId, 'non-existent')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.marcarComoLida(buyerId, 'non-existent')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       prisma.notification.findUnique.mockResolvedValue({ ...notificationMock, buyerId: 'other' });
-      await expect(service.marcarComoLida(buyerId, notificationMock.id)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.marcarComoLida(buyerId, notificationMock.id)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('markAsRead alias should work', async () => {

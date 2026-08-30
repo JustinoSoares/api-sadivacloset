@@ -25,7 +25,7 @@ function mapCondition(value: any): ProductCondition | undefined {
   const map: Record<string, ProductCondition> = {
     novo: ProductCondition.NEW,
     new: ProductCondition.NEW,
-    'semi_novo': ProductCondition.PRE_OWNED,
+    semi_novo: ProductCondition.PRE_OWNED,
     second_hand: ProductCondition.PRE_OWNED,
     pre_owned: ProductCondition.PRE_OWNED,
     'second-hand': ProductCondition.PRE_OWNED,
@@ -34,7 +34,10 @@ function mapCondition(value: any): ProductCondition | undefined {
 }
 
 export class CreateProductDto {
-  @ApiProperty({ example: 'https://cdn.example.com/image.jpg', description: 'Image URL (from frontend)' })
+  @ApiProperty({
+    example: 'https://cdn.example.com/image.jpg',
+    description: 'Image URL (from frontend)',
+  })
   @Transform(({ obj }) => obj.image ?? obj.imagem)
   @IsString({ message: 'image deve ser uma string' })
   @IsNotEmpty({ message: 'image é obrigatório' })
@@ -55,7 +58,9 @@ export class CreateProductDto {
 
   @ApiProperty({ enum: Category, example: Category.DRESSES })
   @Transform(({ obj }) => mapCategory(obj.category ?? obj.categoria))
-  @IsEnum(Category, { message: `category deve ser um dos valores: ${Object.values(Category).join(', ')}` })
+  @IsEnum(Category, {
+    message: `category deve ser um dos valores: ${Object.values(Category).join(', ')}`,
+  })
   category!: Category;
 
   @ApiProperty({ example: 'M' })
@@ -66,7 +71,9 @@ export class CreateProductDto {
 
   @ApiProperty({ enum: ProductCondition, example: ProductCondition.NEW })
   @Transform(({ obj }) => mapCondition(obj.condition ?? obj.estado))
-  @IsEnum(ProductCondition, { message: `condition deve ser um dos valores: ${Object.values(ProductCondition).join(', ')}` })
+  @IsEnum(ProductCondition, {
+    message: `condition deve ser um dos valores: ${Object.values(ProductCondition).join(', ')}`,
+  })
   condition!: ProductCondition;
 
   @ApiProperty({ example: 10, description: 'Stock available, integer >= 0' })

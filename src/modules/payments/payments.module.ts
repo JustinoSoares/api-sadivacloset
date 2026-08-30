@@ -6,7 +6,12 @@ import { EkwanzaClient } from './providers/ekwanza.client';
 import { StorageModule } from '../storage/storage.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { QueueModule } from '../queue/queue.module';
-import { PagamentosController, OrdersPaymentController, PagamentosHistoricoController, WalletController } from './payments.controller';
+import {
+  PagamentosController,
+  OrdersPaymentController,
+  PagamentosHistoricoController,
+  WalletController,
+} from './payments.controller';
 import { AdminPagamentosController, AdminPaymentsController } from './admin-payments.controller';
 import { WebhooksController } from './webhooks.controller';
 

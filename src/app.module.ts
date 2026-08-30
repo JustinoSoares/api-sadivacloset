@@ -6,7 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import configuration from './config/configuration';
-import { envValidationSchema } from './config/env.validation';
+import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { HealthModule } from './modules/health/health.module';
@@ -37,11 +37,7 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      validationSchema: envValidationSchema,
-      validationOptions: {
-        allowUnknown: true,
-        abortEarly: false,
-      },
+      validate: validateEnv,
       expandVariables: true,
     }),
     PrismaModule,

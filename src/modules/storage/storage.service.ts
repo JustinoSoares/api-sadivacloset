@@ -41,7 +41,10 @@ export class StorageService {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (file.mimetype && !allowed.includes(file.mimetype)) {
       throw new BadRequestException({
-        erro: { codigo: 'FORMATO_INVALIDO', mensagem: `Formato ${file.mimetype} não permitido. Use JPG, PNG, WEBP ou PDF` },
+        erro: {
+          codigo: 'FORMATO_INVALIDO',
+          mensagem: `Formato ${file.mimetype} não permitido. Use JPG, PNG, WEBP ou PDF`,
+        },
       });
     }
     const ext = path.extname(file.originalname) || this.extFromMime(file.mimetype);

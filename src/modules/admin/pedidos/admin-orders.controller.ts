@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -16,7 +24,10 @@ export class AdminPedidosController {
   constructor(private readonly adminOrdersService: AdminOrdersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista pedidos (admin) paginado, filtros por estado e intervalo de data', description: 'Returns paginated orders' })
+  @ApiOperation({
+    summary: 'Lista pedidos (admin) paginado, filtros por estado e intervalo de data',
+    description: 'Returns paginated orders',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
@@ -26,7 +37,10 @@ export class AdminPedidosController {
   }
 
   @Patch(':id/estado')
-  @ApiOperation({ summary: 'Atualiza estado do pedido (regista auditoria e notifica comprador)', description: 'Updates order status' })
+  @ApiOperation({
+    summary: 'Atualiza estado do pedido (regista auditoria e notifica comprador)',
+    description: 'Updates order status',
+  })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateOrderStatusDto })
   @ApiResponse({ status: 200, description: 'Success' })

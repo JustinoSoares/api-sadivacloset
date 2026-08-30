@@ -27,7 +27,10 @@ export class UpdateContaDto {
   @IsEmail({}, { message: 'email deve ser um email válido' })
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Password actual (obrigatória se quiser trocar password)', example: 'OldPass123!' })
+  @ApiPropertyOptional({
+    description: 'Password actual (obrigatória se quiser trocar password)',
+    example: 'OldPass123!',
+  })
   @IsOptional()
   @IsString({ message: 'passwordActual deve ser texto' })
   @MinLength(6, { message: 'passwordActual deve ter pelo menos 6 caracteres' })
@@ -89,7 +92,8 @@ export class UpdateContaDto {
   }
 
   get passwordActualNormalized(): string | undefined {
-    const v = this.passwordActual ?? this.currentPassword ?? this.senhaAtual ?? this.password_actual;
+    const v =
+      this.passwordActual ?? this.currentPassword ?? this.senhaAtual ?? this.password_actual;
     return v && v.length ? v : undefined;
   }
 

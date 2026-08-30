@@ -79,7 +79,12 @@ export class CartService {
           erro: {
             codigo: 'STOCK_INSUFICIENTE',
             mensagem: `Stock insuficiente. Disponível: ${product.stock}, no carrinho: ${existing.quantity}, solicitado adicional: ${quantidade} (total ${novaQuantidade})`,
-            detalhes: { disponivel: product.stock, noCarrinho: existing.quantity, solicitado: quantidade, total: novaQuantidade },
+            detalhes: {
+              disponivel: product.stock,
+              noCarrinho: existing.quantity,
+              solicitado: quantidade,
+              total: novaQuantidade,
+            },
           },
         });
       }

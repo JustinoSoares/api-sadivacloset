@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -14,7 +21,10 @@ export class AdminPreferencesController {
   constructor(private readonly preferencesService: AdminPreferencesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get admin preferences (AdminPreferences)', description: 'Returns admin preferences' })
+  @ApiOperation({
+    summary: 'Get admin preferences (AdminPreferences)',
+    description: 'Returns admin preferences',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -30,7 +40,10 @@ export class AdminPreferencesController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Update preferences (notifications, defaultDeliveryFee, activePaymentMethods)', description: 'Updates admin preferences' })
+  @ApiOperation({
+    summary: 'Update preferences (notifications, defaultDeliveryFee, activePaymentMethods)',
+    description: 'Updates admin preferences',
+  })
   @ApiBody({ type: UpdatePreferencesDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })

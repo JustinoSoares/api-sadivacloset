@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -15,7 +22,10 @@ export class AdminContaController {
   constructor(private readonly contaService: AdminContaService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Obtém dados da conta do admin autenticado', description: 'Returns admin account' })
+  @ApiOperation({
+    summary: 'Obtém dados da conta do admin autenticado',
+    description: 'Returns admin account',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -25,7 +35,10 @@ export class AdminContaController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Atualiza dados do admin e troca de password (exige password actual)', description: 'Updates admin account' })
+  @ApiOperation({
+    summary: 'Atualiza dados do admin e troca de password (exige password actual)',
+    description: 'Updates admin account',
+  })
   @ApiBody({ type: UpdateContaDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })

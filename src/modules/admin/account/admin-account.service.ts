@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import * as bcrypt from 'bcryptjs';
@@ -16,7 +21,9 @@ export class AdminAccountService {
       select: { id: true, name: true, email: true, role: true, createdAt: true, isActive: true },
     });
     if (!admin) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Admin não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Admin não encontrado' },
+      });
     }
     return {
       id: admin.id,
@@ -42,14 +49,20 @@ export class AdminAccountService {
   ) {
     const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
     if (!admin) {
-      throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Admin não encontrado' } });
+      throw new NotFoundException({
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Admin não encontrado' },
+      });
     }
 
     const isPasswordChange = data.newPassword !== undefined;
 
     if (isPasswordChange && !data.currentPassword) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'passwordActual é obrigatória para trocar password', detalhes: [{ campo: 'passwordActual', erros: ['obrigatória'] }] },
+        erro: {
+          codigo: 'ERRO_VALIDACAO',
+          mensagem: 'passwordActual é obrigatória para trocar password',
+          detalhes: [{ campo: 'passwordActual', erros: ['obrigatória'] }],
+        },
       });
     }
 
@@ -62,7 +75,10 @@ export class AdminAccountService {
       }
       if (data.newPassword === data.currentPassword) {
         throw new BadRequestException({
-          erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Nova password deve ser diferente da actual' },
+          erro: {
+            codigo: 'ERRO_VALIDACAO',
+            mensagem: 'Nova password deve ser diferente da actual',
+          },
         });
       }
     }
@@ -70,7 +86,9 @@ export class AdminAccountService {
     if (data.email && data.email !== admin.email) {
       const exists = await this.prisma.user.findUnique({ where: { email: data.email } });
       if (exists && exists.id !== adminId) {
-        throw new ConflictException({ erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está em uso' } });
+        throw new ConflictException({
+          erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está em uso' },
+        });
       }
     }
 
@@ -94,7 +112,9 @@ export class AdminAccountService {
     const changedFields = Object.keys(updateData).filter((k) => k !== 'passwordHash');
     const details: any = { alteracoes: changedFields };
     if (updateData.passwordHash) details.trocaPassword = true;
-    await this.audit.register(adminId, 'update_account', 'account', adminId, details).catch(() => {});
+    await this.audit
+      .register(adminId, 'update_account', 'account', adminId, details)
+      .catch(() => {});
 
     return {
       id: updated.id,
@@ -110,7 +130,10 @@ export class AdminAccountService {
   }
 
   // legacy alias for Portuguese callers
-  async updateConta(adminId: string, data: { nome?: string; email?: string; passwordActual?: string; novaPassword?: string }) {
+  async updateConta(
+    adminId: string,
+    data: { nome?: string; email?: string; passwordActual?: string; novaPassword?: string },
+  ) {
     return this.updateAccount(adminId, {
       name: data.nome,
       email: data.email,

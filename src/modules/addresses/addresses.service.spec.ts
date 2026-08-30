@@ -7,7 +7,16 @@ import { OrderStatus } from '@prisma/client';
 describe('AddressesService', () => {
   let service: AddressesService;
   let prisma: {
-    address: { findMany: jest.Mock; count: jest.Mock; create: jest.Mock; findUnique: jest.Mock; update: jest.Mock; delete: jest.Mock; findFirst: jest.Mock; updateMany: jest.Mock };
+    address: {
+      findMany: jest.Mock;
+      count: jest.Mock;
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+      findFirst: jest.Mock;
+      updateMany: jest.Mock;
+    };
     delivery: { findFirst: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -139,9 +148,13 @@ describe('AddressesService', () => {
 
     it('should throw 404 if not owner', async () => {
       prisma.address.findUnique.mockResolvedValue({ ...addressMock, buyerId: otherBuyerId });
-      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       prisma.address.findUnique.mockResolvedValue(null);
-      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -163,7 +176,11 @@ describe('AddressesService', () => {
     it('should block when único com pedidos pendentes', async () => {
       prisma.address.findUnique.mockResolvedValue(addressMock);
       prisma.address.count.mockResolvedValue(1);
-      prisma.delivery.findFirst.mockResolvedValue({ id: 'del1', addressId, order: { status: OrderStatus.AWAITING_PAYMENT } });
+      prisma.delivery.findFirst.mockResolvedValue({
+        id: 'del1',
+        addressId,
+        order: { status: OrderStatus.AWAITING_PAYMENT },
+      });
       await expect(service.remove(buyerId, addressId)).rejects.toBeInstanceOf(BadRequestException);
       await expect(service.remove(buyerId, addressId)).rejects.toMatchObject({
         response: { erro: { codigo: 'ENDERECO_EM_USO' } },
@@ -185,10 +202,17 @@ describe('AddressesService', () => {
       prisma.address.findUnique.mockResolvedValue({ ...addressMock, isDefault: true });
       prisma.address.count.mockResolvedValue(2);
       prisma.address.delete.mockResolvedValue({});
-      prisma.address.findFirst.mockResolvedValue({ id: 'remaining-id', buyerId, isDefault: false } as any);
+      prisma.address.findFirst.mockResolvedValue({
+        id: 'remaining-id',
+        buyerId,
+        isDefault: false,
+      } as any);
       prisma.address.update.mockResolvedValue({});
       await service.remove(buyerId, addressId);
-      expect(prisma.address.update).toHaveBeenCalledWith({ where: { id: 'remaining-id' }, data: { isDefault: true } });
+      expect(prisma.address.update).toHaveBeenCalledWith({
+        where: { id: 'remaining-id' },
+        data: { isDefault: true },
+      });
     });
   });
 
@@ -206,9 +230,13 @@ describe('AddressesService', () => {
 
     it('should throw 404 if not owner', async () => {
       prisma.address.findUnique.mockResolvedValue(null);
-      await expect(service.setDefault(buyerId, addressId)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.setDefault(buyerId, addressId)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       prisma.address.findUnique.mockResolvedValue({ ...addressMock, buyerId: otherBuyerId });
-      await expect(service.setDefault(buyerId, addressId)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.setDefault(buyerId, addressId)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 

@@ -8,7 +8,9 @@ describe('AdminEstatisticasController', () => {
   let service: any;
 
   beforeEach(async () => {
-    service = { getEstatisticas: jest.fn().mockResolvedValue({ receita_total: 100000, total_produtos: 50 }) };
+    service = {
+      getEstatisticas: jest.fn().mockResolvedValue({ receita_total: 100000, total_produtos: 50 }),
+    };
     const mod = await Test.createTestingModule({
       controllers: [AdminEstatisticasController],
       providers: [{ provide: AdminEstatisticasService, useValue: service }],

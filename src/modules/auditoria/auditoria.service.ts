@@ -29,7 +29,18 @@ export class AuditoriaService {
     return this.registar(adminId, action, entity, entityId, details);
   }
 
-  async listar(dto: PaginationDto & { entidade?: string; entity?: string; data_inicio?: string; dataInicio?: string; from?: string; data_fim?: string; dataFim?: string; to?: string }) {
+  async listar(
+    dto: PaginationDto & {
+      entidade?: string;
+      entity?: string;
+      data_inicio?: string;
+      dataInicio?: string;
+      from?: string;
+      data_fim?: string;
+      dataFim?: string;
+      to?: string;
+    },
+  ) {
     const where: any = {};
 
     const entidade = (dto as any).entidade ?? (dto as any).entity;

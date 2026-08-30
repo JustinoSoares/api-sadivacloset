@@ -80,7 +80,14 @@ export class ProductsAdminService {
     });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.audit.register(adminId, 'create_product', 'product', product.id, { name, price, nome: name, preco: price }).catch(() => {});
+      await this.audit
+        .register(adminId, 'create_product', 'product', product.id, {
+          name,
+          price,
+          nome: name,
+          preco: price,
+        })
+        .catch(() => {});
     }
     return product;
   }
@@ -118,7 +125,14 @@ export class ProductsAdminService {
     });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.audit.register(adminId, 'update_product', 'product', id, { before: exists, after: updated, antes: exists, depois: updated }).catch(() => {});
+      await this.audit
+        .register(adminId, 'update_product', 'product', id, {
+          before: exists,
+          after: updated,
+          antes: exists,
+          depois: updated,
+        })
+        .catch(() => {});
     }
     return updated;
   }
@@ -134,7 +148,12 @@ export class ProductsAdminService {
     await this.prisma.product.delete({ where: { id } });
     await this.invalidateCatalogCache();
     if (adminId) {
-      await this.audit.register(adminId, 'remove_product', 'product', id, { name: exists.name, nome: exists.name }).catch(() => {});
+      await this.audit
+        .register(adminId, 'remove_product', 'product', id, {
+          name: exists.name,
+          nome: exists.name,
+        })
+        .catch(() => {});
     }
     return { message: 'Product removed successfully', mensagem: 'Produto removido com sucesso' };
   }

@@ -39,10 +39,7 @@ describe('FavoritesService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        FavoritesService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [FavoritesService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<FavoritesService>(FavoritesService);
@@ -54,7 +51,12 @@ describe('FavoritesService', () => {
     it('should return products from favorites ordered desc', async () => {
       prisma.favorite.findMany.mockResolvedValue([
         { buyerId, productId, createdAt: new Date('2026-02-02'), product: productMock },
-        { buyerId, productId: 'other', createdAt: new Date('2026-02-01'), product: { ...productMock, id: 'other' } },
+        {
+          buyerId,
+          productId: 'other',
+          createdAt: new Date('2026-02-01'),
+          product: { ...productMock, id: 'other' },
+        },
       ]);
 
       const result = await service.findAll(buyerId);

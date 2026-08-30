@@ -15,7 +15,9 @@ describe('AdminDeliveriesController', () => {
   beforeEach(async () => {
     service = {
       findAll: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
-      updateStatus: jest.fn().mockResolvedValue({ id: deliveryId, status: 'ON_THE_WAY', estado: 'a_caminho' }),
+      updateStatus: jest
+        .fn()
+        .mockResolvedValue({ id: deliveryId, status: 'ON_THE_WAY', estado: 'a_caminho' }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminDeliveriesController],

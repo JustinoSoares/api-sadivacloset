@@ -40,7 +40,10 @@ export class AdminLojaService {
     return toResponse(config);
   }
 
-  async updateLoja(data: { nome?: string; email?: string; telefone?: string; morada?: string }, adminId?: string) {
+  async updateLoja(
+    data: { nome?: string; email?: string; telefone?: string; morada?: string },
+    adminId?: string,
+  ) {
     const payload: any = {};
     if (data.nome !== undefined) payload.name = data.nome;
     if (data.email !== undefined) payload.contactEmail = data.email;
@@ -60,7 +63,13 @@ export class AdminLojaService {
       },
     });
     if (adminId) {
-      await this.auditoria.registar(adminId, 'atualizar_loja', 'loja', 'singleton', { antes: before, depois: updated, alteracoes: payload }).catch(() => {});
+      await this.auditoria
+        .registar(adminId, 'atualizar_loja', 'loja', 'singleton', {
+          antes: before,
+          depois: updated,
+          alteracoes: payload,
+        })
+        .catch(() => {});
     }
     return toResponse(updated);
   }

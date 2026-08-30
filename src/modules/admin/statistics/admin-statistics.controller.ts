@@ -1,5 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { AdminStatisticsService } from './admin-statistics.service';
 import { QueryStatisticsDto } from './dto/query-statistics.dto';
@@ -13,7 +19,8 @@ export class AdminStatisticsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Admin dashboard - total revenue (paid/completed), product count, member count, order count + variation vs previous period',
+    summary:
+      'Admin dashboard - total revenue (paid/completed), product count, member count, order count + variation vs previous period',
     description:
       'Calculates current window (last N days, default 30) vs equivalent previous window. Accepts ?days, ?from/to (or data_inicio/data_fim). Returns totals, period values, percentage variation and paginated list of recent orders (page/limit).',
   })

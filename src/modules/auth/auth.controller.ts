@@ -1,5 +1,12 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -23,7 +30,10 @@ export class AuthController {
   @Public()
   @Post('auth/register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register new user', description: 'Creates a new user account and returns user data' })
+  @ApiOperation({
+    summary: 'Register new user',
+    description: 'Creates a new user account and returns user data',
+  })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -40,7 +50,10 @@ export class AuthController {
   @Public()
   @Post('auth/registar')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register new user (PT alias)', description: 'Alias for register - cria nova conta' })
+  @ApiOperation({
+    summary: 'Register new user (PT alias)',
+    description: 'Alias for register - cria nova conta',
+  })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -56,7 +69,10 @@ export class AuthController {
   @Public()
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login', description: 'Authenticates user and returns access and refresh tokens' })
+  @ApiOperation({
+    summary: 'Login',
+    description: 'Authenticates user and returns access and refresh tokens',
+  })
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -71,7 +87,10 @@ export class AuthController {
   @Public()
   @Post('auth/refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh tokens', description: 'Refresh access token using refresh token' })
+  @ApiOperation({
+    summary: 'Refresh tokens',
+    description: 'Refresh access token using refresh token',
+  })
   @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })

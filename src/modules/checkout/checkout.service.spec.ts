@@ -46,7 +46,11 @@ describe('CheckoutService', () => {
       order: { create: jest.fn() },
       $transaction: jest.fn(async (cb) => {
         const tx = {
-          product: { findUnique: jest.fn().mockResolvedValue(productMock), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+          product: {
+            findUnique: jest.fn().mockResolvedValue(productMock),
+            update: jest.fn().mockResolvedValue({}),
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+          },
           order: {
             create: jest.fn().mockResolvedValue({
               id: 'order1',
@@ -57,7 +61,14 @@ describe('CheckoutService', () => {
               status: 'AWAITING_PAYMENT',
               createdAt: new Date(),
               items: [
-                { id: 'oi1', productId, productName: productMock.name, unitPrice: productMock.price, discount: productMock.discount, quantity: 2 },
+                {
+                  id: 'oi1',
+                  productId,
+                  productName: productMock.name,
+                  unitPrice: productMock.price,
+                  discount: productMock.discount,
+                  quantity: 2,
+                },
               ],
               delivery: {
                 id: 'del1',
@@ -157,7 +168,11 @@ describe('CheckoutService', () => {
     // mock transaction to capture deliveryFee 0
     prisma.$transaction = jest.fn(async (cb) => {
       const tx = {
-        product: { findUnique: jest.fn().mockResolvedValue(productMock), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+        product: {
+          findUnique: jest.fn().mockResolvedValue(productMock),
+          update: jest.fn().mockResolvedValue({}),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
         order: {
           create: jest.fn().mockImplementation(async (args) => {
             expect(args.data.delivery.create.deliveryFee).toBe(0);
@@ -203,7 +218,11 @@ describe('CheckoutService', () => {
     const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
     prisma.$transaction = jest.fn(async (cb) => {
       const tx = {
-        product: { findUnique: jest.fn().mockResolvedValue(productMock), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+        product: {
+          findUnique: jest.fn().mockResolvedValue(productMock),
+          update: jest.fn().mockResolvedValue({}),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
         order: {
           create: jest.fn().mockImplementation(async (args) => {
             expect(args.data.deliveryFee).toBe(2200);

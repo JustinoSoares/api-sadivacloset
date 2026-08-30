@@ -36,7 +36,11 @@ export class AdminPreferenciasService {
           notifyLowStock: true,
           notifyNewMessages: true,
           defaultDeliveryFee: 3000,
-          activePaymentMethods: [PaymentMethod.MULTICAIXA_EXPRESS, PaymentMethod.MULTICAIXA_REFERENCE, PaymentMethod.BANK_TRANSFER],
+          activePaymentMethods: [
+            PaymentMethod.MULTICAIXA_EXPRESS,
+            PaymentMethod.MULTICAIXA_REFERENCE,
+            PaymentMethod.BANK_TRANSFER,
+          ],
         },
       });
     }
@@ -55,11 +59,14 @@ export class AdminPreferenciasService {
   ) {
     const before = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
     const payload: any = {};
-    if (data.notificarNovosPedidos !== undefined) payload.notifyNewOrders = data.notificarNovosPedidos;
+    if (data.notificarNovosPedidos !== undefined)
+      payload.notifyNewOrders = data.notificarNovosPedidos;
     if (data.notificarStockBaixo !== undefined) payload.notifyLowStock = data.notificarStockBaixo;
-    if (data.notificarNovasMensagens !== undefined) payload.notifyNewMessages = data.notificarNovasMensagens;
+    if (data.notificarNovasMensagens !== undefined)
+      payload.notifyNewMessages = data.notificarNovasMensagens;
     if (data.taxaEntregaPadrao !== undefined) payload.defaultDeliveryFee = data.taxaEntregaPadrao;
-    if (data.metodosPagamentoAtivos !== undefined) payload.activePaymentMethods = data.metodosPagamentoAtivos;
+    if (data.metodosPagamentoAtivos !== undefined)
+      payload.activePaymentMethods = data.metodosPagamentoAtivos;
 
     const updated = await this.prisma.adminPreferences.upsert({
       where: { id: 'singleton' },
@@ -70,11 +77,21 @@ export class AdminPreferenciasService {
         notifyLowStock: payload.notifyLowStock ?? true,
         notifyNewMessages: payload.notifyNewMessages ?? true,
         defaultDeliveryFee: payload.defaultDeliveryFee ?? 3000,
-        activePaymentMethods: payload.activePaymentMethods ?? [PaymentMethod.MULTICAIXA_EXPRESS, PaymentMethod.MULTICAIXA_REFERENCE, PaymentMethod.BANK_TRANSFER],
+        activePaymentMethods: payload.activePaymentMethods ?? [
+          PaymentMethod.MULTICAIXA_EXPRESS,
+          PaymentMethod.MULTICAIXA_REFERENCE,
+          PaymentMethod.BANK_TRANSFER,
+        ],
       },
     });
     if (adminId) {
-      await this.auditoria.registar(adminId, 'atualizar_preferencias', 'preferencias', 'singleton', { antes: before, depois: updated, alteracoes: payload }).catch(() => {});
+      await this.auditoria
+        .registar(adminId, 'atualizar_preferencias', 'preferencias', 'singleton', {
+          antes: before,
+          depois: updated,
+          alteracoes: payload,
+        })
+        .catch(() => {});
     }
     return toResponse(updated);
   }

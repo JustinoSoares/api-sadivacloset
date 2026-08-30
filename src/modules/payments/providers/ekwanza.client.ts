@@ -55,12 +55,16 @@ export class EkwanzaClient {
     return (await response.json()) as EkwanzaCreateTicketResponse;
   }
 
-  async sendKwikToCustomer(request: EkwanzaSendKwikToCustomerRequest): Promise<EkwanzaSendKwikToCustomerResponse> {
+  async sendKwikToCustomer(
+    request: EkwanzaSendKwikToCustomerRequest,
+  ): Promise<EkwanzaSendKwikToCustomerResponse> {
     const baseUrl = this.require('EKWANZA_API_BASE_URL');
     const token = this.require('EKWANZA_NOTIFICATION_TOKEN');
     const apiKey = this.require('EKWANZA_API_KEY');
     const timestamp = new Date().toISOString();
-    const signature = createHmac('sha256', apiKey).update([timestamp, request.iban, token, request.operationCode].join('')).digest('hex');
+    const signature = createHmac('sha256', apiKey)
+      .update([timestamp, request.iban, token, request.operationCode].join(''))
+      .digest('hex');
     const response = await this.request(`${baseUrl}/Operations/SendKWiKToCustomer`, {
       method: 'POST',
       headers: {
@@ -69,7 +73,12 @@ export class EkwanzaClient {
         'X-API-Key': apiKey,
       },
       body: JSON.stringify({
-        data: { IBAN: request.iban, token, amount: String(request.amount), operationCode: request.operationCode },
+        data: {
+          IBAN: request.iban,
+          token,
+          amount: String(request.amount),
+          operationCode: request.operationCode,
+        },
         meta: { timestamp, signature },
       }),
     });
@@ -106,7 +115,8 @@ export class EkwanzaClient {
 
   private require(key: string): string {
     const value = this.config.get<string>(key);
-    if (!value || value.trim().length === 0) throw new Error(`E-Kwanza configuration '${key}' is missing`);
+    if (!value || value.trim().length === 0)
+      throw new Error(`E-Kwanza configuration '${key}' is missing`);
     return value;
   }
 }

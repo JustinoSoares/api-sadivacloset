@@ -27,10 +27,23 @@ describe('OrdersControllers', () => {
       findOne: jest.fn().mockResolvedValue(orderMock),
       cancel: jest.fn().mockResolvedValue({ ...orderMock, estado: 'cancelado' }),
       upsertDelivery: jest.fn().mockResolvedValue(orderMock),
-      findAllPaginated: jest.fn().mockResolvedValue({ data: [orderMock], dados: [orderMock], page: 1, pagina: 1, total: 1, totalPages: 1, total_paginas: 1 }),
+      findAllPaginated: jest.fn().mockResolvedValue({
+        data: [orderMock],
+        dados: [orderMock],
+        page: 1,
+        pagina: 1,
+        total: 1,
+        totalPages: 1,
+        total_paginas: 1,
+      }),
     };
     const mod = await Test.createTestingModule({
-      controllers: [PedidosController, OrdersController, PerfilPedidosController, ProfileOrdersController],
+      controllers: [
+        PedidosController,
+        OrdersController,
+        PerfilPedidosController,
+        ProfileOrdersController,
+      ],
       providers: [{ provide: OrdersService, useValue: service }],
     }).compile();
     pedidosController = mod.get(PedidosController);

@@ -27,7 +27,10 @@ export class UpdateAccountDto {
   @IsEmail({}, { message: 'email must be a valid email' })
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Current password (required to change password)', example: 'OldPass123!' })
+  @ApiPropertyOptional({
+    description: 'Current password (required to change password)',
+    example: 'OldPass123!',
+  })
   @IsOptional()
   @IsString({ message: 'currentPassword must be a string' })
   @MinLength(6, { message: 'currentPassword must have at least 6 characters' })
@@ -93,7 +96,8 @@ export class UpdateAccountDto {
   }
 
   get currentPasswordNormalized(): string | undefined {
-    const v = this.currentPassword ?? this.passwordActual ?? this.senhaAtual ?? this.password_actual;
+    const v =
+      this.currentPassword ?? this.passwordActual ?? this.senhaAtual ?? this.password_actual;
     return v && v.length ? v : undefined;
   }
 

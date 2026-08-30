@@ -41,7 +41,7 @@ describe('AdminEstatisticasService', () => {
       .mockResolvedValueOnce(80) // total pedidos
       .mockResolvedValueOnce(15) // atual
       .mockResolvedValueOnce(10) // anterior
-      .mockResolvedValueOnce(80) // pedidosRecentes total
+      .mockResolvedValueOnce(80); // pedidosRecentes total
     prisma.order.findMany.mockResolvedValue([]);
 
     const dto = new QueryEstatisticasDto();
@@ -105,7 +105,8 @@ describe('AdminEstatisticasService', () => {
     expect(result.periodo.fim.toISOString().startsWith('2026-07-31')).toBe(true);
     // período anterior deve ter mesma duração
     const durAtual = result.periodo.fim.getTime() - result.periodo.inicio.getTime();
-    const durAnterior = result.periodo.fimAnterior.getTime() - result.periodo.inicioAnterior.getTime();
+    const durAnterior =
+      result.periodo.fimAnterior.getTime() - result.periodo.inicioAnterior.getTime();
     expect(Math.abs(durAtual - durAnterior)).toBeLessThan(2000);
   });
 
@@ -123,7 +124,9 @@ describe('AdminEstatisticasService', () => {
     dto.page = 2;
     dto.limit = 2;
     const result = await service.getEstatisticas(dto);
-    expect(prisma.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 2, take: 2 }));
+    expect(prisma.order.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 2, take: 2 }),
+    );
     expect(result.pedidosRecentes.page).toBe(2);
     expect(result.pedidosRecentes.total).toBe(5);
   });

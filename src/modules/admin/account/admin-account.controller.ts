@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -14,7 +21,10 @@ export class AdminAccountController {
   constructor(private readonly accountService: AdminAccountService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get authenticated admin account', description: 'Returns authenticated admin account' })
+  @ApiOperation({
+    summary: 'Get authenticated admin account',
+    description: 'Returns authenticated admin account',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -30,7 +40,10 @@ export class AdminAccountController {
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Update admin account and change password (requires current password)', description: 'Updates admin account and changes password' })
+  @ApiOperation({
+    summary: 'Update admin account and change password (requires current password)',
+    description: 'Updates admin account and changes password',
+  })
   @ApiBody({ type: UpdateAccountDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -41,7 +54,8 @@ export class AdminAccountController {
     const account = await this.accountService.updateAccount(user.sub, {
       name: (dto as any).nameNormalized ?? (dto as any).nomeNormalized,
       email: dto.emailNormalized,
-      currentPassword: (dto as any).currentPasswordNormalized ?? (dto as any).passwordActualNormalized,
+      currentPassword:
+        (dto as any).currentPasswordNormalized ?? (dto as any).passwordActualNormalized,
       newPassword: (dto as any).newPasswordNormalized ?? (dto as any).novaPasswordNormalized,
     });
     return { data: account, dados: account };

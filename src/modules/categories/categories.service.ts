@@ -35,10 +35,16 @@ export class CategoriesService {
         const parsed = JSON.parse(cached);
         // normalize to both en/pt
         if (parsed.data && !parsed.dados) {
-          return { data: parsed.data, dados: parsed.data.map((c: any) => ({ categoria: c.category, total: c.total })) };
+          return {
+            data: parsed.data,
+            dados: parsed.data.map((c: any) => ({ categoria: c.category, total: c.total })),
+          };
         }
         if (parsed.dados && !parsed.data) {
-          return { data: parsed.dados.map((c: any) => ({ category: c.categoria, total: c.total })), dados: parsed.dados };
+          return {
+            data: parsed.dados.map((c: any) => ({ category: c.categoria, total: c.total })),
+            dados: parsed.dados,
+          };
         }
         return parsed;
       } catch {
@@ -61,7 +67,10 @@ export class CategoriesService {
       total: map.get(cat) ?? 0,
     }));
 
-    const dados: CategoriaComContagem[] = data.map((d) => ({ categoria: d.category, total: d.total }));
+    const dados: CategoriaComContagem[] = data.map((d) => ({
+      categoria: d.category,
+      total: d.total,
+    }));
 
     const result: any = { data, dados };
     await this.redis.set(CACHE_KEY_EN, JSON.stringify(result), 60);

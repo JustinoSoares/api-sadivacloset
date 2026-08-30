@@ -38,7 +38,14 @@ describe('CheckoutController', () => {
     dto.janela_horario = '09:00-12:00';
 
     const result = await controller.checkout(user, dto);
-    expect(service.checkout).toHaveBeenCalledWith(buyerId, expect.objectContaining({ tipo: 'domicilio', dataAgendada: tomorrow, janelaHorario: '09:00-12:00' }));
+    expect(service.checkout).toHaveBeenCalledWith(
+      buyerId,
+      expect.objectContaining({
+        tipo: 'domicilio',
+        dataAgendada: tomorrow,
+        janelaHorario: '09:00-12:00',
+      }),
+    );
     expect(result).toEqual({ data: orderMock, dados: orderMock });
   });
 
@@ -50,7 +57,10 @@ describe('CheckoutController', () => {
     dto.time_window = '09:00-12:00';
 
     await controller.checkout(user, dto);
-    expect(service.checkout).toHaveBeenCalledWith(buyerId, expect.objectContaining({ tipo: 'domicilio' }));
+    expect(service.checkout).toHaveBeenCalledWith(
+      buyerId,
+      expect.objectContaining({ tipo: 'domicilio' }),
+    );
   });
 
   it('should throw 400 if missing required fields', async () => {
@@ -61,7 +71,9 @@ describe('CheckoutController', () => {
   });
 
   it('should be throttled (checkout) and authenticated', () => {
-    const throttlerMeta = Reflect.getMetadata('throttler:options', CheckoutController) || Reflect.getMetadata('THROTTLER:OPTIONS', CheckoutController);
+    const throttlerMeta =
+      Reflect.getMetadata('throttler:options', CheckoutController) ||
+      Reflect.getMetadata('THROTTLER:OPTIONS', CheckoutController);
     // check path
     expect(Reflect.getMetadata('path', CheckoutController)).toBe('checkout');
     // controller should have ApiBearerAuth

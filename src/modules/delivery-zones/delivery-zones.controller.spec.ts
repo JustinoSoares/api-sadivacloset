@@ -16,7 +16,10 @@ describe('DeliveryZonesController', () => {
   });
 
   it('should delegate to service', async () => {
-    const mock = { data: [{ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 }], dados: [{ id: '1', bairro: 'Talatona', preco: 2500, neighborhood: 'Talatona', price: 2500 }] };
+    const mock = {
+      data: [{ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 }],
+      dados: [{ id: '1', bairro: 'Talatona', preco: 2500, neighborhood: 'Talatona', price: 2500 }],
+    };
     service.findAll.mockResolvedValue(mock);
     const result = await controller.findAll();
     expect(result).toEqual(mock);

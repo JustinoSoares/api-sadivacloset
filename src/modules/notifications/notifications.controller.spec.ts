@@ -1,6 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PerfilNotificacoesController, ProfileNotificationsController } from './notifications.controller';
+import {
+  PerfilNotificacoesController,
+  ProfileNotificationsController,
+} from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
 describe('PerfilNotificacoesController', () => {
@@ -59,18 +62,29 @@ describe('PerfilNotificacoesController', () => {
   it('PATCH /perfil/notificacoes/lidas should mark all as read', async () => {
     const result = await perfilController.markAllAsRead(user);
     expect(service.marcarTodasComoLidas).toHaveBeenCalledWith(buyerId);
-    expect(result).toEqual({ data: { count: 3 }, dados: { count: 3 }, mensagem: expect.any(String) });
+    expect(result).toEqual({
+      data: { count: 3 },
+      dados: { count: 3 },
+      mensagem: expect.any(String),
+    });
   });
 
   it('PATCH /perfil/notificacoes/:id/lida should mark one', async () => {
     const result = await perfilController.markOneAsRead(user, notifId);
     expect(service.marcarComoLida).toHaveBeenCalledWith(buyerId, notifId);
-    expect(result).toEqual({ data: expect.objectContaining({ lida: true }), dados: expect.objectContaining({ lida: true }) });
+    expect(result).toEqual({
+      data: expect.objectContaining({ lida: true }),
+      dados: expect.objectContaining({ lida: true }),
+    });
   });
 
   it('should propagate 404 if notification not owner', async () => {
-    service.marcarComoLida.mockRejectedValue(new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO' } }));
-    await expect(perfilController.markOneAsRead(user, notifId)).rejects.toBeInstanceOf(NotFoundException);
+    service.marcarComoLida.mockRejectedValue(
+      new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO' } }),
+    );
+    await expect(perfilController.markOneAsRead(user, notifId)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('aliases /profile/notifications should mirror', async () => {
@@ -84,7 +98,9 @@ describe('PerfilNotificacoesController', () => {
 
   it('should have correct paths and lidas before :id/lida order', () => {
     expect(Reflect.getMetadata('path', PerfilNotificacoesController)).toBe('perfil/notificacoes');
-    expect(Reflect.getMetadata('path', ProfileNotificationsController)).toBe('profile/notifications');
+    expect(Reflect.getMetadata('path', ProfileNotificationsController)).toBe(
+      'profile/notifications',
+    );
     // ensure lidas route exists
     const perfilRoutes = Reflect.getMetadata('__routes__', PerfilNotificacoesController) || [];
     // alternative check via prototype methods existence

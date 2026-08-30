@@ -36,7 +36,11 @@ export class AdminPreferencesService {
           notifyLowStock: true,
           notifyNewMessages: true,
           defaultDeliveryFee: 3000,
-          activePaymentMethods: [PaymentMethod.MULTICAIXA_EXPRESS, PaymentMethod.MULTICAIXA_REFERENCE, PaymentMethod.BANK_TRANSFER],
+          activePaymentMethods: [
+            PaymentMethod.MULTICAIXA_EXPRESS,
+            PaymentMethod.MULTICAIXA_REFERENCE,
+            PaymentMethod.BANK_TRANSFER,
+          ],
         },
       });
     }
@@ -64,7 +68,8 @@ export class AdminPreferencesService {
     if (data.notifyLowStock !== undefined) payload.notifyLowStock = data.notifyLowStock;
     if (data.notifyNewMessages !== undefined) payload.notifyNewMessages = data.notifyNewMessages;
     if (data.defaultDeliveryFee !== undefined) payload.defaultDeliveryFee = data.defaultDeliveryFee;
-    if (data.activePaymentMethods !== undefined) payload.activePaymentMethods = data.activePaymentMethods;
+    if (data.activePaymentMethods !== undefined)
+      payload.activePaymentMethods = data.activePaymentMethods;
 
     const updated = await this.prisma.adminPreferences.upsert({
       where: { id: 'singleton' },
@@ -75,11 +80,21 @@ export class AdminPreferencesService {
         notifyLowStock: payload.notifyLowStock ?? true,
         notifyNewMessages: payload.notifyNewMessages ?? true,
         defaultDeliveryFee: payload.defaultDeliveryFee ?? 3000,
-        activePaymentMethods: payload.activePaymentMethods ?? [PaymentMethod.MULTICAIXA_EXPRESS, PaymentMethod.MULTICAIXA_REFERENCE, PaymentMethod.BANK_TRANSFER],
+        activePaymentMethods: payload.activePaymentMethods ?? [
+          PaymentMethod.MULTICAIXA_EXPRESS,
+          PaymentMethod.MULTICAIXA_REFERENCE,
+          PaymentMethod.BANK_TRANSFER,
+        ],
       },
     });
     if (adminId) {
-      await this.audit.register(adminId, 'update_preferences', 'preferences', 'singleton', { before, after: updated, changes: payload }).catch(() => {});
+      await this.audit
+        .register(adminId, 'update_preferences', 'preferences', 'singleton', {
+          before,
+          after: updated,
+          changes: payload,
+        })
+        .catch(() => {});
     }
     return toResponse(updated);
   }

@@ -10,7 +10,10 @@ export class HealthController {
 
   @Public()
   @Get()
-  @ApiOperation({ summary: 'Health check', description: 'Checks database connectivity and returns health status' })
+  @ApiOperation({
+    summary: 'Health check',
+    description: 'Checks database connectivity and returns health status',
+  })
   @ApiResponse({ status: 200, description: 'Success - service healthy' })
   @ApiResponse({ status: 500, description: 'Internal Server Error - database down' })
   async check() {

@@ -4,7 +4,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationDto, buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { FilterMembersDto } from './dto/filter-members.dto';
 
-function toMemberResponse(user: any, stats: { totalOrders: number; totalSpentGross: number; totalSpentPaid: number }) {
+function toMemberResponse(
+  user: any,
+  stats: { totalOrders: number; totalSpentGross: number; totalSpentPaid: number },
+) {
   return {
     id: user.id,
     name: user.name,
@@ -109,10 +112,14 @@ export class AdminMembersService {
     if (!member || member.role !== Role.BUYER) {
       const exists = await this.prisma.user.findUnique({ where: { id: memberId } });
       if (!exists) {
-        throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' } });
+        throw new NotFoundException({
+          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' },
+        });
       }
       if (exists.role !== Role.BUYER) {
-        throw new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' } });
+        throw new NotFoundException({
+          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' },
+        });
       }
     }
 

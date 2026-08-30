@@ -11,7 +11,15 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiExcludeController } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../../common/guards/jwt-auth.guard';
@@ -28,7 +36,10 @@ export class ProductsAdminController {
   constructor(private readonly productsService: ProductsAdminService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List products (admin, paginated, filterable)', description: 'Returns paginated products for admin with filters' })
+  @ApiOperation({
+    summary: 'List products (admin, paginated, filterable)',
+    description: 'Returns paginated products for admin with filters',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -61,7 +72,11 @@ export class ProductsAdminController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
-  async update(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto) {
+  async update(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductDto,
+  ) {
     const product = await this.productsService.update(id, dto as any, user.sub);
     return { data: product, dados: product };
   }

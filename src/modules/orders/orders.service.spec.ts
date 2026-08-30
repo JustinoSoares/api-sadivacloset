@@ -24,7 +24,15 @@ describe('OrdersService', () => {
     status: OrderStatus.AWAITING_PAYMENT,
     createdAt: new Date(),
     items: [
-      { id: 'oi1', orderId, productId, productName: 'Prod', unitPrice: 10000, discount: 0, quantity: 2 },
+      {
+        id: 'oi1',
+        orderId,
+        productId,
+        productName: 'Prod',
+        unitPrice: 10000,
+        discount: 0,
+        quantity: 2,
+      },
     ],
     delivery: {
       id: 'del1',
@@ -51,7 +59,11 @@ describe('OrdersService', () => {
           product: { update: jest.fn().mockResolvedValue({}) },
           order: {
             update: jest.fn().mockResolvedValue({ ...orderMock, status: OrderStatus.CANCELLED }),
-            findUnique: jest.fn().mockResolvedValue({ ...orderMock, status: OrderStatus.CANCELLED, delivery: { ...orderMock.delivery, status: DeliveryStatus.CANCELLED } }),
+            findUnique: jest.fn().mockResolvedValue({
+              ...orderMock,
+              status: OrderStatus.CANCELLED,
+              delivery: { ...orderMock.delivery, status: DeliveryStatus.CANCELLED },
+            }),
           },
           delivery: { update: jest.fn().mockResolvedValue({}) },
         };
@@ -109,7 +121,9 @@ describe('OrdersService', () => {
         status: OrderStatus.SHIPPING,
       });
       await expect(service.cancel(buyerId, orderId)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.cancel(buyerId, orderId)).rejects.toMatchObject({ response: { erro: { codigo: 'ENTREGA_EM_CURSO' } } });
+      await expect(service.cancel(buyerId, orderId)).rejects.toMatchObject({
+        response: { erro: { codigo: 'ENTREGA_EM_CURSO' } },
+      });
     });
     it('should block if already cancelled', async () => {
       prisma.order.findUnique.mockResolvedValue({ ...orderMock, status: OrderStatus.CANCELLED });
@@ -126,8 +140,14 @@ describe('OrdersService', () => {
       prisma.order.findUnique
         .mockResolvedValueOnce(orderMock) // first call for ownership
         .mockResolvedValueOnce({ ...orderMock, delivery: { ...orderMock.delivery } }) // second for findUnique after update? actually service does second findUnique after update via prisma.order.findUnique
-        .mockResolvedValueOnce({ ...orderMock, delivery: { ...orderMock.delivery, timeWindow: '14:00-18:00' } });
-      prisma.delivery.update.mockResolvedValue({ ...orderMock.delivery, timeWindow: '14:00-18:00' });
+        .mockResolvedValueOnce({
+          ...orderMock,
+          delivery: { ...orderMock.delivery, timeWindow: '14:00-18:00' },
+        });
+      prisma.delivery.update.mockResolvedValue({
+        ...orderMock.delivery,
+        timeWindow: '14:00-18:00',
+      });
       prisma.order.findUnique.mockResolvedValue({
         ...orderMock,
         delivery: { ...orderMock.delivery },
@@ -140,15 +160,23 @@ describe('OrdersService', () => {
       // override to test update path
       const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
       // need to setup prisma mocks for second part
-      const mockOrder = { ...orderMock, delivery: { ...orderMock.delivery, status: DeliveryStatus.SCHEDULED } };
+      const mockOrder = {
+        ...orderMock,
+        delivery: { ...orderMock.delivery, status: DeliveryStatus.SCHEDULED },
+      };
       prisma.order.findUnique = jest.fn().mockResolvedValue(mockOrder);
-      prisma.delivery.update = jest.fn().mockResolvedValue({ ...mockOrder.delivery, timeWindow: '14:00-18:00' });
+      prisma.delivery.update = jest
+        .fn()
+        .mockResolvedValue({ ...mockOrder.delivery, timeWindow: '14:00-18:00' });
       // after update, order findUnique returns updated
-      prisma.order.findUnique
-        .mockResolvedValueOnce(mockOrder)
-        .mockResolvedValueOnce({ ...mockOrder, delivery: { ...mockOrder.delivery, timeWindow: '14:00-18:00' } });
+      prisma.order.findUnique.mockResolvedValueOnce(mockOrder).mockResolvedValueOnce({
+        ...mockOrder,
+        delivery: { ...mockOrder.delivery, timeWindow: '14:00-18:00' },
+      });
 
-      const result = await service.upsertDelivery(buyerId, orderId, { janelaHorario: '14:00-18:00' });
+      const result = await service.upsertDelivery(buyerId, orderId, {
+        janelaHorario: '14:00-18:00',
+      });
       expect(prisma.delivery.update).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
@@ -157,7 +185,9 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(orderMock);
       prisma.address.findUnique.mockResolvedValue(null);
       const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-      await expect(service.upsertDelivery(buyerId, orderId, { enderecoId: addressId })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.upsertDelivery(buyerId, orderId, { enderecoId: addressId }),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

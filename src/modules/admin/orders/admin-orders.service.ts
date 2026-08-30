@@ -26,7 +26,14 @@ function toOrderResponse(order: any) {
     created_at: order.createdAt,
     criado_em: order.createdAt,
     buyer: order.buyer,
-    comprador: order.buyer ? { id: order.buyer.id, name: order.buyer.name, nome: order.buyer.name, email: order.buyer.email } : undefined,
+    comprador: order.buyer
+      ? {
+          id: order.buyer.id,
+          name: order.buyer.name,
+          nome: order.buyer.name,
+          email: order.buyer.email,
+        }
+      : undefined,
     items: (order.items ?? []).map((it: any) => ({
       id: it.id,
       productId: it.productId,
@@ -130,7 +137,14 @@ export class AdminOrdersService {
         erro: {
           codigo: 'ERRO_VALIDACAO',
           mensagem: 'Estado inválido',
-          detalhes: [{ campo: 'estado', erros: [`estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`] }],
+          detalhes: [
+            {
+              campo: 'estado',
+              erros: [
+                `estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`,
+              ],
+            },
+          ],
         },
       });
     }
@@ -157,7 +171,14 @@ export class AdminOrdersService {
     });
 
     // Audit log via AuditService (English primary)
-    await this.audit.register(adminId, 'update_order_status', 'order', orderId, { from: order.status, to: newStatus, status: newStatus, de: order.status, para: newStatus, estado: newStatus });
+    await this.audit.register(adminId, 'update_order_status', 'order', orderId, {
+      from: order.status,
+      to: newStatus,
+      status: newStatus,
+      de: order.status,
+      para: newStatus,
+      estado: newStatus,
+    });
 
     // Notification to buyer (bilingual service method)
     try {

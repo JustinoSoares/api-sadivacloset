@@ -30,8 +30,22 @@ describe('AdminMembersService', () => {
   it('should list paginated members with search by name/email and real aggregation by buyerId', async () => {
     prisma.user.count.mockResolvedValue(2);
     prisma.user.findMany.mockResolvedValue([
-      { id: 'u1', name: 'Joao Silva', email: 'joao@test.com', createdAt: new Date(), isActive: true, role: Role.BUYER },
-      { id: 'u2', name: 'Maria', email: 'maria@test.com', createdAt: new Date(), isActive: true, role: Role.BUYER },
+      {
+        id: 'u1',
+        name: 'Joao Silva',
+        email: 'joao@test.com',
+        createdAt: new Date(),
+        isActive: true,
+        role: Role.BUYER,
+      },
+      {
+        id: 'u2',
+        name: 'Maria',
+        email: 'maria@test.com',
+        createdAt: new Date(),
+        isActive: true,
+        role: Role.BUYER,
+      },
     ]);
     prisma.order.groupBy
       .mockResolvedValueOnce([
@@ -49,7 +63,9 @@ describe('AdminMembersService', () => {
     dto.limit = 20;
     const result = await service.findAll(dto);
 
-    expect(prisma.user.count).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ role: Role.BUYER }) }));
+    expect(prisma.user.count).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ role: Role.BUYER }) }),
+    );
     const where = prisma.user.count.mock.calls[0][0].where;
     expect(where.OR).toBeDefined();
     expect(result.total).toBe(2);
@@ -65,8 +81,22 @@ describe('AdminMembersService', () => {
   it('should not compare by name – always by buyerId', async () => {
     prisma.user.count.mockResolvedValue(2);
     prisma.user.findMany.mockResolvedValue([
-      { id: 'u1', name: 'João', email: 'joao1@test.com', createdAt: new Date(), isActive: true, role: Role.BUYER },
-      { id: 'u2', name: 'João', email: 'joao2@test.com', createdAt: new Date(), isActive: true, role: Role.BUYER },
+      {
+        id: 'u1',
+        name: 'João',
+        email: 'joao1@test.com',
+        createdAt: new Date(),
+        isActive: true,
+        role: Role.BUYER,
+      },
+      {
+        id: 'u2',
+        name: 'João',
+        email: 'joao2@test.com',
+        createdAt: new Date(),
+        isActive: true,
+        role: Role.BUYER,
+      },
     ]);
     prisma.order.groupBy
       .mockResolvedValueOnce([
@@ -90,25 +120,49 @@ describe('AdminMembersService', () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: Role.BUYER });
     prisma.order.count.mockResolvedValue(2);
     prisma.order.findMany.mockResolvedValue([
-      { id: 'o1', buyerId: 'u1', total: 5000, status: OrderStatus.PAID, createdAt: new Date(), items: [], delivery: null, payment: null },
+      {
+        id: 'o1',
+        buyerId: 'u1',
+        total: 5000,
+        status: OrderStatus.PAID,
+        createdAt: new Date(),
+        items: [],
+        delivery: null,
+        payment: null,
+      },
     ]);
     const dto: any = { page: 1, limit: 10, skip: 0, take: 10 };
     const result = await service.findOrdersByMember('u1', dto);
     expect(prisma.order.count).toHaveBeenCalledWith({ where: { buyerId: 'u1' } });
-    expect(prisma.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { buyerId: 'u1' } }));
+    expect(prisma.order.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { buyerId: 'u1' } }),
+    );
     expect(result.total).toBe(2);
     expect(result.data[0].id).toBe('o1');
   });
 
   it('should give 404 if member not exists', async () => {
     prisma.user.findUnique.mockResolvedValue(null);
-    await expect(service.findOrdersByMember('fake-id', { page: 1, limit: 10, skip: 0, take: 10 } as any)).rejects.toThrow();
+    await expect(
+      service.findOrdersByMember('fake-id', { page: 1, limit: 10, skip: 0, take: 10 } as any),
+    ).rejects.toThrow();
   });
 
   it('legacy alias findPedidosByMembro should work', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: Role.BUYER });
     prisma.order.count.mockResolvedValue(1);
-    prisma.order.findMany.mockResolvedValue([{ id: 'o1', buyerId: 'u1', total: 5000, status: OrderStatus.PAID, createdAt: new Date(), items: [], delivery: null, payment: null }]);
+    prisma.order.findMany.mockResolvedValue([
+      {
+        id: 'o1',
+        buyerId: 'u1',
+        total: 5000,
+        status: OrderStatus.PAID,
+        createdAt: new Date(),
+        items: [],
+        delivery: null,
+        payment: null,
+      },
+    ]);
     const dto: any = { page: 1, limit: 10, skip: 0, take: 10 };
     const result = await service.findPedidosByMembro('u1', dto);
     expect(result.total).toBe(1);

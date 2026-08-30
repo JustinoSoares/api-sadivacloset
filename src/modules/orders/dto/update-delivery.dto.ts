@@ -2,11 +2,13 @@ import { IsDateString, IsOptional, IsString, IsUUID, IsNotEmpty } from 'class-va
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
-const Trim = () =>
-  Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
+const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class UpdateDeliveryDto {
-  @ApiPropertyOptional({ description: 'ID do endereço da entrega', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'ID do endereço da entrega',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsUUID('4', { message: 'endereco_id deve ser um UUID válido' })
   endereco_id?: string;

@@ -4,7 +4,13 @@ import { Type } from 'class-transformer';
 import { PaginationDto } from '../../../../common/dto/pagination.dto';
 
 export class QueryStatisticsDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Window in days for comparison (1-365)', example: 30, minimum: 1, maximum: 365, default: 30 })
+  @ApiPropertyOptional({
+    description: 'Window in days for comparison (1-365)',
+    example: 30,
+    minimum: 1,
+    maximum: 365,
+    default: 30,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
