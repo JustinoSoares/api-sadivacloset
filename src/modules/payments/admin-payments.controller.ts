@@ -65,17 +65,6 @@ export class AdminPagamentosController {
     return this.paymentsService.walletHistorico(null, dto as any);
   }
 
-  @Get('bridpay/wallet')
-  @ApiOperation({
-    summary: 'Proxy BridPay wallet (balance + transactions)',
-    description: 'Proxies BridPay wallet',
-  })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async bridpayWallet() {
-    return this.paymentsService.bridpayWalletProxy();
-  }
 }
 
 @ApiTags('admin-payments')

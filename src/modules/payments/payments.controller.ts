@@ -36,7 +36,7 @@ export class PagamentosController {
   @Post('iniciar')
   @ApiOperation({
     summary:
-      'Inicia pagamento (cria registo PENDENTE/PROCESSANDO). Para GPO/GPR chama BridPay (/gpo,/gpr); para KWIK cria saída',
+      'Inicia pagamento (cria registo PENDENTE/PROCESSANDO). Para KWIK via E-Kwanza cria saída',
     description: 'Initiates payment creating PENDING/PROCESSING record',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
@@ -220,15 +220,14 @@ export class WalletController {
 
   @Get('historico')
   @ApiOperation({
-    summary: 'Wallet historico (proxy BridPay + local)',
-    description: 'Returns wallet history proxy BridPay + local',
+    summary: 'Wallet historico (local)',
+    description: 'Returns local wallet history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async historico(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
     const local = await this.paymentsService.walletHistorico(user.sub, dto as any);
-    const bridpay = await this.paymentsService.bridpayWalletProxy();
-    return { local, bridpay, data: local.data, dados: local.dados };
+    return { local, data: local.data, dados: local.dados };
   }
 }

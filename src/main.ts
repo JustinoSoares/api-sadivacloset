@@ -203,7 +203,7 @@ bootstrap().catch((err) => {
   if (err?.code === 'EADDRINUSE') {
     console.error(
       `❌ Porta ${err.port} já em uso (EADDRINUSE). ` +
-        `Tens o Docker a correr (sadivacloset-api:3001 + bridpay-api:3000) ou outro processo.\n` +
+        `Tens o Docker a correr (sadivacloset-api:3001) ou outro processo.\n` +
         `   → Opções: 1) docker compose down  2) muda PORT no .env (ex: 3002)  3) PORT=3002 pnpm run start:dev  4) lsof -i :${err.port} / ss -tulpn | grep ${err.port}`,
     );
   } else {

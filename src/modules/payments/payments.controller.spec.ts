@@ -28,7 +28,6 @@ describe('Payments Controllers', () => {
       validarAdmin: jest.fn().mockResolvedValue({ pagamento: paymentMock }),
       historico: jest.fn().mockResolvedValue({ data: [paymentMock], total: 1 }),
       walletHistorico: jest.fn().mockResolvedValue({ data: [], total: 0 }),
-      bridpayWalletProxy: jest.fn().mockResolvedValue({ balance: 0 }),
     };
     const mod = await Test.createTestingModule({
       controllers: [PagamentosController, AdminPagamentosController, WalletController],

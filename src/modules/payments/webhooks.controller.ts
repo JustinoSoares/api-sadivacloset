@@ -20,7 +20,7 @@ export class WebhooksController {
   })
   @ApiParam({
     name: 'gateway',
-    enum: ['appypay', 'ekwanza', 'generic', 'bridpay', 'gpo', 'gpr', 'kwik'],
+    enum: ['ekwanza', 'generic', 'kwik'],
     description: 'Gateway name',
   })
   @ApiResponse({ status: 200, description: 'Success - webhook processed' })
@@ -45,7 +45,7 @@ export class WebhooksController {
   })
   @ApiParam({
     name: 'gateway',
-    enum: ['appypay', 'ekwanza', 'generic', 'bridpay', 'gpo', 'gpr', 'kwik'],
+    enum: ['ekwanza', 'generic', 'kwik'],
   })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -57,55 +57,6 @@ export class WebhooksController {
   ) {
     const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body);
     return this.paymentsService.handlePagamentoWebhook(gateway, rawBody, headers, body);
-  }
-
-  @Public()
-  @Post('bridpay')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary:
-      'BridPay webhook - confirms payment (only point that can mark order as paid besides admin validation)',
-    description: 'Handles BridPay webhook',
-  })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  async bridpayWebhook(@Body() body: any, @Headers('x-signature') signature?: string) {
-    const result = await this.paymentsService.handleBridpayWebhook(body);
-    return result;
-  }
-
-  @ApiExcludeEndpoint()
-  @Public()
-  @Post('pagamentos/bridpay')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Alias for BridPay webhook', description: 'Alias for BridPay webhook' })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  async bridpayAlias(@Body() body: any) {
-    return this.paymentsService.handleBridpayWebhook(body);
-  }
-
-  // Webhooks diretos dos providers reais (AppPay e E-Kwanza) – usados quando Sadiva chama provider direto sem BridPay
-  @Public()
-  @Post('appypay')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'AppPay webhook (GPO/GPR) - validates x-signature HMAC and confirms payment',
-    description: 'Handles AppPay webhook',
-  })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  async appypayWebhook(
-    @Body() body: any,
-    @Headers() headers: Record<string, string>,
-    @Req() req: any,
-  ) {
-    const rawBody: string = req.rawBody
-      ? req.rawBody.toString('utf8')
-      : typeof body === 'string'
-        ? body
-        : JSON.stringify(body);
-    return this.paymentsService.handleAppPayWebhook(rawBody, headers);
   }
 
   @Public()

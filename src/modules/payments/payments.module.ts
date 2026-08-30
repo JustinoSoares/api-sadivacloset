@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { BridpayClient } from './bridpay.client';
-import { AppPayClient } from './providers/appypay.client';
 import { EkwanzaClient } from './providers/ekwanza.client';
 import { StorageModule } from '../storage/storage.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -26,7 +24,7 @@ import { WebhooksController } from './webhooks.controller';
     AdminPaymentsController,
     WebhooksController,
   ],
-  providers: [PaymentsService, BridpayClient, AppPayClient, EkwanzaClient],
-  exports: [PaymentsService, BridpayClient, AppPayClient, EkwanzaClient],
+  providers: [PaymentsService, EkwanzaClient],
+  exports: [PaymentsService, EkwanzaClient],
 })
 export class PaymentsModule {}

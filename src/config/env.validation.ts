@@ -5,6 +5,7 @@ import * as Joi from 'joi';
  * - Falha no boot (fail-fast) se faltar variável obrigatória.
  * - Em produção exige secrets fortes (>=32 chars) e PAYMENT_WEBHOOK_SECRET.
  * - Mensagens em PT para facilitar correção via .env / .env.example
+ * - Gateway único: E-Kwanza (KWiK / Ticket)
  */
 export const envValidationSchema = Joi.object({
   // ── APP ──
@@ -66,35 +67,7 @@ export const envValidationSchema = Joi.object({
       'string.pattern.base': '"JWT_REFRESH_EXPIRES_IN" deve ser no formato 15m, 1h, 7d',
     }),
 
-  // ── BRIDPAY (proxy opcional) ──
-  BRIDPAY_BASE_URL: Joi.string().uri().optional().default('http://localhost:3000').allow(''),
-  BRIDPAY_API_KEY: Joi.string().allow('').optional().default(''),
-  BRIDPAY_ENVIRONMENT: Joi.string().valid('live', 'sandbox').optional().default('sandbox'),
-
-  // ── APPPAY ──
-  APPYPAY_ENVIRONMENT: Joi.string().valid('live', 'sandbox').optional().default('sandbox'),
-  // Contém placeholder {tenant} por isso não valida como URI estrito
-  APPYPAY_AUTH_URL: Joi.string()
-    .allow('')
-    .optional()
-    .default('https://login.microsoftonline.com/{tenant}/oauth2/token'),
-  APPYPAY_TENANT: Joi.string().allow('').optional().default(''),
-  APPYPAY_CLIENT_ID: Joi.string().allow('').optional().default(''),
-  APPYPAY_CLIENT_SECRET: Joi.string().allow('').optional().default(''),
-  APPYPAY_RESOURCE: Joi.string().allow('').optional().default(''),
-  APPYPAY_API_BASE_URL: Joi.string()
-    .uri()
-    .optional()
-    .default('https://gwy-api.appypay.co.ao')
-    .allow(''),
-  APPYPAY_MERCHANT_IDENTIFIER: Joi.string().allow('').optional().default(''),
-  APPYPAY_OPTIONS_API_KEY: Joi.string().allow('').optional().default(''),
-  APPYPAY_PAYMENT_METHOD_GPO: Joi.string().allow('').optional().default(''),
-  APPYPAY_PAYMENT_METHOD_REFERENCE: Joi.string().allow('').optional().default(''),
-  APPYPAY_WEBHOOK_SECRET: Joi.string().allow('').optional().default(''),
-  APPYPAY_HTTP_TIMEOUT_MS: Joi.number().positive().optional().default(10000),
-
-  // ── E-KWANZA ──
+  // ── E-KWANZA (único gateway) ──
   EKWANZA_API_BASE_URL: Joi.string()
     .uri()
     .optional()
@@ -111,10 +84,8 @@ export const envValidationSchema = Joi.object({
 
   // ── WEBHOOKS & FILA ──
   PAYMENT_WEBHOOK_SECRET: Joi.string().allow('').optional().default(''),
-  PAYMENT_WEBHOOK_SECRET_APPYPAY: Joi.string().allow('').optional().default(''),
   PAYMENT_WEBHOOK_SECRET_EKWANZA: Joi.string().allow('').optional().default(''),
   PAYMENT_WEBHOOK_SECRET_GENERIC: Joi.string().allow('').optional().default(''),
-  PAYMENT_WEBHOOK_SECRET_BRIDPAY: Joi.string().allow('').optional().default(''),
   WEBHOOK_PAYMENT_SECRET: Joi.string().allow('').optional().default(''),
   WEBHOOK_SECRET: Joi.string().allow('').optional().default(''),
   PAYMENT_QUEUE_NAME: Joi.string().optional().default('pagamento-confirmado'),
@@ -207,7 +178,7 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   }
 
   // Sincroniza defaults/valores validados para process.env
-  // para que configuration() possa ler apenas process.env.VAR sem fallbacks ||
+  // para que configuration() possa ler apenas process.env.VAR sem fallbacks
   for (const [k, v] of Object.entries(value)) {
     if (v !== undefined && v !== null) {
       process.env[k] = String(v);

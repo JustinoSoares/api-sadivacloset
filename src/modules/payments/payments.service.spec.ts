@@ -3,8 +3,6 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { BridpayClient } from './bridpay.client';
-import { AppPayClient } from './providers/appypay.client';
 import { EkwanzaClient } from './providers/ekwanza.client';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -16,7 +14,6 @@ import { PaymentQueueService } from '../queue/payment-queue.service';
 describe('PaymentsService', () => {
   let service: PaymentsService;
   let prisma: any;
-  let bridpay: any;
   let storage: any;
 
   const buyerId = '11111111-1111-1111-1111-111111111111';
@@ -70,19 +67,6 @@ describe('PaymentsService', () => {
       payout: { create: jest.fn().mockResolvedValue({}) },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
-    bridpay = {
-      createGpo: jest.fn().mockResolvedValue(null),
-      createGpr: jest.fn().mockResolvedValue(null),
-      createKwik: jest.fn().mockResolvedValue(null),
-      getWalletBalance: jest.fn().mockResolvedValue({ balance: 100000 }),
-      getWalletTransactions: jest.fn().mockResolvedValue({ data: [] }),
-    };
-    const appPay = {
-      createCharge: jest
-        .fn()
-        .mockResolvedValue({ id: 'apppay123', transactionId: 'tx123', reference: 'ref123' }),
-      getAccessToken: jest.fn().mockResolvedValue('token'),
-    };
     const ekwanza = {
       sendKwikToCustomer: jest.fn().mockResolvedValue({
         ekzOperationCode: 'op123',
@@ -104,8 +88,6 @@ describe('PaymentsService', () => {
         },
         PaymentsService,
         { provide: PrismaService, useValue: prisma },
-        { provide: BridpayClient, useValue: bridpay },
-        { provide: AppPayClient, useValue: appPay },
         { provide: EkwanzaClient, useValue: ekwanza },
         { provide: StorageService, useValue: storage },
         {
@@ -149,26 +131,25 @@ describe('PaymentsService', () => {
       expect(result.metodo).toBe('BANK_TRANSFER');
     });
 
-    it('should create PROCESSING for gpo via AppPay direto', async () => {
+    it('should create PROCESSING for gpo local', async () => {
       prisma.order.findUnique.mockResolvedValue(orderMock);
       prisma.payment.create.mockResolvedValue({ ...paymentMock, status: PaymentStatus.PROCESSING });
       prisma.payment.update.mockResolvedValue({
         ...paymentMock,
         status: PaymentStatus.PROCESSING,
         externalReference: 'mtx123',
-        bridpayIntentId: 'apppay123',
       });
       const result = await service.iniciar(buyerId, orderId, {
         metodo: 'multicaixa_express',
         phoneNumber: '923456789',
       });
-      // em modo mock (sem env APPYPAY_MERCHANT_IDENTIFIER) não chama AppPay, mas cria pagamento PROCESSING local
+      // sem AppPay, cria pagamento PROCESSING local
       expect(prisma.payment.create).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result.estado).toBe(PaymentStatus.PROCESSING);
     });
 
-    it('should create PROCESSING for gpr via AppPay direto', async () => {
+    it('should create PROCESSING for gpr local', async () => {
       prisma.order.findUnique.mockResolvedValue(orderMock);
       prisma.payment.create.mockResolvedValue({
         ...paymentMock,
@@ -258,21 +239,6 @@ describe('PaymentsService', () => {
       expect(true).toBe(true); // auditoria mocked
       expect(result.pagamento.estado).toBe(PaymentStatus.PAID);
       expect(result.pedido.estado).toBe(OrderStatus.PAID);
-    });
-  });
-
-  describe('webhook', () => {
-    it('should handle Bridpay webhook settled -> mark PAID', async () => {
-      prisma.payment.findFirst.mockResolvedValue(paymentMock);
-      prisma.payment.update.mockResolvedValue({ ...paymentMock, status: PaymentStatus.PAID });
-      prisma.order.update.mockResolvedValue({ ...orderMock, status: OrderStatus.PAID });
-      prisma.order.findUnique.mockResolvedValue(orderMock);
-      const res = await service.handleBridpayWebhook({
-        merchantTxId: 'mtx123',
-        status: 'settled',
-        providerTxId: 'ptx123',
-      });
-      expect(res.ok).toBe(true);
     });
   });
 

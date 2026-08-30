@@ -9,22 +9,6 @@ export interface AppConfig {
     expiresIn: string;
     refreshExpiresIn: string;
   };
-  bridpay: { baseUrl: string; apiKey: string; environment: 'live' | 'sandbox' };
-  appypay: {
-    environment: 'live' | 'sandbox';
-    authUrl: string;
-    tenant: string;
-    clientId: string;
-    clientSecret: string;
-    resource: string;
-    apiBaseUrl: string;
-    merchantIdentifier: string;
-    optionsApiKey: string;
-    paymentMethodGpo: string;
-    paymentMethodReference: string;
-    webhookSecret: string;
-    httpTimeoutMs: number;
-  };
   ekwanza: {
     apiBaseUrl: string;
     notificationToken: string;
@@ -57,26 +41,6 @@ export default (): AppConfig => ({
     refreshSecret: process.env.JWT_REFRESH_SECRET!,
     expiresIn: process.env.JWT_EXPIRES_IN!,
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN!,
-  },
-  bridpay: {
-    baseUrl: process.env.BRIDPAY_BASE_URL!,
-    apiKey: process.env.BRIDPAY_API_KEY!,
-    environment: process.env.BRIDPAY_ENVIRONMENT! as 'live' | 'sandbox',
-  },
-  appypay: {
-    environment: process.env.APPYPAY_ENVIRONMENT! as 'live' | 'sandbox',
-    authUrl: process.env.APPYPAY_AUTH_URL!,
-    tenant: process.env.APPYPAY_TENANT!,
-    clientId: process.env.APPYPAY_CLIENT_ID!,
-    clientSecret: process.env.APPYPAY_CLIENT_SECRET!,
-    resource: process.env.APPYPAY_RESOURCE!,
-    apiBaseUrl: process.env.APPYPAY_API_BASE_URL!,
-    merchantIdentifier: process.env.APPYPAY_MERCHANT_IDENTIFIER!,
-    optionsApiKey: process.env.APPYPAY_OPTIONS_API_KEY!,
-    paymentMethodGpo: process.env.APPYPAY_PAYMENT_METHOD_GPO!,
-    paymentMethodReference: process.env.APPYPAY_PAYMENT_METHOD_REFERENCE!,
-    webhookSecret: process.env.APPYPAY_WEBHOOK_SECRET!,
-    httpTimeoutMs: parseInt(process.env.APPYPAY_HTTP_TIMEOUT_MS!, 10),
   },
   ekwanza: {
     apiBaseUrl: process.env.EKWANZA_API_BASE_URL!,
