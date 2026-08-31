@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { PaymentMethod } from '@prisma/client';
@@ -28,7 +28,7 @@ function normalizePaymentMethods(value: any): PaymentMethod[] | undefined {
 }
 
 export class UpdatePreferenciasDto {
-  @ApiPropertyOptional({ description: 'Notificar novos pedidos', example: true })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => {
     if (value === 'true' || value === '1') return true;
@@ -38,7 +38,7 @@ export class UpdatePreferenciasDto {
   @IsBoolean({ message: 'notifyNewOrders must be a boolean' })
   notificarNovosPedidos?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notifyNewOrders' })
+  @ApiPropertyOptional({ description: 'Notify new orders', example: true })
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -46,7 +46,7 @@ export class UpdatePreferenciasDto {
   @IsBoolean()
   notifyNewOrders?: boolean;
 
-  @ApiPropertyOptional({ description: 'Notificar stock baixo', example: true })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -54,7 +54,7 @@ export class UpdatePreferenciasDto {
   @IsBoolean({ message: 'notifyLowStock must be a boolean' })
   notificarStockBaixo?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notifyLowStock' })
+  @ApiPropertyOptional({ description: 'Notify low stock', example: true })
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -62,7 +62,7 @@ export class UpdatePreferenciasDto {
   @IsBoolean()
   notifyLowStock?: boolean;
 
-  @ApiPropertyOptional({ description: 'Notificar novas mensagens', example: true })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -70,7 +70,7 @@ export class UpdatePreferenciasDto {
   @IsBoolean({ message: 'notifyNewMessages must be a boolean' })
   notificarNovasMensagens?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notifyNewMessages' })
+  @ApiPropertyOptional({ description: 'Notify new messages', example: true })
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -78,26 +78,21 @@ export class UpdatePreferenciasDto {
   @IsBoolean()
   notifyNewMessages?: boolean;
 
-  @ApiPropertyOptional({ description: 'Taxa de entrega padrão (AOA)', example: 2500, minimum: 0 })
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'defaultDeliveryFee must be an integer' })
   @Min(0, { message: 'defaultDeliveryFee cannot be negative' })
   taxaEntregaPadrao?: number;
 
-  @ApiPropertyOptional({ description: 'Alias defaultDeliveryFee' })
+  @ApiPropertyOptional({ description: 'Default delivery fee (AOA)', example: 2500, minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   defaultDeliveryFee?: number;
 
-  @ApiPropertyOptional({
-    description: 'Métodos de pagamento ativos',
-    example: ['multicaixa_express', 'transferencia'],
-    enum: PaymentMethod,
-    isArray: true,
-  })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
   @IsArray({ message: 'activePaymentMethods must be an array' })
@@ -107,7 +102,12 @@ export class UpdatePreferenciasDto {
   })
   metodosPagamentoAtivos?: PaymentMethod[];
 
-  @ApiPropertyOptional({ description: 'Alias activePaymentMethods' })
+  @ApiPropertyOptional({
+    description: 'Active payment methods',
+    example: ['multicaixa_express', 'transferencia'],
+    enum: PaymentMethod,
+    isArray: true,
+  })
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
   @IsArray()

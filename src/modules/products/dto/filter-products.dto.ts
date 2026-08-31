@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Category, ProductCondition } from '@prisma/client';
@@ -77,7 +77,7 @@ export class FilterProductsDto extends PaginationDto {
   })
   category?: Category[];
 
-  // legacy alias: categoria
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => mapCategoryArray(value))
   @IsEnum(Category, { each: true })
@@ -89,7 +89,7 @@ export class FilterProductsDto extends PaginationDto {
   @IsString({ each: true })
   size?: string[];
 
-  // legacy alias
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => toArray<string>(value))
   @IsString({ each: true })
@@ -108,7 +108,7 @@ export class FilterProductsDto extends PaginationDto {
   })
   condition?: ProductCondition[];
 
-  // legacy alias
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => mapConditionArray(value))
   @IsEnum(ProductCondition, { each: true })
@@ -121,6 +121,7 @@ export class FilterProductsDto extends PaginationDto {
   @Min(0, { message: 'price_min must be >= 0' })
   price_min?: number;
 
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -134,6 +135,7 @@ export class FilterProductsDto extends PaginationDto {
   @Min(0, { message: 'price_max must be >= 0' })
   price_max?: number;
 
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -145,7 +147,7 @@ export class FilterProductsDto extends PaginationDto {
   @IsEnum(SortOrder, { message: `sort must be: ${Object.values(SortOrder).join(', ')}` })
   sort?: SortOrder;
 
-  // legacy alias
+  @ApiHideProperty()
   @IsOptional()
   @IsEnum(SortOrder)
   ordenar?: SortOrder;

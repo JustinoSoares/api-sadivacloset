@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Category } from '@prisma/client';
@@ -29,9 +29,10 @@ export class FilterProductsDto extends PaginationDto {
   @ApiPropertyOptional({ enum: Category, description: 'Filter by category' })
   @Transform(({ obj }) => mapCategory(obj.category ?? obj.categoria))
   @IsOptional()
-  @IsEnum(Category, { message: `category deve ser: ${Object.values(Category).join(', ')}` })
+  @IsEnum(Category, { message: `category must be one of: ${Object.values(Category).join(', ')}` })
   category?: Category;
 
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => mapCategory(value))
   @IsEnum(Category)

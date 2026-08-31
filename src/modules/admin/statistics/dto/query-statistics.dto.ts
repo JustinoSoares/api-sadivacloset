@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaginationDto } from '../../../../common/dto/pagination.dto';
@@ -18,7 +18,7 @@ export class QueryStatisticsDto extends PaginationDto {
   @Max(365)
   days?: number;
 
-  @ApiPropertyOptional({ description: 'Alias dias/period' })
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -26,7 +26,7 @@ export class QueryStatisticsDto extends PaginationDto {
   @Max(365)
   dias?: number;
 
-  @ApiPropertyOptional({ description: 'Alias period' })
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -39,19 +39,19 @@ export class QueryStatisticsDto extends PaginationDto {
   @IsDateString({}, { message: 'from must be valid ISO date' })
   from?: string;
 
-  @ApiPropertyOptional({ description: 'Alias data_inicio' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   data_inicio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataInicio/startDate' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   dataInicio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias startDate' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsDateString({}, { message: 'from deve ser data ISO válida' })
+  @IsDateString({}, { message: 'from must be a valid ISO date' })
   startDate?: string;
 
   @ApiPropertyOptional({ description: 'End date of current period (ISO)', example: '2026-07-31' })
@@ -59,19 +59,19 @@ export class QueryStatisticsDto extends PaginationDto {
   @IsDateString({}, { message: 'to must be valid ISO date' })
   to?: string;
 
-  @ApiPropertyOptional({ description: 'Alias data_fim' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   data_fim?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataFim/endDate' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   dataFim?: string;
 
-  @ApiPropertyOptional({ description: 'Alias endDate' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsDateString({}, { message: 'to deve ser data ISO válida' })
+  @IsDateString({}, { message: 'to must be a valid ISO date' })
   endDate?: string;
 
   get daysNormalized(): number {

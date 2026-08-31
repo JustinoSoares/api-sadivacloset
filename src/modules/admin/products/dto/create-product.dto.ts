@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Category, ProductCondition } from '@prisma/client';
@@ -95,15 +95,23 @@ export class CreateProductDto {
   @Max(100, { message: 'discount must be <= 100' })
   discount?: number;
 
-  // legacy aliases for validation whitelist
+  @ApiHideProperty()
   @IsOptional() imagem?: string;
+  @ApiHideProperty()
   @IsOptional() nomeProduto?: string;
+  @ApiHideProperty()
   @IsOptional() nome?: string;
+  @ApiHideProperty()
   @IsOptional() descricao?: string;
+  @ApiHideProperty()
   @IsOptional() categoria?: Category;
+  @ApiHideProperty()
   @IsOptional() tamanho?: string;
+  @ApiHideProperty()
   @IsOptional() estado?: ProductCondition;
+  @ApiHideProperty()
   @IsOptional() volume?: number;
+  @ApiHideProperty()
   @IsOptional() desconto?: number;
 }
 

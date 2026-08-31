@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsDateString, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
@@ -26,24 +26,24 @@ function mapOrderStatus(value: any): OrderStatus | undefined {
 }
 
 export class FilterOrdersDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Filtro por estado', example: 'aguardando_pagamento' })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => mapOrderStatus(value))
   @IsString()
   estado?: string;
 
-  @ApiPropertyOptional({ description: 'Alias status' })
+  @ApiPropertyOptional({ description: 'Filter by status', enum: ['awaiting_payment','paid','preparing','shipping','completed','cancelled'] })
   @IsOptional()
   @Transform(({ value }) => mapOrderStatus(value))
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Data início intervalo (ISO)', example: '2026-01-01' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   data_inicio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataInicio' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   dataInicio?: string;
@@ -53,12 +53,12 @@ export class FilterOrdersDto extends PaginationDto {
   @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   startDate?: string;
 
-  @ApiPropertyOptional({ description: 'Data fim intervalo (ISO)', example: '2026-12-31' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   data_fim?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataFim' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   dataFim?: string;

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -8,14 +8,15 @@ export class IniciarPagamentoDto {
   @ApiProperty({ description: 'Payment method', example: 'multicaixa_express' })
   @IsString({ message: 'method must be a string' })
   @IsNotEmpty({ message: 'method must not be empty' })
+  @Transform(({ obj }) => obj.method ?? obj.metodo)
   @Trim()
-  metodo!: string;
+  method!: string;
 
-  @ApiPropertyOptional({ description: 'Payment method alias (English)' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @Trim()
-  method?: string;
+  metodo?: string;
 
   @ApiPropertyOptional({
     description: 'Phone number for GPO (Multicaixa Express)',
@@ -26,7 +27,7 @@ export class IniciarPagamentoDto {
   @Trim()
   phoneNumber?: string;
 
-  @ApiPropertyOptional({ description: 'Phone alias (legacy)' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @Trim()
@@ -43,14 +44,15 @@ export class IniciarPagamentoDto {
   @IsString({ message: 'description must be a string' })
   @MaxLength(255)
   @Trim()
-  descricao?: string;
+  @Transform(({ obj }) => obj.description ?? obj.descricao)
+  description?: string;
 
-  @ApiPropertyOptional({ description: 'Description alias (English)' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @MaxLength(255)
   @Trim()
-  description?: string;
+  descricao?: string;
 
   @ApiPropertyOptional({ description: 'Expiration in seconds for GPO', example: 900 })
   @IsOptional()
@@ -58,9 +60,14 @@ export class IniciarPagamentoDto {
   @Min(60)
   expiresInSeconds?: number;
 
-  get metodoNormalized(): string {
-    const raw = this.metodo ?? this.method ?? '';
+  get methodNormalized(): string {
+    const raw = this.method ?? this.metodo ?? '';
     return String(raw).trim().toLowerCase();
+  }
+
+  // backward compat alias
+  get metodoNormalized(): string {
+    return this.methodNormalized;
   }
 
   get phoneNormalized(): string | undefined {
@@ -76,10 +83,14 @@ export class IniciarPagamentoDto {
     return t.length ? t : undefined;
   }
 
-  get descricaoNormalized(): string | undefined {
-    const v = this.descricao ?? this.description;
+  get descriptionNormalized(): string | undefined {
+    const v = this.description ?? this.descricao;
     if (!v) return undefined;
     const t = String(v).trim();
     return t.length ? t : undefined;
+  }
+
+  get descricaoNormalized(): string | undefined {
+    return this.descriptionNormalized;
   }
 }

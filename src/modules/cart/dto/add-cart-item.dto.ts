@@ -1,62 +1,62 @@
 import { IsInt, IsOptional, IsUUID, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AddCartItemDto {
   @ApiProperty({ description: 'Product ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
-  @IsUUID('4', { message: 'produto_id deve ser um UUID válido' })
-  produto_id?: string;
-
-  @ApiPropertyOptional({ description: 'Alias English - Product ID' })
-  @IsOptional()
-  @IsUUID('4', { message: 'product_id deve ser um UUID válido' })
-  product_id?: string;
-
-  @ApiPropertyOptional({ description: 'Alias productId camelCase' })
-  @IsOptional()
-  @IsUUID('4', { message: 'productId deve ser um UUID válido' })
+  @IsUUID('4', { message: 'productId must be a valid UUID' })
   productId?: string;
 
-  @ApiProperty({ description: 'Quantidade', example: 2, minimum: 1 })
+  @ApiHideProperty()
   @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'quantidade deve ser um número inteiro' })
-  @Min(1, { message: 'quantidade deve ser pelo menos 1' })
-  quantidade?: number;
+  @IsUUID('4', { message: 'productId must be a valid UUID' })
+  product_id?: string;
 
-  @ApiPropertyOptional({ description: 'Alias English - quantity' })
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID('4', { message: 'productId must be a valid UUID' })
+  produto_id?: string;
+
+  @ApiPropertyOptional({ description: 'Quantity', example: 2, minimum: 1 })
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: 'quantity deve ser um número inteiro' })
-  @Min(1, { message: 'quantity deve ser pelo menos 1' })
+  @IsInt({ message: 'quantity must be an integer' })
+  @Min(1, { message: 'quantity must be at least 1' })
   quantity?: number;
 
+  @ApiHideProperty()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'quantity must be an integer' })
+  @Min(1, { message: 'quantity must be at least 1' })
+  quantidade?: number;
+
   get productIdNormalized(): string | undefined {
-    return this.produto_id ?? this.product_id ?? this.productId;
+    return this.productId ?? this.product_id ?? this.produto_id;
   }
 
   get quantityNormalized(): number | undefined {
-    return this.quantidade ?? this.quantity;
+    return this.quantity ?? this.quantidade;
   }
 }
 
 export class UpdateCartItemDto {
-  @ApiProperty({ description: 'Quantidade', example: 3, minimum: 1 })
+  @ApiPropertyOptional({ description: 'Quantity', example: 3, minimum: 1 })
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: 'quantidade deve ser um número inteiro' })
-  @Min(1, { message: 'quantidade deve ser pelo menos 1' })
-  quantidade?: number;
-
-  @ApiPropertyOptional({ description: 'Alias English - quantity' })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'quantity deve ser um número inteiro' })
-  @Min(1, { message: 'quantity deve ser pelo menos 1' })
+  @IsInt({ message: 'quantity must be an integer' })
+  @Min(1, { message: 'quantity must be at least 1' })
   quantity?: number;
 
+  @ApiHideProperty()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'quantity must be an integer' })
+  @Min(1, { message: 'quantity must be at least 1' })
+  quantidade?: number;
+
   get quantityNormalized(): number | undefined {
-    return this.quantidade ?? this.quantity;
+    return this.quantity ?? this.quantidade;
   }
 }

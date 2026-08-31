@@ -1,125 +1,154 @@
 import { IsDateString, IsIn, IsOptional, IsString, IsUUID, IsNotEmpty } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class CheckoutDto {
   @ApiPropertyOptional({
-    description: 'ID do endereço (para entrega domicílio)',
+    description: 'Address ID (for home delivery)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsOptional()
-  @IsUUID('4', { message: 'endereco_id deve ser um UUID válido' })
-  endereco_id?: string;
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
+  addressId?: string;
 
-  @ApiPropertyOptional({ description: 'Alias address_id' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsUUID('4', { message: 'address_id deve ser um UUID válido' })
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
   address_id?: string;
 
-  @ApiPropertyOptional({ description: 'ID da zona de entrega' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsUUID('4', { message: 'zona_entrega_id deve ser um UUID válido' })
-  zona_entrega_id?: string;
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
+  endereco_id?: string;
 
-  @ApiPropertyOptional({ description: 'Alias delivery_zone_id' })
+  @ApiPropertyOptional({ description: 'Delivery zone ID' })
   @IsOptional()
-  @IsUUID('4', { message: 'delivery_zone_id deve ser um UUID válido' })
+  @IsUUID('4', { message: 'deliveryZoneId must be a valid UUID' })
+  deliveryZoneId?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID('4', { message: 'deliveryZoneId must be a valid UUID' })
   delivery_zone_id?: string;
 
-  @ApiProperty({
-    description: 'Tipo de entrega',
-    example: 'domicilio',
-    enum: ['domicilio', 'levantamento_loja'],
-  })
+  @ApiHideProperty()
   @IsOptional()
-  @Trim()
-  @IsString({ message: 'tipo deve ser texto' })
-  @IsIn(['domicilio', 'levantamento_loja'], {
-    message: 'tipo deve ser domicilio ou levantamento_loja',
-  })
-  tipo?: string;
+  @IsUUID('4', { message: 'deliveryZoneId must be a valid UUID' })
+  zona_entrega_id?: string;
 
-  @ApiPropertyOptional({ description: 'Alias type (HOME_DELIVERY | STORE_PICKUP)' })
+  @ApiPropertyOptional({
+    description: 'Delivery type',
+    example: 'domicilio',
+    enum: ['domicilio', 'levantamento_loja', 'HOME_DELIVERY', 'STORE_PICKUP'],
+  })
   @IsOptional()
   @Trim()
-  @IsString()
+  @IsString({ message: 'type must be a string' })
   @IsIn(['domicilio', 'levantamento_loja', 'HOME_DELIVERY', 'STORE_PICKUP'], {
-    message: 'type deve ser domicilio ou levantamento_loja',
+    message: 'type must be one of: domicilio, levantamento_loja, HOME_DELIVERY, STORE_PICKUP',
   })
   type?: string;
 
-  @ApiProperty({ description: 'Data agendada (ISO date)', example: '2026-09-01' })
-  @IsOptional()
-  @IsDateString({}, { message: 'data_agendada deve ser data ISO válida (YYYY-MM-DD)' })
-  data_agendada?: string;
-
-  @ApiPropertyOptional({ description: 'Alias scheduled_date' })
-  @IsOptional()
-  @IsDateString({}, { message: 'scheduled_date deve ser data ISO válida' })
-  scheduled_date?: string;
-
-  @ApiPropertyOptional({ description: 'Alias scheduledDate camelCase' })
-  @IsOptional()
-  @IsDateString({}, { message: 'scheduledDate deve ser data ISO válida' })
-  scheduledDate?: string;
-
-  @ApiProperty({ description: 'Janela de horário', example: '09:00-12:00' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
-  @IsString({ message: 'janela_horario deve ser texto' })
-  @IsNotEmpty({ message: 'janela_horario não pode ser vazia' })
-  janela_horario?: string;
+  @IsString({ message: 'type must be a string' })
+  @IsIn(['domicilio', 'levantamento_loja', 'HOME_DELIVERY', 'STORE_PICKUP'], {
+    message: 'type must be one of: domicilio, levantamento_loja',
+  })
+  tipo?: string;
 
-  @ApiPropertyOptional({ description: 'Alias time_window' })
+  @ApiPropertyOptional({ description: 'Scheduled date (ISO date)', example: '2026-09-01' })
+  @IsOptional()
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date (YYYY-MM-DD)' })
+  scheduledDate?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date' })
+  scheduled_date?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date' })
+  data_agendada?: string;
+
+  @ApiPropertyOptional({ description: 'Time window', example: '09:00-12:00' })
+  @IsOptional()
+  @Trim()
+  @IsString({ message: 'timeWindow must be a string' })
+  @IsNotEmpty({ message: 'timeWindow must not be empty' })
+  timeWindow?: string;
+
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   time_window?: string;
 
-  @ApiPropertyOptional({ description: 'Alias timeWindow camelCase' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  timeWindow?: string;
+  janela_horario?: string;
 
-  // --- normalizados ---
+  // --- normalized ---
+  get addressIdNormalized(): string | undefined {
+    const v = this.addressId ?? this.address_id ?? this.endereco_id;
+    if (!v) return undefined;
+    const t = v.trim();
+    return t.length ? t : undefined;
+  }
+
   get enderecoIdNormalized(): string | undefined {
-    const v = this.endereco_id ?? this.address_id;
+    return this.addressIdNormalized;
+  }
+
+  get deliveryZoneIdNormalized(): string | undefined {
+    const v = this.deliveryZoneId ?? this.delivery_zone_id ?? this.zona_entrega_id;
     if (!v) return undefined;
     const t = v.trim();
     return t.length ? t : undefined;
   }
 
   get zonaEntregaIdNormalized(): string | undefined {
-    const v = this.zona_entrega_id ?? this.delivery_zone_id;
-    if (!v) return undefined;
-    const t = v.trim();
-    return t.length ? t : undefined;
+    return this.deliveryZoneIdNormalized;
   }
 
-  get tipoNormalized(): string | undefined {
-    const raw = this.tipo ?? this.type;
+  get typeNormalized(): string | undefined {
+    const raw = this.type ?? this.tipo;
     if (!raw) return undefined;
     const t = raw.trim();
     if (!t) return undefined;
-    // normaliza EN aliases para PT
     if (t === 'HOME_DELIVERY') return 'domicilio';
     if (t === 'STORE_PICKUP') return 'levantamento_loja';
     return t;
   }
 
-  get dataAgendadaNormalized(): string | undefined {
-    return this.data_agendada ?? this.scheduled_date ?? this.scheduledDate;
+  get tipoNormalized(): string | undefined {
+    return this.typeNormalized;
   }
 
-  get janelaHorarioNormalized(): string | undefined {
-    const v = this.janela_horario ?? this.time_window ?? this.timeWindow;
+  get scheduledDateNormalized(): string | undefined {
+    return this.scheduledDate ?? this.scheduled_date ?? this.data_agendada;
+  }
+
+  get dataAgendadaNormalized(): string | undefined {
+    return this.scheduledDateNormalized;
+  }
+
+  get timeWindowNormalized(): string | undefined {
+    const v = this.timeWindow ?? this.time_window ?? this.janela_horario;
     if (!v) return undefined;
     const t = v.trim();
     return t.length ? t : undefined;
+  }
+
+  get janelaHorarioNormalized(): string | undefined {
+    return this.timeWindowNormalized;
   }
 }

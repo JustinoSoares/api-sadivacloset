@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -13,7 +13,7 @@ export class UpdateStoreDto {
   @MaxLength(100, { message: 'name must have at most 100 characters' })
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Alias nome' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString({ message: 'name must be a string' })
@@ -27,13 +27,13 @@ export class UpdateStoreDto {
   @IsEmail({}, { message: 'email must be a valid email' })
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Alias contactEmail' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsEmail({}, { message: 'contactEmail must be a valid email' })
   contactEmail?: string;
 
-  @ApiPropertyOptional({ description: 'Alias email_contacto' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsEmail({}, { message: 'email_contacto must be a valid email' })
@@ -47,7 +47,7 @@ export class UpdateStoreDto {
   @MaxLength(20, { message: 'phone must have at most 20 characters' })
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Alias telefone' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString({ message: 'phone must be a string' })
@@ -63,7 +63,7 @@ export class UpdateStoreDto {
   @MaxLength(500, { message: 'address must have at most 500 characters' })
   address?: string;
 
-  @ApiPropertyOptional({ description: 'Alias morada' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString({ message: 'address must be a string' })

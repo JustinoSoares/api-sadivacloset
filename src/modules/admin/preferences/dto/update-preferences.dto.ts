@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { PaymentMethod } from '@prisma/client';
@@ -38,7 +38,7 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   notifyNewOrders?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notificarNovosPedidos' })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -54,7 +54,7 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   notifyLowStock?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notificarStockBaixo' })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -70,7 +70,7 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   notifyNewMessages?: boolean;
 
-  @ApiPropertyOptional({ description: 'Alias notificarNovasMensagens' })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
@@ -85,7 +85,7 @@ export class UpdatePreferencesDto {
   @Min(0)
   defaultDeliveryFee?: number;
 
-  @ApiPropertyOptional({ description: 'Alias taxaEntregaPadrao' })
+  @ApiHideProperty()
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'defaultDeliveryFee must be an integer' })
@@ -104,7 +104,7 @@ export class UpdatePreferencesDto {
   @IsEnum(PaymentMethod, { each: true })
   activePaymentMethods?: PaymentMethod[];
 
-  @ApiPropertyOptional({ description: 'Alias metodosPagamentoAtivos' })
+  @ApiHideProperty()
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
   @IsArray({ message: 'activePaymentMethods must be an array' })

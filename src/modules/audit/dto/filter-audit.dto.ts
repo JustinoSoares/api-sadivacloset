@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsDateString, IsOptional, IsString } from 'class-validator';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
@@ -8,7 +8,7 @@ export class FilterAuditDto extends PaginationDto {
   @IsString()
   entity?: string;
 
-  @ApiPropertyOptional({ description: 'Alias entidade' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   entidade?: string;
@@ -18,12 +18,12 @@ export class FilterAuditDto extends PaginationDto {
   @IsDateString({}, { message: 'from must be valid ISO date' })
   from?: string;
 
-  @ApiPropertyOptional({ description: 'Alias data_inicio' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'data_inicio must be valid ISO date' })
   data_inicio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataInicio' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'dataInicio must be valid ISO date' })
   dataInicio?: string;
@@ -33,12 +33,12 @@ export class FilterAuditDto extends PaginationDto {
   @IsDateString({}, { message: 'to must be valid ISO date' })
   to?: string;
 
-  @ApiPropertyOptional({ description: 'Alias data_fim' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'data_fim must be valid ISO date' })
   data_fim?: string;
 
-  @ApiPropertyOptional({ description: 'Alias dataFim' })
+  @ApiHideProperty()
   @IsOptional()
   @IsDateString({}, { message: 'dataFim must be valid ISO date' })
   dataFim?: string;

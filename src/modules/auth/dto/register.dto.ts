@@ -1,26 +1,25 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
   @ApiProperty({ description: 'User name', example: 'Maria Silva' })
   @Transform(({ obj }) => obj.name ?? obj.nome)
-  @IsString()
-  @IsNotEmpty({ message: 'name é obrigatório' })
+  @IsString({ message: 'name must be a string' })
+  @IsNotEmpty({ message: 'name is required' })
   name!: string;
 
-  // legacy alias, not validated directly
-  @ApiPropertyOptional({ description: 'Legacy alias nome' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   nome?: string;
 
   @ApiProperty({ description: 'User email', example: 'maria@example.com' })
-  @IsEmail({}, { message: 'email deve ser um email válido' })
+  @IsEmail({}, { message: 'email must be a valid email' })
   email!: string;
 
   @ApiProperty({ description: 'User password (min 8 chars)', example: 'StrongPass123' })
   @IsString()
-  @MinLength(8, { message: 'password deve ter no mínimo 8 caracteres' })
+  @MinLength(8, { message: 'password must have at least 8 characters' })
   password!: string;
 }

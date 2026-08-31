@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiProperty, ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { DeliveryStatus } from '@prisma/client';
@@ -23,13 +23,13 @@ const allowed = [
 ];
 
 export class UpdateDeliveryStatusDto {
-  @ApiProperty({ description: 'Novo estado', example: 'a_caminho' })
+  @ApiHideProperty()
   @IsString({ message: 'status must be a string' })
   @IsNotEmpty({ message: 'status cannot be empty' })
   @Transform(({ value }) => normalize(value))
   estado?: string;
 
-  @ApiPropertyOptional({ description: 'Alias status' })
+  @ApiProperty({ description: 'Delivery status', example: 'scheduled', enum: ['scheduled','on_the_way','delivered','failed','cancelled'] })
   @IsOptional()
   @IsString()
   @IsNotEmpty()

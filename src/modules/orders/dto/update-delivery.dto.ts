@@ -1,98 +1,119 @@
 import { IsDateString, IsOptional, IsString, IsUUID, IsNotEmpty } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class UpdateDeliveryDto {
   @ApiPropertyOptional({
-    description: 'ID do endereço da entrega',
+    description: 'Delivery address ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsOptional()
-  @IsUUID('4', { message: 'endereco_id deve ser um UUID válido' })
-  endereco_id?: string;
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
+  addressId?: string;
 
-  @ApiPropertyOptional({ description: 'Alias address_id' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsUUID('4', { message: 'address_id deve ser um UUID válido' })
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
   address_id?: string;
 
-  @ApiPropertyOptional({ description: 'Alias enderecoId camelCase' })
+  @ApiHideProperty()
   @IsOptional()
-  @IsUUID('4', { message: 'enderecoId deve ser um UUID válido' })
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
+  endereco_id?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID('4', { message: 'addressId must be a valid UUID' })
   enderecoId?: string;
 
-  @ApiPropertyOptional({ description: 'Data agendada (ISO)', example: '2026-09-10' })
+  @ApiPropertyOptional({ description: 'Scheduled date (ISO)', example: '2026-09-10' })
   @IsOptional()
-  @IsDateString({}, { message: 'data_agendada deve ser data ISO válida (YYYY-MM-DD)' })
-  data_agendada?: string;
-
-  @ApiPropertyOptional({ description: 'Alias scheduled_date' })
-  @IsOptional()
-  @IsDateString({}, { message: 'scheduled_date deve ser data ISO válida' })
-  scheduled_date?: string;
-
-  @ApiPropertyOptional({ description: 'Alias scheduledDate' })
-  @IsOptional()
-  @IsDateString({}, { message: 'scheduledDate deve ser data ISO válida' })
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date (YYYY-MM-DD)' })
   scheduledDate?: string;
 
-  @ApiPropertyOptional({ description: 'Janela de horário', example: '09:00-12:00' })
+  @ApiHideProperty()
+  @IsOptional()
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date' })
+  scheduled_date?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsDateString({}, { message: 'scheduledDate must be a valid ISO date' })
+  data_agendada?: string;
+
+  @ApiPropertyOptional({ description: 'Time window', example: '09:00-12:00' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'janela_horario deve ser texto' })
-  @IsNotEmpty({ message: 'janela_horario não pode ser vazia' })
-  janela_horario?: string;
+  @IsString({ message: 'timeWindow must be a string' })
+  @IsNotEmpty({ message: 'timeWindow must not be empty' })
+  timeWindow?: string;
 
-  @ApiPropertyOptional({ description: 'Alias time_window' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   time_window?: string;
 
-  @ApiPropertyOptional({ description: 'Alias timeWindow' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  timeWindow?: string;
+  janela_horario?: string;
 
-  @ApiPropertyOptional({ description: 'Instruções adicionais' })
+  @ApiPropertyOptional({ description: 'Additional instructions' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'instrucoes deve ser texto' })
-  instrucoes?: string;
+  @IsString({ message: 'instructions must be a string' })
+  instructions?: string;
 
-  @ApiPropertyOptional({ description: 'Alias instructions' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
-  instructions?: string;
+  instrucoes?: string;
 
-  get enderecoIdNormalized(): string | undefined {
-    const v = this.endereco_id ?? this.address_id ?? this.enderecoId;
+  get addressIdNormalized(): string | undefined {
+    const v = this.addressId ?? this.address_id ?? this.endereco_id ?? this.enderecoId;
     if (!v) return undefined;
     const t = v.trim();
     return t.length ? t : undefined;
   }
 
+  get enderecoIdNormalized(): string | undefined {
+    return this.addressIdNormalized;
+  }
+
+  get scheduledDateNormalized(): string | undefined {
+    return this.scheduledDate ?? this.scheduled_date ?? this.data_agendada;
+  }
+
   get dataAgendadaNormalized(): string | undefined {
-    return this.data_agendada ?? this.scheduled_date ?? this.scheduledDate;
+    return this.scheduledDateNormalized;
+  }
+
+  get timeWindowNormalized(): string | undefined {
+    const v = this.timeWindow ?? this.time_window ?? this.janela_horario;
+    if (!v) return undefined;
+    const t = v.trim();
+    return t.length ? t : undefined;
   }
 
   get janelaHorarioNormalized(): string | undefined {
-    const v = this.janela_horario ?? this.time_window ?? this.timeWindow;
-    if (!v) return undefined;
+    return this.timeWindowNormalized;
+  }
+
+  get instructionsNormalized(): string | undefined {
+    const v = this.instructions ?? this.instrucoes;
+    if (v === undefined) return undefined;
     const t = v.trim();
     return t.length ? t : undefined;
   }
 
   get instrucoesNormalized(): string | undefined {
-    const v = this.instrucoes ?? this.instructions;
-    if (v === undefined) return undefined;
-    const t = v.trim();
-    return t.length ? t : undefined;
+    return this.instructionsNormalized;
   }
 }

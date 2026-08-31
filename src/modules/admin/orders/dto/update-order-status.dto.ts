@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiProperty, ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
@@ -25,13 +25,13 @@ const allowedValues = [
 ];
 
 export class UpdateOrderStatusDto {
-  @ApiProperty({ description: 'Novo estado', example: 'pago' })
+  @ApiHideProperty()
   @IsString({ message: 'status must be a string' })
   @IsNotEmpty({ message: 'status cannot be empty' })
   @Transform(({ value }) => mapOrderStatus(value))
   estado?: string;
 
-  @ApiPropertyOptional({ description: 'Alias status' })
+  @ApiProperty({ description: 'Order status', example: 'paid', enum: ['awaiting_payment','paid','preparing','shipping','completed','cancelled'] })
   @IsOptional()
   @IsString()
   @IsNotEmpty()

@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../../common/dto/pagination.dto';
@@ -12,13 +12,13 @@ export class FilterMembersDto extends PaginationDto {
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ description: 'Alias search' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Alias pesquisa' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
@@ -30,7 +30,7 @@ export class FilterMembersDto extends PaginationDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Alias nome' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()

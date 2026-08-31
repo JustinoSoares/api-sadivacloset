@@ -1,6 +1,6 @@
 import { IsNumber, IsOptional, IsString, Max, Min, IsNotEmpty } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
@@ -17,87 +17,87 @@ function normalizeRef(v?: string): string | undefined {
 }
 
 export class CreateAddressDto {
-  @ApiProperty({ description: 'Label', example: 'Home' })
+  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'label must be a string' })
   @IsNotEmpty({ message: 'label must not be empty' })
-  etiqueta?: string;
+  label?: string;
 
-  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  label?: string;
-
-  @ApiProperty({ description: 'Province', example: 'Luanda' })
-  @IsOptional()
-  @Trim()
-  @IsString({ message: 'province must be a string' })
-  @IsNotEmpty({ message: 'province must not be empty' })
-  provincia?: string;
+  etiqueta?: string;
 
   @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'province must be a string' })
+  @IsNotEmpty({ message: 'province must not be empty' })
   province?: string;
 
-  @ApiProperty({ description: 'Municipality', example: 'Talatona' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
-  @IsString({ message: 'municipality must be a string' })
-  @IsNotEmpty({ message: 'municipality must not be empty' })
-  municipio?: string;
+  @IsString()
+  @IsNotEmpty()
+  provincia?: string;
 
   @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'municipality must be a string' })
+  @IsNotEmpty({ message: 'municipality must not be empty' })
   municipality?: string;
 
-  @ApiProperty({ description: 'Neighborhood', example: 'Benfica' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
-  @IsString({ message: 'neighborhood must be a string' })
-  @IsNotEmpty({ message: 'neighborhood must not be empty' })
-  bairro?: string;
+  @IsString()
+  @IsNotEmpty()
+  municipio?: string;
 
   @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'neighborhood must be a string' })
+  @IsNotEmpty({ message: 'neighborhood must not be empty' })
   neighborhood?: string;
 
-  @ApiProperty({ description: 'Street', example: '123 Main St' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
-  @IsString({ message: 'street must be a string' })
-  @IsNotEmpty({ message: 'street must not be empty' })
-  rua?: string;
+  @IsString()
+  @IsNotEmpty()
+  bairro?: string;
 
   @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
+  @IsString({ message: 'street must be a string' })
+  @IsNotEmpty({ message: 'street must not be empty' })
+  street?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @Trim()
   @IsString()
   @IsNotEmpty()
-  street?: string;
+  rua?: string;
 
   @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'reference must be a string' })
-  referencia?: string;
+  reference?: string;
 
-  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
-  reference?: string;
+  referencia?: string;
 
   @ApiPropertyOptional({ description: 'Latitude', example: -8.8368 })
   @IsOptional()
@@ -116,22 +116,22 @@ export class CreateAddressDto {
   longitude?: number;
 
   get labelNormalized(): string | undefined {
-    return normalizeStr(this.etiqueta ?? this.label);
+    return normalizeStr(this.label ?? this.etiqueta);
   }
   get provinceNormalized(): string | undefined {
-    return normalizeStr(this.provincia ?? this.province);
+    return normalizeStr(this.province ?? this.provincia);
   }
   get municipalityNormalized(): string | undefined {
-    return normalizeStr(this.municipio ?? this.municipality);
+    return normalizeStr(this.municipality ?? this.municipio);
   }
   get neighborhoodNormalized(): string | undefined {
-    return normalizeStr(this.bairro ?? this.neighborhood);
+    return normalizeStr(this.neighborhood ?? this.bairro);
   }
   get streetNormalized(): string | undefined {
-    return normalizeStr(this.rua ?? this.street);
+    return normalizeStr(this.street ?? this.rua);
   }
   get referenceNormalized(): string | undefined {
-    return normalizeRef(this.referencia ?? this.reference);
+    return normalizeRef(this.reference ?? this.referencia);
   }
 }
 
@@ -141,82 +141,82 @@ export class UpdateAddressDto {
   @Trim()
   @IsString({ message: 'label must be a string' })
   @IsNotEmpty({ message: 'label must not be empty' })
-  etiqueta?: string;
+  label?: string;
 
-  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  label?: string;
+  etiqueta?: string;
 
   @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'province must be a string' })
   @IsNotEmpty()
-  provincia?: string;
+  province?: string;
 
-  @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  province?: string;
+  provincia?: string;
 
   @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'municipality must be a string' })
   @IsNotEmpty()
-  municipio?: string;
+  municipality?: string;
 
-  @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  municipality?: string;
+  municipio?: string;
 
   @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'neighborhood must be a string' })
   @IsNotEmpty()
-  bairro?: string;
+  neighborhood?: string;
 
-  @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  neighborhood?: string;
+  bairro?: string;
 
   @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'street must be a string' })
   @IsNotEmpty()
-  rua?: string;
+  street?: string;
 
-  @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
-  street?: string;
+  rua?: string;
 
   @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
   @IsString({ message: 'reference must be a string' })
-  referencia?: string;
+  reference?: string;
 
-  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString()
-  reference?: string;
+  referencia?: string;
 
   @ApiPropertyOptional({ description: 'Latitude' })
   @IsOptional()
@@ -235,21 +235,21 @@ export class UpdateAddressDto {
   longitude?: number;
 
   get labelNormalized(): string | undefined {
-    return normalizeStr(this.etiqueta ?? this.label);
+    return normalizeStr(this.label ?? this.etiqueta);
   }
   get provinceNormalized(): string | undefined {
-    return normalizeStr(this.provincia ?? this.province);
+    return normalizeStr(this.province ?? this.provincia);
   }
   get municipalityNormalized(): string | undefined {
-    return normalizeStr(this.municipio ?? this.municipality);
+    return normalizeStr(this.municipality ?? this.municipio);
   }
   get neighborhoodNormalized(): string | undefined {
-    return normalizeStr(this.bairro ?? this.neighborhood);
+    return normalizeStr(this.neighborhood ?? this.bairro);
   }
   get streetNormalized(): string | undefined {
-    return normalizeStr(this.rua ?? this.street);
+    return normalizeStr(this.street ?? this.rua);
   }
   get referenceNormalized(): string | undefined {
-    return normalizeRef(this.referencia ?? this.reference);
+    return normalizeRef(this.reference ?? this.referencia);
   }
 }

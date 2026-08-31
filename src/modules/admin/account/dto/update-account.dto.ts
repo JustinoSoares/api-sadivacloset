@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {ApiPropertyOptional, ApiHideProperty} from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -13,7 +13,7 @@ export class UpdateAccountDto {
   @MaxLength(100, { message: 'name must have at most 100 characters' })
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Alias nome' })
+  @ApiHideProperty()
   @IsOptional()
   @Trim()
   @IsString({ message: 'name must be a string' })
@@ -36,19 +36,19 @@ export class UpdateAccountDto {
   @MinLength(6, { message: 'currentPassword must have at least 6 characters' })
   currentPassword?: string;
 
-  @ApiPropertyOptional({ description: 'Alias passwordActual' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString({ message: 'passwordActual must be a string' })
   @MinLength(6)
   passwordActual?: string;
 
-  @ApiPropertyOptional({ description: 'Alias senhaAtual' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @MinLength(6)
   senhaAtual?: string;
 
-  @ApiPropertyOptional({ description: 'Alias password_actual' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @MinLength(6)
@@ -61,21 +61,21 @@ export class UpdateAccountDto {
   @MaxLength(100, { message: 'newPassword too long' })
   newPassword?: string;
 
-  @ApiPropertyOptional({ description: 'Alias novaPassword' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString({ message: 'novaPassword must be a string' })
   @MinLength(8)
   @MaxLength(100)
   novaPassword?: string;
 
-  @ApiPropertyOptional({ description: 'Alias senhaNova' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @MinLength(8)
   @MaxLength(100)
   senhaNova?: string;
 
-  @ApiPropertyOptional({ description: 'Alias password' })
+  @ApiHideProperty()
   @IsOptional()
   @IsString()
   @MinLength(8)
