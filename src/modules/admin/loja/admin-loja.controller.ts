@@ -31,7 +31,7 @@ export class AdminLojaController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getLoja() {
     const loja = await this.lojaService.getLoja();
-    return { data: loja, dados: loja };
+    return { data: loja };
   }
 
   @Patch()
@@ -54,7 +54,7 @@ export class AdminLojaController {
       },
       user.sub,
     );
-    return { data: loja, dados: loja };
+    return { data: loja };
   }
 }
 

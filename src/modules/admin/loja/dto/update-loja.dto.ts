@@ -8,7 +8,7 @@ export class UpdateLojaDto {
   @ApiPropertyOptional({ description: 'Nome da loja', example: 'SadivaCloset' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'nome deve ser texto' })
+  @IsString({ message: 'name must be a string' })
   @MinLength(2, { message: 'nome deve ter pelo menos 2 caracteres' })
   @MaxLength(100, { message: 'nome deve ter no máximo 100 caracteres' })
   nome?: string;
@@ -42,7 +42,7 @@ export class UpdateLojaDto {
   @ApiPropertyOptional({ description: 'Telefone', example: '+244 900 000 000' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'telefone deve ser texto' })
+  @IsString({ message: 'phone must be a string' })
   @MinLength(8, { message: 'telefone deve ter pelo menos 8 caracteres' })
   @MaxLength(20, { message: 'telefone deve ter no máximo 20 caracteres' })
   telefone?: string;
@@ -58,7 +58,7 @@ export class UpdateLojaDto {
   @ApiPropertyOptional({ description: 'Morada', example: 'Luanda, Talatona' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'morada deve ser texto' })
+  @IsString({ message: 'address must be a string' })
   @MinLength(5, { message: 'morada deve ter pelo menos 5 caracteres' })
   @MaxLength(500, { message: 'morada deve ter no máximo 500 caracteres' })
   morada?: string;

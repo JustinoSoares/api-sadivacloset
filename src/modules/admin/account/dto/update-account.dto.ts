@@ -16,7 +16,7 @@ export class UpdateAccountDto {
   @ApiPropertyOptional({ description: 'Alias nome' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'nome deve ser texto' })
+  @IsString({ message: 'name must be a string' })
   @MinLength(2)
   @MaxLength(100)
   nome?: string;

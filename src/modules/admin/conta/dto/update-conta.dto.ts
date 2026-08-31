@@ -8,7 +8,7 @@ export class UpdateContaDto {
   @ApiPropertyOptional({ description: 'Nome do admin', example: 'Admin Sadiva' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'nome deve ser texto' })
+  @IsString({ message: 'name must be a string' })
   @MinLength(2, { message: 'nome deve ter pelo menos 2 caracteres' })
   @MaxLength(100, { message: 'nome deve ter no máximo 100 caracteres' })
   nome?: string;

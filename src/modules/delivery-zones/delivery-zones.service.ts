@@ -6,34 +6,26 @@ import { RedisService } from '../redis/redis.service';
 export interface DeliveryZoneResponse {
   id: string;
   neighborhood: string;
-  bairro: string;
   price: number;
-  preco: number;
 }
 
 export interface ZonaEntregaResponse {
   id: string;
-  bairro: string;
-  preco: number;
   neighborhood: string;
   price: number;
 }
 
 export interface DeliveryZonesListResponse {
   data: DeliveryZoneResponse[];
-  dados: ZonaEntregaResponse[];
 }
 
-const CACHE_KEY_EN = 'cache:delivery-zones';
-const CACHE_KEY_PT = 'cache:zonas-entrega';
+const CACHE_KEY = 'cache:delivery-zones';
 
-function toBilingual(zone: DeliveryZone): DeliveryZoneResponse & ZonaEntregaResponse {
+function toResponse(zone: DeliveryZone): DeliveryZoneResponse {
   return {
     id: zone.id,
     neighborhood: zone.neighborhood,
-    bairro: zone.neighborhood,
     price: zone.price,
-    preco: zone.price,
   };
 }
 
@@ -47,26 +39,15 @@ export class DeliveryZonesService {
   ) {}
 
   async findAll(): Promise<DeliveryZonesListResponse> {
-    const cachedEn = await this.redis.get(CACHE_KEY_EN);
-    const cachedPt = await this.redis.get(CACHE_KEY_PT);
-    const cached = cachedEn ?? cachedPt;
+    const cached = await this.redis.get(CACHE_KEY);
     if (cached) {
       try {
-        const parsed = JSON.parse(cached) as DeliveryZonesListResponse;
-        // normalize legacy shapes — ensure both data/dados exist
-        if (parsed.data && !parsed.dados) {
-          return { data: parsed.data as any, dados: parsed.data as any };
+        const parsed = JSON.parse(cached) as any;
+        if (parsed.data && Array.isArray(parsed.data)) {
+          return { data: parsed.data };
         }
-        if (parsed.dados && !parsed.data) {
-          return { data: parsed.dados as any, dados: parsed.dados as any };
-        }
-        if (parsed.data && parsed.dados) {
-          return parsed;
-        }
-        // if cached is plain array (older shape), wrap it
-        if (Array.isArray(parsed as any)) {
-          const arr = parsed as unknown as DeliveryZoneResponse[];
-          return { data: arr, dados: arr as unknown as ZonaEntregaResponse[] };
+        if (Array.isArray(parsed)) {
+          return { data: parsed as DeliveryZoneResponse[] };
         }
       } catch {
         // ignore parse error
@@ -77,23 +58,21 @@ export class DeliveryZonesService {
       orderBy: { neighborhood: 'asc' },
     });
 
-    const bilingual = zones.map(toBilingual);
+    const data = zones.map(toResponse);
     const result: DeliveryZonesListResponse = {
-      data: bilingual,
-      dados: bilingual,
+      data,
     };
 
     const serialized = JSON.stringify(result);
-    await this.redis.set(CACHE_KEY_EN, serialized, 60);
-    await this.redis.set(CACHE_KEY_PT, serialized, 60);
-    this.logger.debug(`Cache SET ${CACHE_KEY_EN} ttl 60s (${bilingual.length} zones)`);
+    await this.redis.set(CACHE_KEY, serialized, 60);
+    this.logger.debug(`Cache SET ${CACHE_KEY} ttl 60s (${data.length} zones)`);
 
     return result;
   }
 
   async clearCache(): Promise<void> {
-    await this.redis.del(CACHE_KEY_EN);
-    await this.redis.del(CACHE_KEY_PT);
+    await this.redis.del(CACHE_KEY);
+    await this.redis.del('cache:zonas-entrega');
   }
 }
 

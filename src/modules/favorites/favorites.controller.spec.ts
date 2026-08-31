@@ -28,37 +28,37 @@ describe('PerfilFavoritosController', () => {
     profileController = mod.get(ProfileFavoritesController);
   });
 
-  it('GET /perfil/favoritos should return {data,dados}', async () => {
+  it('GET /perfil/favoritos should return {data} English-only', async () => {
     const result = await perfilController.findAll(user);
     expect(service.findAll).toHaveBeenCalledWith(buyerId);
-    expect(result).toEqual({ data: [productMock], dados: [productMock] });
+    expect(result).toEqual({ data: [productMock] });
   });
 
   it('POST /perfil/favoritos/:produto_id should add idempotently', async () => {
     const result = await perfilController.add(user, productId);
     expect(service.add).toHaveBeenCalledWith(buyerId, productId);
-    expect(result).toEqual({ data: productMock, dados: productMock });
+    expect(result).toEqual({ data: productMock });
   });
 
   it('DELETE /perfil/favoritos/:produto_id should remove idempotently', async () => {
     const result = await perfilController.remove(user, productId);
     expect(service.remove).toHaveBeenCalledWith(buyerId, productId);
-    expect(result).toEqual({ mensagem: 'Removido dos favoritos', data: null, dados: null });
+    expect(result).toEqual({ message: 'Removed from favorites', data: null });
   });
 
   it('GET /profile/favorites alias should work', async () => {
     const result = await profileController.findAll(user);
-    expect(result).toEqual({ data: [productMock], dados: [productMock] });
+    expect(result).toEqual({ data: [productMock] });
   });
 
   it('POST /profile/favorites/:productId alias should work', async () => {
     const result = await profileController.add(user, productId);
-    expect(result).toEqual({ data: productMock, dados: productMock });
+    expect(result).toEqual({ data: productMock });
   });
 
   it('DELETE /profile/favorites/:productId alias should work', async () => {
     const result = await profileController.remove(user, productId);
-    expect(result.mensagem).toBeDefined();
+    expect(result.message).toBeDefined();
   });
 
   it('should have Roles buyer metadata', () => {

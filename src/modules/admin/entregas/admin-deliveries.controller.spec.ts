@@ -14,8 +14,8 @@ describe('AdminEntregasController', () => {
 
   beforeEach(async () => {
     service = {
-      findAll: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
-      updateStatus: jest.fn().mockResolvedValue({ id: deliveryId, estado: 'a_caminho' }),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 }),
+      updateStatus: jest.fn().mockResolvedValue({ id: deliveryId, status: 'ON_THE_WAY' }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminEntregasController],
@@ -38,7 +38,7 @@ describe('AdminEntregasController', () => {
     dto.estado = 'a_caminho';
     const result = await controller.updateStatus(user, deliveryId, dto);
     expect(service.updateStatus).toHaveBeenCalledWith(adminId, deliveryId, dto);
-    expect(result.data.estado).toBe('a_caminho');
+    expect(result.data.status).toBe('ON_THE_WAY');
   });
 
   it('should have correct path and roles', () => {

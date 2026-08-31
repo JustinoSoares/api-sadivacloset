@@ -128,7 +128,7 @@ describe('PaymentsService', () => {
       expect(prisma.payment.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ method: 'BANK_TRANSFER' }) }),
       );
-      expect(result.metodo).toBe('BANK_TRANSFER');
+      expect(result.method).toBe('BANK_TRANSFER');
     });
 
     it('should create PROCESSING for gpo local', async () => {
@@ -146,7 +146,7 @@ describe('PaymentsService', () => {
       // sem AppPay, cria pagamento PROCESSING local
       expect(prisma.payment.create).toHaveBeenCalled();
       expect(result).toBeDefined();
-      expect(result.estado).toBe(PaymentStatus.PROCESSING);
+      expect(result.status).toBe(PaymentStatus.PROCESSING);
     });
 
     it('should create PROCESSING for gpr local', async () => {
@@ -214,8 +214,8 @@ describe('PaymentsService', () => {
       } as any;
       const result = await service.comprovativo(buyerId, orderId, file);
       expect(storage.saveComprovativo).toHaveBeenCalled();
-      expect(result.comprovativo_url).toBe('/uploads/test.jpg');
-      expect(result.estado).toBe(PaymentStatus.PROCESSING);
+      expect(result.receiptUrl).toBe('/uploads/test.jpg');
+      expect(result.status).toBe(PaymentStatus.PROCESSING);
     });
   });
 
@@ -237,8 +237,8 @@ describe('PaymentsService', () => {
       );
       // audit now via AuditoriaService
       expect(true).toBe(true); // auditoria mocked
-      expect(result.pagamento.estado).toBe(PaymentStatus.PAID);
-      expect(result.pedido.estado).toBe(OrderStatus.PAID);
+      expect(result.payment.status).toBe(PaymentStatus.PAID);
+      expect(result.order.status).toBe(OrderStatus.PAID);
     });
   });
 
@@ -265,13 +265,13 @@ describe('PaymentsService', () => {
       const dto: any = { page: 1, limit: 20, skip: 0, take: 20 };
       const result = await service.walletHistorico(buyerId, dto);
       expect(result.total).toBe(1);
-      expect(result.data[0].tipo).toBe('entrada');
+      expect(result.data[0].type).toBe('credit');
     });
   });
 
   describe('webhook pagamento/:gateway idempotente', () => {
     it('should validate HMAC, usar referencia_externa como chave, confirmar pagamento e enfileirar BullMQ', async () => {
-      const rawBody = JSON.stringify({ referencia_externa: 'ref123', status: 'paid' });
+      const rawBody = JSON.stringify({ externalReference: 'ref123', status: 'paid' });
       // mock referencia lookup
       prisma.payment.findFirst.mockResolvedValue({
         ...paymentMock,
@@ -293,7 +293,7 @@ describe('PaymentsService', () => {
         'generic',
         rawBody,
         {},
-        { referencia_externa: 'ref123', status: 'paid' },
+        { externalReference: 'ref123', status: 'paid' },
       );
       expect(result.ok).toBe(true);
       expect(prisma.payment.update).toHaveBeenCalledWith(
@@ -305,14 +305,14 @@ describe('PaymentsService', () => {
       // simula Redis com exists true
       const redisMock = (service as any).redis;
       redisMock.exists.mockResolvedValueOnce(true);
-      const rawBody = JSON.stringify({ referencia_externa: 'ref123', status: 'paid' });
+      const rawBody = JSON.stringify({ externalReference: 'ref123', status: 'paid' });
       const result = await service.handlePagamentoWebhook(
         'generic',
         rawBody,
         {},
-        { referencia_externa: 'ref123' },
+        { externalReference: 'ref123' },
       );
-      expect(result.idempotente).toBe(true);
+      expect(result.idempotent).toBe(true);
       expect(result.ok).toBe(true);
     });
 
@@ -323,7 +323,7 @@ describe('PaymentsService', () => {
         if (key === 'PAYMENT_WEBHOOK_SECRET' || key === 'webhook.paymentSecret') return secret;
         return '';
       });
-      const rawBody = JSON.stringify({ referencia_externa: 'refHmac', status: 'paid' });
+      const rawBody = JSON.stringify({ externalReference: 'refHmac', status: 'paid' });
       const { createHmac } = require('crypto');
       const signature = createHmac('sha256', secret).update(rawBody).digest('hex');
       prisma.payment.findFirst.mockResolvedValue({
@@ -338,7 +338,7 @@ describe('PaymentsService', () => {
         'generic',
         rawBody,
         { 'x-signature': signature },
-        { referencia_externa: 'refHmac', status: 'paid' },
+        { externalReference: 'refHmac', status: 'paid' },
       );
       expect(result.ok).toBe(true);
     });

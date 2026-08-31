@@ -17,83 +17,83 @@ function normalizeRef(v?: string): string | undefined {
 }
 
 export class CreateAddressDto {
-  @ApiProperty({ description: 'Etiqueta', example: 'Casa' })
+  @ApiProperty({ description: 'Label', example: 'Home' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'etiqueta deve ser texto' })
-  @IsNotEmpty({ message: 'etiqueta não pode ser vazia' })
+  @IsString({ message: 'label must be a string' })
+  @IsNotEmpty({ message: 'label must not be empty' })
   etiqueta?: string;
 
-  @ApiPropertyOptional({ description: 'Alias label' })
+  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   label?: string;
 
-  @ApiProperty({ description: 'Província', example: 'Luanda' })
+  @ApiProperty({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'provincia deve ser texto' })
-  @IsNotEmpty({ message: 'provincia não pode ser vazia' })
+  @IsString({ message: 'province must be a string' })
+  @IsNotEmpty({ message: 'province must not be empty' })
   provincia?: string;
 
-  @ApiPropertyOptional({ description: 'Alias province' })
+  @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   province?: string;
 
-  @ApiProperty({ description: 'Município', example: 'Talatona' })
+  @ApiProperty({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'municipio deve ser texto' })
-  @IsNotEmpty({ message: 'municipio não pode ser vazio' })
+  @IsString({ message: 'municipality must be a string' })
+  @IsNotEmpty({ message: 'municipality must not be empty' })
   municipio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias municipality' })
+  @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   municipality?: string;
 
-  @ApiProperty({ description: 'Bairro', example: 'Benfica' })
+  @ApiProperty({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'bairro deve ser texto' })
-  @IsNotEmpty({ message: 'bairro não pode ser vazio' })
+  @IsString({ message: 'neighborhood must be a string' })
+  @IsNotEmpty({ message: 'neighborhood must not be empty' })
   bairro?: string;
 
-  @ApiPropertyOptional({ description: 'Alias neighborhood' })
+  @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   neighborhood?: string;
 
-  @ApiProperty({ description: 'Rua', example: 'Rua 1, nº 123' })
+  @ApiProperty({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'rua deve ser texto' })
-  @IsNotEmpty({ message: 'rua não pode ser vazia' })
+  @IsString({ message: 'street must be a string' })
+  @IsNotEmpty({ message: 'street must not be empty' })
   rua?: string;
 
-  @ApiPropertyOptional({ description: 'Alias street' })
+  @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   street?: string;
 
-  @ApiPropertyOptional({ description: 'Referência', example: 'Próximo ao mercado' })
+  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'referencia deve ser texto' })
+  @IsString({ message: 'reference must be a string' })
   referencia?: string;
 
-  @ApiPropertyOptional({ description: 'Alias reference' })
+  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
   @IsString()
@@ -102,17 +102,17 @@ export class CreateAddressDto {
   @ApiPropertyOptional({ description: 'Latitude', example: -8.8368 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'latitude deve ser número' })
-  @Min(-90, { message: 'latitude deve ser >= -90' })
-  @Max(90, { message: 'latitude deve ser <= 90' })
+  @IsNumber({}, { message: 'latitude must be a number' })
+  @Min(-90, { message: 'latitude must be >= -90' })
+  @Max(90, { message: 'latitude must be <= 90' })
   latitude?: number;
 
   @ApiPropertyOptional({ description: 'Longitude', example: 13.2344 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'longitude deve ser número' })
-  @Min(-180, { message: 'longitude deve ser >= -180' })
-  @Max(180, { message: 'longitude deve ser <= 180' })
+  @IsNumber({}, { message: 'longitude must be a number' })
+  @Min(-180, { message: 'longitude must be >= -180' })
+  @Max(180, { message: 'longitude must be <= 180' })
   longitude?: number;
 
   get labelNormalized(): string | undefined {
@@ -136,83 +136,83 @@ export class CreateAddressDto {
 }
 
 export class UpdateAddressDto {
-  @ApiPropertyOptional({ description: 'Etiqueta' })
+  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'etiqueta deve ser texto' })
-  @IsNotEmpty({ message: 'etiqueta não pode ser vazia' })
+  @IsString({ message: 'label must be a string' })
+  @IsNotEmpty({ message: 'label must not be empty' })
   etiqueta?: string;
 
-  @ApiPropertyOptional({ description: 'Alias label' })
+  @ApiPropertyOptional({ description: 'Label', example: 'Home' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   label?: string;
 
-  @ApiPropertyOptional({ description: 'Província' })
+  @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'provincia deve ser texto' })
+  @IsString({ message: 'province must be a string' })
   @IsNotEmpty()
   provincia?: string;
 
-  @ApiPropertyOptional({ description: 'Alias province' })
+  @ApiPropertyOptional({ description: 'Province', example: 'Luanda' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   province?: string;
 
-  @ApiPropertyOptional({ description: 'Município' })
+  @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'municipio deve ser texto' })
+  @IsString({ message: 'municipality must be a string' })
   @IsNotEmpty()
   municipio?: string;
 
-  @ApiPropertyOptional({ description: 'Alias municipality' })
+  @ApiPropertyOptional({ description: 'Municipality', example: 'Talatona' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   municipality?: string;
 
-  @ApiPropertyOptional({ description: 'Bairro' })
+  @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'bairro deve ser texto' })
+  @IsString({ message: 'neighborhood must be a string' })
   @IsNotEmpty()
   bairro?: string;
 
-  @ApiPropertyOptional({ description: 'Alias neighborhood' })
+  @ApiPropertyOptional({ description: 'Neighborhood', example: 'Benfica' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   neighborhood?: string;
 
-  @ApiPropertyOptional({ description: 'Rua' })
+  @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'rua deve ser texto' })
+  @IsString({ message: 'street must be a string' })
   @IsNotEmpty()
   rua?: string;
 
-  @ApiPropertyOptional({ description: 'Alias street' })
+  @ApiPropertyOptional({ description: 'Street', example: '123 Main St' })
   @IsOptional()
   @Trim()
   @IsString()
   @IsNotEmpty()
   street?: string;
 
-  @ApiPropertyOptional({ description: 'Referência' })
+  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'referencia deve ser texto' })
+  @IsString({ message: 'reference must be a string' })
   referencia?: string;
 
-  @ApiPropertyOptional({ description: 'Alias reference' })
+  @ApiPropertyOptional({ description: 'Reference', example: 'Near the market' })
   @IsOptional()
   @Trim()
   @IsString()
@@ -221,7 +221,7 @@ export class UpdateAddressDto {
   @ApiPropertyOptional({ description: 'Latitude' })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'latitude deve ser número' })
+  @IsNumber({}, { message: 'latitude must be a number' })
   @Min(-90)
   @Max(90)
   latitude?: number;
@@ -229,7 +229,7 @@ export class UpdateAddressDto {
   @ApiPropertyOptional({ description: 'Longitude' })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'longitude deve ser número' })
+  @IsNumber({}, { message: 'longitude must be a number' })
   @Min(-180)
   @Max(180)
   longitude?: number;

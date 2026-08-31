@@ -27,15 +27,15 @@ async function bootstrap() {
       transform: true,
       transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
-        const detalhes = errors.map((e) => ({
-          campo: e.property,
-          erros: Object.values(e.constraints ?? {}),
+        const details = errors.map((e) => ({
+          field: e.property,
+          errors: Object.values(e.constraints ?? {}),
         }));
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'Erro de validação',
-            detalhes,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            details,
           },
         });
       },
@@ -87,38 +87,38 @@ async function bootstrap() {
     .setTitle('SadivaCloset API')
     .setDescription(
       `
-# SadivaCloset API – Contrato Frontend
+# SadivaCloset API – Frontend Contract
 
-**Base URL:** http://localhost:3001/api/v1 (prefixo global) | Docs: /api/docs | OpenAPI JSON: /api/docs-json
+**Base URL:** https://api-sadivacloset.himersus.com/api/v1 (staging) | Local: http://localhost:3001/api/v1 | Docs: /api/docs | OpenAPI JSON: /api/docs-json
 
-**Idioma:** Codigo, tabelas e endpoints em Ingles; mensagens de erro/validacao para o utilizador em Portugues ({ erro: { codigo, mensagem, detalhes } }).
+**Language:** All code, tables, endpoints and responses are in English. Error format is { error: { code, message, details } }.
 
-## Autenticacao
+## Authentication
 - JWT Bearer (Authorization: Bearer <access_token>).
-- POST /auth/register -> cria BUYER, POST /auth/login -> { access_token, refresh_token }, POST /auth/refresh, POST /auth/logout.
-- Rotas publicas marcadas com @Public(): auth/*, products, categories, delivery-zones, health, webhooks/*.
-- Todas as outras exigem JWT; /admin/* exige role=admin (guard global + @Roles('admin')).
+- POST /auth/register -> creates BUYER, POST /auth/login -> { access_token, refresh_token }, POST /auth/refresh, POST /auth/logout.
+- Public routes marked with @Public(): auth/*, products, categories, delivery-zones, health, webhooks/*.
+- All other routes require JWT; /admin/* requires role=admin (global guard + @Roles('admin')).
 
-## Paginacao bilingue
+## Pagination
 - Query: ?page=1&limit=20 (PaginationDto).
-- Resposta: { data, dados, page, pagina, total, totalPages, total_paginas } – use data/page/totalPages (EN) ou dados/pagina/total_paginas (PT).
+- Response: { data, page, total, totalPages }.
 
-## Erros
+## Errors
 \`\`\`json
-{ "erro": { "codigo": "ERRO_VALIDACAO|NAO_AUTENTICADO|ACESSO_NEGADO|NAO_ENCONTRADO|STOCK_INSUFICIENTE|LIMITE_EXCEDIDO|ERRO_INTERNO", "mensagem": "...", "detalhes": [...] } }
+{ "error": { "code": "VALIDATION_ERROR|UNAUTHENTICATED|FORBIDDEN|NOT_FOUND|INSUFFICIENT_STOCK|RATE_LIMIT_EXCEEDED|INTERNAL_ERROR", "message": "...", "details": [...] } }
 \`\`\`
-- 400 PEDIDO_INVALIDO/ERRO_VALIDACAO, 401 NAO_AUTENTICADO, 403 ACESSO_NEGADO, 404 NAO_ENCONTRADO, 409 CONFLITO/EMAIL_JA_EXISTE, 429 LIMITE_EXCEDIDO, 500 ERRO_INTERNO.
+- 400 VALIDATION_ERROR, 401 UNAUTHENTICATED, 403 FORBIDDEN, 404 NOT_FOUND, 409 CONFLICT/EMAIL_ALREADY_EXISTS, 429 RATE_LIMIT_EXCEEDED, 500 INTERNAL_ERROR.
 
 ## Rate Limiting (Redis)
-- auth 20/min, esqueci 5/15min (POST /auth/forgot-password, /auth/esqueci-password), checkout 10/min, default 60/min. Resposta 429 { erro: { codigo: LIMITE_EXCEDIDO } }.
+- auth 20/min, forgot 5/15min (POST /auth/forgot-password), checkout 10/min, default 60/min. Response 429 { error: { code: RATE_LIMIT_EXCEEDED } }.
 
 ## Webhooks
-- POST /webhooks/payment/:gateway (publico, HMAC x-signature = HMAC_SHA256(rawBody, PAYMENT_WEBHOOK_SECRET), idempotente por referencia_externa).
+- POST /webhooks/payment/:gateway (public, HMAC x-signature = HMAC_SHA256(rawBody, PAYMENT_WEBHOOK_SECRET), idempotent by externalReference).
 
-## Uploads
-- POST /orders/:id/payment/receipt multipart file, servido em /uploads e /api/v1/uploads.
+## Receipts
+- POST /orders/:id/payment/receipt expects JSON { receiptUrl: "https://..." } (frontend hosts file externally, e.g. S3/Cloudinary). No multipart upload.
 
-Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> Orders -> Payments/Webhooks -> Admin.
+See tags below for critical flows: Auth -> Products -> Cart -> Checkout -> Orders -> Payments/Webhooks -> Admin.
       `.trim(),
     )
     .setVersion('0.1.0')
@@ -128,6 +128,7 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
       'contacto@sadivacloset.co.ao',
     )
     .setLicense('Proprietary', 'https://sadivacloset.co.ao/terms')
+    .addServer('https://api-sadivacloset.himersus.com', 'Staging')
     .addServer('http://localhost:3001', 'Local (Docker host)')
     .addServer('http://localhost:3002', 'Local alt (host .env PORT=3002)')
     .addBearerAuth(
@@ -135,7 +136,7 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'Colar access_token obtido em POST /auth/login',
+        description: 'Paste access_token from POST /auth/login',
       },
       'bearer',
     )
@@ -144,33 +145,33 @@ Veja tags abaixo para fluxos criticos: Auth -> Products -> Cart -> Checkout -> O
         type: 'apiKey',
         in: 'header',
         name: 'x-signature',
-        description: 'HMAC SHA256 do rawBody com PAYMENT_WEBHOOK_SECRET (apenas webhooks)',
+        description: 'HMAC SHA256 of rawBody with PAYMENT_WEBHOOK_SECRET (webhooks only)',
       },
       'x-signature',
     )
-    .addTag('auth', 'Registo, login, refresh, forgot/reset, perfil')
-    .addTag('products', 'Catálogo público (cache 60s, filtros, ordenação)')
-    .addTag('categories', 'Categorias')
-    .addTag('delivery-zones', 'Zonas de entrega')
-    .addTag('cart', 'Carrinho (valida stock)')
-    .addTag('checkout', 'Cria pedido a partir do carrinho (transação)')
-    .addTag('orders', 'Pedidos do comprador')
-    .addTag('profile/orders', 'Histórico do perfil')
-    .addTag('profile/addresses', 'Endereços do comprador')
-    .addTag('payments', 'Pagamentos, carteira, comprovativos')
-    .addTag('webhooks', 'Webhooks de pagamento (público, HMAC, idempotente)')
-    .addTag('favorites', 'Favoritos')
-    .addTag('notifications', 'Notificações')
-    .addTag('admin-products', 'Admin: CRUD produtos')
-    .addTag('admin-orders', 'Admin: gestão pedidos')
-    .addTag('admin-deliveries', 'Admin: entregas')
-    .addTag('admin-statistics', 'Admin: dashboard estatísticas')
-    .addTag('admin-store', 'Admin: loja')
-    .addTag('admin-account', 'Admin: conta')
-    .addTag('admin-preferences', 'Admin: preferências')
-    .addTag('admin-members', 'Admin: membros')
-    .addTag('admin-audit', 'Admin: auditoria')
-    .addTag('admin-payments', 'Admin: validação pagamentos')
+    .addTag('auth', 'Register, login, refresh, forgot/reset, profile')
+    .addTag('products', 'Public catalog (cache 60s, filters, sorting)')
+    .addTag('categories', 'Categories')
+    .addTag('delivery-zones', 'Delivery zones')
+    .addTag('cart', 'Cart (validates stock)')
+    .addTag('checkout', 'Create order from cart (transaction)')
+    .addTag('orders', 'Buyer orders')
+    .addTag('profile/orders', 'Profile order history')
+    .addTag('profile/addresses', 'Buyer addresses')
+    .addTag('payments', 'Payments, wallet, receipts')
+    .addTag('webhooks', 'Payment webhooks (public, HMAC, idempotent)')
+    .addTag('favorites', 'Favorites')
+    .addTag('notifications', 'Notifications')
+    .addTag('admin-products', 'Admin: products CRUD')
+    .addTag('admin-orders', 'Admin: orders management')
+    .addTag('admin-deliveries', 'Admin: deliveries')
+    .addTag('admin-statistics', 'Admin: statistics dashboard')
+    .addTag('admin-store', 'Admin: store config')
+    .addTag('admin-account', 'Admin: account')
+    .addTag('admin-preferences', 'Admin: preferences')
+    .addTag('admin-members', 'Admin: members')
+    .addTag('admin-audit', 'Admin: audit logs')
+    .addTag('admin-payments', 'Admin: payment validation')
     .addTag('health', 'Healthcheck')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig, {

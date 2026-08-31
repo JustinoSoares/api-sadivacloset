@@ -24,8 +24,8 @@ const allowed = [
 
 export class UpdateDeliveryStatusDto {
   @ApiProperty({ description: 'Novo estado', example: 'a_caminho' })
-  @IsString({ message: 'estado deve ser texto' })
-  @IsNotEmpty({ message: 'estado não pode ser vazio' })
+  @IsString({ message: 'status must be a string' })
+  @IsNotEmpty({ message: 'status cannot be empty' })
   @Transform(({ value }) => normalize(value))
   estado?: string;
 

@@ -4,46 +4,30 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export interface AddressResponse {
   id: string;
-  compradorId: string;
   buyerId: string;
-  etiqueta: string;
   label: string;
-  provincia: string;
   province: string;
-  municipio: string;
   municipality: string;
-  bairro: string;
   neighborhood: string;
-  rua: string;
   street: string;
-  referencia: string | null;
   reference: string | null;
   latitude: number | null;
   longitude: number | null;
-  predefinida: boolean;
   isDefault: boolean;
 }
 
 function toResponse(a: Address): AddressResponse {
   return {
     id: a.id,
-    compradorId: a.buyerId,
     buyerId: a.buyerId,
-    etiqueta: a.label,
     label: a.label,
-    provincia: a.province,
     province: a.province,
-    municipio: a.municipality,
     municipality: a.municipality,
-    bairro: a.neighborhood,
     neighborhood: a.neighborhood,
-    rua: a.street,
     street: a.street,
-    referencia: a.reference ?? null,
     reference: a.reference ?? null,
     latitude: a.latitude ?? null,
     longitude: a.longitude ?? null,
-    predefinida: a.isDefault,
     isDefault: a.isDefault,
   };
 }
@@ -63,12 +47,12 @@ export class AddressesService {
   async create(
     buyerId: string,
     data: {
-      etiqueta: string;
-      provincia: string;
-      municipio: string;
-      bairro: string;
-      rua: string;
-      referencia?: string | null;
+      label: string;
+      province: string;
+      municipality: string;
+      neighborhood: string;
+      street: string;
+      reference?: string | null;
       latitude?: number | null;
       longitude?: number | null;
     },
@@ -79,12 +63,12 @@ export class AddressesService {
     const created = await this.prisma.address.create({
       data: {
         buyerId,
-        label: data.etiqueta,
-        province: data.provincia,
-        municipality: data.municipio,
-        neighborhood: data.bairro,
-        street: data.rua,
-        reference: data.referencia ?? null,
+        label: data.label,
+        province: data.province,
+        municipality: data.municipality,
+        neighborhood: data.neighborhood,
+        street: data.street,
+        reference: data.reference ?? null,
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
         isDefault,
@@ -97,12 +81,12 @@ export class AddressesService {
     buyerId: string,
     id: string,
     data: {
-      etiqueta?: string;
-      provincia?: string;
-      municipio?: string;
-      bairro?: string;
-      rua?: string;
-      referencia?: string | null;
+      label?: string;
+      province?: string;
+      municipality?: string;
+      neighborhood?: string;
+      street?: string;
+      reference?: string | null;
       latitude?: number | null;
       longitude?: number | null;
     },
@@ -110,19 +94,19 @@ export class AddressesService {
     const existing = await this.prisma.address.findUnique({ where: { id } });
     if (!existing || existing.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Endereço não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Address not found' },
       });
     }
 
     const updated = await this.prisma.address.update({
       where: { id },
       data: {
-        ...(data.etiqueta !== undefined ? { label: data.etiqueta } : {}),
-        ...(data.provincia !== undefined ? { province: data.provincia } : {}),
-        ...(data.municipio !== undefined ? { municipality: data.municipio } : {}),
-        ...(data.bairro !== undefined ? { neighborhood: data.bairro } : {}),
-        ...(data.rua !== undefined ? { street: data.rua } : {}),
-        ...(data.referencia !== undefined ? { reference: data.referencia } : {}),
+        ...(data.label !== undefined ? { label: data.label } : {}),
+        ...(data.province !== undefined ? { province: data.province } : {}),
+        ...(data.municipality !== undefined ? { municipality: data.municipality } : {}),
+        ...(data.neighborhood !== undefined ? { neighborhood: data.neighborhood } : {}),
+        ...(data.street !== undefined ? { street: data.street } : {}),
+        ...(data.reference !== undefined ? { reference: data.reference } : {}),
         ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
         ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
       },
@@ -134,14 +118,13 @@ export class AddressesService {
     const existing = await this.prisma.address.findUnique({ where: { id } });
     if (!existing || existing.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Endereço não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Address not found' },
       });
     }
 
     const count = await this.prisma.address.count({ where: { buyerId } });
 
     if (count === 1) {
-      // validação simples: impede remover se for o único e houver pedidos pendentes ligados
       const pendingStatuses: OrderStatus[] = [
         OrderStatus.AWAITING_PAYMENT,
         OrderStatus.PAID,
@@ -161,10 +144,10 @@ export class AddressesService {
 
       if (linkedPending) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ENDERECO_EM_USO',
-            mensagem: 'Não é possível remover o único endereço com pedidos pendentes associados',
-            detalhes: { enderecoId: id },
+          error: {
+            code: 'ADDRESS_IN_USE',
+            message: 'Cannot remove the only address with pending orders associated',
+            details: { addressId: id },
           },
         });
       }
@@ -172,7 +155,6 @@ export class AddressesService {
 
     await this.prisma.address.delete({ where: { id } });
 
-    // se era predefinido e restam endereços, promove o primeiro como novo predefinido
     if (existing.isDefault) {
       const remaining = await this.prisma.address.findFirst({
         where: { buyerId },
@@ -191,7 +173,7 @@ export class AddressesService {
     const existing = await this.prisma.address.findUnique({ where: { id } });
     if (!existing || existing.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Endereço não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Address not found' },
       });
     }
 

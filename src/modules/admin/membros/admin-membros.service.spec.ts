@@ -71,9 +71,9 @@ describe('AdminMembrosService', () => {
     expect(where.OR).toBeDefined();
     expect(result.total).toBe(2);
     expect(result.data[0].id).toBe('u1');
-    expect(result.data[0].totalPedidos).toBe(3);
-    expect(result.data[0].totalGasto).toBe(10000); // soma pago/concluido
-    expect(result.data[0].totalGastoBruto).toBe(15000);
+    expect(result.data[0].totalOrders).toBe(3);
+    expect(result.data[0].totalSpent).toBe(10000); // soma pago/concluido
+    expect(result.data[0].totalSpentGross).toBe(15000);
   });
 
   it('não deve comparar por nome – sempre por comprador_id', async () => {
@@ -111,9 +111,9 @@ describe('AdminMembrosService', () => {
     // cada membro deve ter agregação distinta, não misturada por nome
     const m1 = result.data.find((m: any) => m.id === 'u1');
     const m2 = result.data.find((m: any) => m.id === 'u2');
-    expect(m1.totalPedidos).toBe(5);
-    expect(m2.totalPedidos).toBe(1);
-    expect(m1.totalGasto).not.toBe(m2.totalGasto);
+    expect(m1.totalOrders).toBe(5);
+    expect(m2.totalOrders).toBe(1);
+    expect(m1.totalSpent).not.toBe(m2.totalSpent);
   });
 
   it('deve retornar histórico de pedidos do membro paginado', async () => {

@@ -96,12 +96,9 @@ describe('ProductsService', () => {
   describe('findAll - cache', () => {
     it('should return from cache when exists (english)', async () => {
       const cached = {
-        dados: [productsMock[0]],
         data: [productsMock[0]],
-        pagina: 1,
         page: 1,
         total: 1,
-        total_paginas: 1,
         totalPages: 1,
       };
       const cachedSerialized = JSON.stringify(cached);
@@ -255,7 +252,7 @@ describe('ProductsService', () => {
         take: 20,
       } as any);
       expect(resultMin.total).toBe(2);
-      expect(resultMin.dados.every((p) => p.price - (p.price * p.discount) / 100 >= 20000)).toBe(
+      expect(resultMin.data.every((p) => p.price - (p.price * p.discount) / 100 >= 20000)).toBe(
         true,
       );
 
@@ -292,14 +289,14 @@ describe('ProductsService', () => {
 
     it('should paginate correctly after filters', async () => {
       const resultPage1 = await service.findAll({ page: 1, limit: 2, skip: 0, take: 2 } as any);
-      expect(resultPage1.dados).toHaveLength(2);
-      expect(resultPage1.pagina).toBe(1);
+      expect(resultPage1.data).toHaveLength(2);
+      expect(resultPage1.page).toBe(1);
       expect(resultPage1.total).toBe(4);
-      expect(resultPage1.total_paginas).toBe(2);
+      expect(resultPage1.totalPages).toBe(2);
 
       const resultPage2 = await service.findAll({ page: 2, limit: 2, skip: 2, take: 2 } as any);
-      expect(resultPage2.dados).toHaveLength(2);
-      expect(resultPage2.pagina).toBe(2);
+      expect(resultPage2.data).toHaveLength(2);
+      expect(resultPage2.page).toBe(2);
     });
   });
 
@@ -312,7 +309,7 @@ describe('ProductsService', () => {
         skip: 0,
         take: 20,
       } as any);
-      const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
+      const prices = result.data.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([9000, 15000, 20000, 40500]);
     });
 
@@ -324,7 +321,7 @@ describe('ProductsService', () => {
         skip: 0,
         take: 20,
       } as any);
-      const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
+      const prices = result.data.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([9000, 15000, 20000, 40500]);
     });
 
@@ -336,7 +333,7 @@ describe('ProductsService', () => {
         skip: 0,
         take: 20,
       } as any);
-      const prices = result.dados.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
+      const prices = result.data.map((p) => Math.round(p.price - (p.price * p.discount) / 100));
       expect(prices).toEqual([40500, 20000, 15000, 9000]);
     });
 
@@ -348,14 +345,14 @@ describe('ProductsService', () => {
         skip: 0,
         take: 20,
       } as any);
-      expect(result.dados[0].name).toBe('Black Suit');
-      expect(result.dados[1].name).toBe('Casual Set');
+      expect(result.data[0].name).toBe('Black Suit');
+      expect(result.data[1].name).toBe('Casual Set');
     });
 
     it('should sort by recent (default, createdAt desc)', async () => {
       const result = await service.findAll({ page: 1, limit: 20, skip: 0, take: 20 } as any);
-      expect(result.dados[0].id).toBe('4');
-      expect(result.dados[1].id).toBe('1');
+      expect(result.data[0].id).toBe('4');
+      expect(result.data[1].id).toBe('1');
     });
 
     it('should sort by oldest (createdAt asc)', async () => {
@@ -366,8 +363,8 @@ describe('ProductsService', () => {
         skip: 0,
         take: 20,
       } as any);
-      expect(result.dados[0].id).toBe('3');
-      expect(result.dados[3].id).toBe('4');
+      expect(result.data[0].id).toBe('3');
+      expect(result.data[3].id).toBe('4');
     });
   });
 
@@ -382,7 +379,7 @@ describe('ProductsService', () => {
       prisma.product.findUnique.mockResolvedValue(null);
       await expect(service.findOne('no-id')).rejects.toBeInstanceOf(NotFoundException);
       await expect(service.findOne('no-id')).rejects.toMatchObject({
-        response: { erro: { codigo: 'NAO_ENCONTRADO' } },
+        response: { error: { code: 'NOT_FOUND' } },
       });
     });
   });

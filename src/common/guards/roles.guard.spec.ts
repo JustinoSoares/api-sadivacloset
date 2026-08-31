@@ -43,7 +43,7 @@ describe('RolesGuard', () => {
     expect(() => guard.canActivate(ctx)).toThrow(
       expect.objectContaining({
         response: expect.objectContaining({
-          erro: expect.objectContaining({ codigo: 'ACESSO_NEGADO' }),
+          error: expect.objectContaining({ code: 'FORBIDDEN' }),
         }),
       }),
     );

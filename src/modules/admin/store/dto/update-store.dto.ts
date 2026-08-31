@@ -16,7 +16,7 @@ export class UpdateStoreDto {
   @ApiPropertyOptional({ description: 'Alias nome' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'nome deve ser texto' })
+  @IsString({ message: 'name must be a string' })
   @MinLength(2)
   @MaxLength(100)
   nome?: string;
@@ -50,7 +50,7 @@ export class UpdateStoreDto {
   @ApiPropertyOptional({ description: 'Alias telefone' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'telefone deve ser texto' })
+  @IsString({ message: 'phone must be a string' })
   @MinLength(8)
   @MaxLength(20)
   telefone?: string;
@@ -66,7 +66,7 @@ export class UpdateStoreDto {
   @ApiPropertyOptional({ description: 'Alias morada' })
   @IsOptional()
   @Trim()
-  @IsString({ message: 'morada must be a string' })
+  @IsString({ message: 'address must be a string' })
   @MinLength(5)
   @MaxLength(500)
   morada?: string;

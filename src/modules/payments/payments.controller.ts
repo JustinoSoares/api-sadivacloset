@@ -27,7 +27,7 @@ import { IniciarPagamentoDto } from './dto/iniciar-pagamento.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiExcludeController()
-@ApiTags('pedidos-pagamento')
+@ApiTags('orders-payment')
 @ApiBearerAuth('bearer')
 @Controller('pedidos/:id/pagamento')
 export class PagamentosController {
@@ -35,15 +35,14 @@ export class PagamentosController {
 
   @Post('iniciar')
   @ApiOperation({
-    summary:
-      'Inicia pagamento (cria registo PENDENTE/PROCESSANDO). Para KWIK via E-Kwanza cria saída',
+    summary: 'Initiate payment (creates PENDING/PROCESSING record). For KWIK via E-Kwanza creates payout',
     description: 'Initiates payment creating PENDING/PROCESSING record',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: IniciarPagamentoDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async iniciar(
     @CurrentUser() user: JwtPayload,
@@ -58,35 +57,34 @@ export class PagamentosController {
       descricao: dto.descricaoNormalized,
       expiresInSeconds: dto.expiresInSeconds,
     });
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Estado actual do pagamento do pedido',
+    summary: 'Get current payment status for order',
     description: 'Returns current payment status for order',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async get(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const result = await this.paymentsService.get(user.sub, id);
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   @Post('comprovativo')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary:
-      'Upload comprovativo (transferência bancária) – muda para PROCESSANDO, aguarda validação admin',
+    summary: 'Upload receipt (bank transfer) – sets to PROCESSING, awaits admin validation',
     description: 'Uploads receipt, sets to PROCESSING awaiting admin validation',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async comprovativo(
     @CurrentUser() user: JwtPayload,
@@ -94,7 +92,7 @@ export class PagamentosController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const result = await this.paymentsService.comprovativo(user.sub, id, file);
-    return { data: result, dados: result, mensagem: 'Comprovativo enviado, aguarda validação' };
+    return { data: result, message: 'Receipt uploaded, awaiting validation' };
   }
 }
 
@@ -129,7 +127,7 @@ export class OrdersPaymentController {
       descricao: dto.descricaoNormalized,
       expiresInSeconds: dto.expiresInSeconds,
     });
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   @Get()
@@ -141,7 +139,7 @@ export class OrdersPaymentController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async get(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const result = await this.paymentsService.get(user.sub, id);
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   @Post('receipt')
@@ -160,12 +158,12 @@ export class OrdersPaymentController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const result = await this.paymentsService.comprovativo(user.sub, id, file);
-    return { data: result, dados: result };
+    return { data: result };
   }
 }
 
 @ApiExcludeController()
-@ApiTags('pagamentos-historico')
+@ApiTags('payments-history')
 @ApiBearerAuth('bearer')
 @Controller('pagamentos')
 export class PagamentosHistoricoController {
@@ -173,40 +171,40 @@ export class PagamentosHistoricoController {
 
   @Get('historico')
   @ApiOperation({
-    summary: 'Histórico de pagamentos do comprador (entradas)',
+    summary: 'Buyer payment history',
     description: 'Returns buyer payment history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async historico(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
     return this.paymentsService.historico(user.sub, dto);
   }
 
   @Get('entradas')
-  @ApiOperation({ summary: 'Entradas (créditos)', description: 'Returns credits' })
+  @ApiOperation({ summary: 'Credits (inbound)', description: 'Returns credits' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async entradas(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
-    (dto as any).tipo = 'entrada';
+    (dto as any).type = 'credit';
     return this.paymentsService.walletHistorico(user.sub, dto as any);
   }
 
   @Get('saidas')
-  @ApiOperation({ summary: 'Saídas (débitos via KWIK)', description: 'Returns debits' })
+  @ApiOperation({ summary: 'Debits (outbound via KWIK)', description: 'Returns debits' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async saidas(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
-    (dto as any).tipo = 'saida';
+    (dto as any).type = 'debit';
     return this.paymentsService.walletHistorico(user.sub, dto as any);
   }
 
   @Get('carteira/historico')
   @ApiOperation({
-    summary: 'Histórico completo da carteira (entradas e saídas)',
+    summary: 'Complete wallet history (credits and debits)',
     description: 'Returns complete wallet history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async carteira(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
     return this.paymentsService.walletHistorico(user.sub, dto as any);
   }
@@ -220,7 +218,7 @@ export class WalletController {
 
   @Get('historico')
   @ApiOperation({
-    summary: 'Wallet historico (local)',
+    summary: 'Wallet history (local)',
     description: 'Returns local wallet history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
@@ -228,6 +226,18 @@ export class WalletController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async historico(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
     const local = await this.paymentsService.walletHistorico(user.sub, dto as any);
-    return { local, data: local.data, dados: local.dados };
+    return { data: local.data, meta: (local as any).meta, page: (local as any).page, total: (local as any).total, totalPages: (local as any).totalPages };
+  }
+
+  @Get('history')
+  @ApiOperation({
+    summary: 'Wallet history (local) - English alias',
+    description: 'Returns local wallet history',
+  })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 429, description: 'Too Many Requests' })
+  async history(@CurrentUser() user: JwtPayload, @Query() dto: PaginationDto) {
+    return this.paymentsService.walletHistorico(user.sub, dto as any);
   }
 }

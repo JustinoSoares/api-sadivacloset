@@ -17,24 +17,21 @@ describe('OrdersControllers', () => {
 
   const orderMock = {
     id: orderId,
-    comprador_id: buyerId,
-    itens: [],
-    entrega: null,
+    buyerId: buyerId,
+    items: [],
+    delivery: null,
   };
 
   beforeEach(async () => {
     service = {
       findOne: jest.fn().mockResolvedValue(orderMock),
-      cancel: jest.fn().mockResolvedValue({ ...orderMock, estado: 'cancelado' }),
+      cancel: jest.fn().mockResolvedValue({ ...orderMock, status: 'CANCELLED' }),
       upsertDelivery: jest.fn().mockResolvedValue(orderMock),
       findAllPaginated: jest.fn().mockResolvedValue({
         data: [orderMock],
-        dados: [orderMock],
         page: 1,
-        pagina: 1,
         total: 1,
         totalPages: 1,
-        total_paginas: 1,
       }),
     };
     const mod = await Test.createTestingModule({
@@ -54,13 +51,13 @@ describe('OrdersControllers', () => {
   it('GET /pedidos/:id should return detail', async () => {
     const result = await pedidosController.findOne(user, orderId);
     expect(service.findOne).toHaveBeenCalledWith(buyerId, orderId);
-    expect(result).toEqual({ data: orderMock, dados: orderMock });
+    expect(result).toEqual({ data: orderMock });
   });
 
   it('PATCH /pedidos/:id/cancelar should cancel', async () => {
     const result = await pedidosController.cancelar(user, orderId);
     expect(service.cancel).toHaveBeenCalledWith(buyerId, orderId);
-    expect(result.mensagem).toBe('Pedido cancelado');
+    expect(result.message).toBe('Order cancelled');
   });
 
   it('POST /pedidos/:id/entrega should upsert', async () => {

@@ -31,7 +31,7 @@ export class AdminStoreController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async getStore() {
     const store = await this.storeService.getStore();
-    return { data: store, dados: store };
+    return { data: store };
   }
 
   // legacy alias
@@ -60,7 +60,7 @@ export class AdminStoreController {
       },
       user.sub,
     );
-    return { data: store, dados: store };
+    return { data: store };
   }
 
   async updateLoja(user: JwtPayload, dto: UpdateStoreDto) {

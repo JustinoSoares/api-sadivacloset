@@ -31,7 +31,7 @@ export class AdminPreferencesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async getPreferences() {
     const pref = await this.preferencesService.getPreferences();
-    return { data: pref, dados: pref };
+    return { data: pref };
   }
 
   // legacy alias
@@ -61,7 +61,7 @@ export class AdminPreferencesController {
       },
       user.sub,
     );
-    return { data: pref, dados: pref };
+    return { data: pref };
   }
 
   // legacy alias method

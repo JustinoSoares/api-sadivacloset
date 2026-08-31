@@ -19,7 +19,7 @@ export class FavoritesService {
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Produto não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Product not found' },
       });
     }
 

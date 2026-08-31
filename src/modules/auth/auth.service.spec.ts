@@ -126,7 +126,7 @@ describe('AuthService', () => {
       await expect(
         service.register('Teste', 'teste@example.com', 'password123'),
       ).rejects.toMatchObject({
-        response: { erro: { codigo: 'EMAIL_JA_EXISTE' } },
+        response: { error: { code: 'EMAIL_ALREADY_EXISTS' } },
       });
     });
   });
@@ -151,7 +151,7 @@ describe('AuthService', () => {
     it('should throw Unauthorized if account inactive', async () => {
       prisma.user.findUnique.mockResolvedValue({ ...mockUser, isActive: false });
       await expect(service.login('teste@example.com', 'x')).rejects.toMatchObject({
-        response: { erro: { codigo: 'CONTA_INATIVA' } },
+        response: { error: { code: 'ACCOUNT_INACTIVE' } },
       });
     });
 
@@ -159,7 +159,7 @@ describe('AuthService', () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
       await expect(service.login('teste@example.com', 'wrong')).rejects.toMatchObject({
-        response: { erro: { codigo: 'CREDENCIAIS_INVALIDAS' } },
+        response: { error: { code: 'INVALID_CREDENTIALS' } },
       });
     });
   });
@@ -183,7 +183,7 @@ describe('AuthService', () => {
     it('should reject if token is blacklisted', async () => {
       redis.exists.mockResolvedValue(true);
       await expect(service.refresh(refreshToken)).rejects.toMatchObject({
-        response: { erro: { codigo: 'TOKEN_REVOGADO' } },
+        response: { error: { code: 'REVOKED_TOKEN' } },
       });
     });
 
@@ -191,7 +191,7 @@ describe('AuthService', () => {
       redis.exists.mockResolvedValue(false);
       jwt.verifyAsync.mockRejectedValue(new Error('invalid'));
       await expect(service.refresh('bad')).rejects.toMatchObject({
-        response: { erro: { codigo: 'TOKEN_INVALIDO' } },
+        response: { error: { code: 'INVALID_TOKEN' } },
       });
     });
 
@@ -200,7 +200,7 @@ describe('AuthService', () => {
       jwt.verifyAsync.mockResolvedValue({ sub: 'nao-existe', email: 'a', role: 'BUYER' });
       prisma.user.findUnique.mockResolvedValue(null);
       await expect(service.refresh(refreshToken)).rejects.toMatchObject({
-        response: { erro: { codigo: 'NAO_AUTENTICADO' } },
+        response: { error: { code: 'UNAUTHENTICATED' } },
       });
     });
   });
@@ -215,7 +215,7 @@ describe('AuthService', () => {
         '1',
         expect.any(Number),
       );
-      expect(result).toEqual({ mensagem: 'Sessão terminada com sucesso' });
+      expect(result).toEqual({ message: 'Session terminated successfully' });
     });
 
     it('should throw BadRequest if token empty', async () => {
@@ -238,7 +238,7 @@ describe('AuthService', () => {
         15 * 60,
       );
       expect(result).toEqual({
-        mensagem: 'Se o email existir, um link de redefinição foi enviado',
+        message: 'If the email exists, a reset link has been sent',
       });
     });
 
@@ -246,14 +246,14 @@ describe('AuthService', () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       const result = await service.esqueciPassword('teste@example.com');
       expect(redis.set).toHaveBeenCalled();
-      expect(result.mensagem).toContain('Se o email existir');
+      expect(result.message).toContain('If the email exists');
     });
 
     it('should return generic message when email not exists (not enumerate)', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       const result = await service.forgotPassword('nao@existe.com');
       expect(redis.set).not.toHaveBeenCalled();
-      expect(result.mensagem).toContain('Se o email existir');
+      expect(result.message).toContain('If the email exists');
     });
   });
 
@@ -275,7 +275,7 @@ describe('AuthService', () => {
         }),
       );
       expect(redis.del).toHaveBeenCalledWith(key);
-      expect(result).toEqual({ mensagem: 'Password redefinida com sucesso' });
+      expect(result).toEqual({ message: 'Password reset successfully' });
     });
 
     it('legacy redefinirPassword alias should work', async () => {
@@ -286,7 +286,7 @@ describe('AuthService', () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.user.update.mockResolvedValue({ id: mockUser.id });
       const result = await service.redefinirPassword(raw, 'novaPassword123');
-      expect(result.mensagem).toBe('Password redefinida com sucesso');
+      expect(result.message).toBe('Password reset successfully');
     });
 
     it('should throw BadRequest if token expired', async () => {
@@ -295,7 +295,7 @@ describe('AuthService', () => {
         BadRequestException,
       );
       await expect(service.resetPassword('bad', 'nova12345')).rejects.toMatchObject({
-        response: { erro: { codigo: 'TOKEN_EXPIRADO' } },
+        response: { error: { code: 'TOKEN_EXPIRED' } },
       });
     });
 

@@ -50,7 +50,7 @@ describe('JwtAuthGuard', () => {
     await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(UnauthorizedException);
     const { ctx: ctx2 } = createContext({});
     await expect(guard.canActivate(ctx2)).rejects.toMatchObject({
-      response: { erro: { codigo: 'NAO_AUTENTICADO' } },
+      response: { error: { code: 'UNAUTHENTICATED' } },
     });
   });
 
@@ -58,17 +58,17 @@ describe('JwtAuthGuard', () => {
     const { ctx } = createContext({ authorization: 'Bearer invalid' });
     jwt.verifyAsync.mockRejectedValue(new Error('invalid'));
     await expect(guard.canActivate(ctx)).rejects.toMatchObject({
-      response: { erro: { codigo: 'NAO_AUTENTICADO' } },
+      response: { error: { code: 'UNAUTHENTICATED' } },
     });
   });
 
-  it('deve rejeitar com Token expirado quando TokenExpiredError', async () => {
+  it('deve rejeitar com Token expired quando TokenExpiredError', async () => {
     const { ctx } = createContext({ authorization: 'Bearer expired' });
     const err = new Error('jwt expired');
     err.name = 'TokenExpiredError';
     jwt.verifyAsync.mockRejectedValue(err);
     await expect(guard.canActivate(ctx)).rejects.toMatchObject({
-      response: { erro: { mensagem: 'Token expirado' } },
+      response: { error: { message: 'Token expired' } },
     });
   });
 

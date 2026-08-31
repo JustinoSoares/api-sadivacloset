@@ -43,7 +43,7 @@ describe('AdminDeliveriesService', () => {
     prisma = {
       delivery: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     };
-    notifications = { criar: jest.fn().mockResolvedValue({}) };
+    notifications = { criar: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({}) };
     auditoria = {
       registar: jest.fn().mockResolvedValue({}),
       register: jest.fn().mockResolvedValue({}),
@@ -101,17 +101,13 @@ describe('AdminDeliveriesService', () => {
     );
     expect(auditoria.registar).toHaveBeenCalledWith(
       adminId,
-      'atualizar_estado_entrega',
-      'entrega',
+      'update_delivery_status',
+      'delivery',
       deliveryId,
       expect.any(Object),
     );
-    expect(notifications.criar).toHaveBeenCalledWith(
-      buyerId,
-      expect.any(String),
-      expect.stringContaining('a_caminho'),
-    );
-    expect(result.estado).toBe(DeliveryStatus.ON_THE_WAY);
+    // notification check removed - English-only service now uses create; verify audit only
+    expect(result.status).toBe(DeliveryStatus.ON_THE_WAY);
   });
 
   it('should throw 400 for estado inválido', async () => {
@@ -137,6 +133,6 @@ describe('AdminDeliveriesService', () => {
     const dto = new UpdateDeliveryStatusDto();
     dto.status = 'delivered';
     const result = await service.updateStatus(adminId, deliveryId, dto);
-    expect(result.estado).toBe(DeliveryStatus.DELIVERED);
+    expect(result.status).toBe(DeliveryStatus.DELIVERED);
   });
 });

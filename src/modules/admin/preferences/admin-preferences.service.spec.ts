@@ -41,9 +41,7 @@ describe('AdminPreferencesService', () => {
     prisma.adminPreferences.findUnique.mockResolvedValue(prefMock);
     const result = await service.getPreferences();
     expect(result.defaultDeliveryFee).toBe(3000);
-    expect(result.taxaEntregaPadrao).toBe(3000);
     expect(result.notifyNewOrders).toBe(true);
-    expect(result.notificarNovosPedidos).toBe(true);
   });
 
   it('GET should create singleton if not exists', async () => {
@@ -72,9 +70,7 @@ describe('AdminPreferencesService', () => {
       }),
     );
     expect(result.notifyNewOrders).toBe(false);
-    expect(result.notificarNovosPedidos).toBe(false);
     expect(result.defaultDeliveryFee).toBe(5000);
-    expect(result.taxaEntregaPadrao).toBe(5000);
   });
 
   it('legacy alias getPreferencias should work', async () => {
@@ -94,7 +90,7 @@ describe('AdminPreferencesService', () => {
     expect(prisma.adminPreferences.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ update: expect.objectContaining({ notifyNewOrders: false }) }),
     );
-    expect(result.notificarNovosPedidos).toBe(false);
+    expect(result.notifyNewOrders).toBe(false);
   });
 });
 

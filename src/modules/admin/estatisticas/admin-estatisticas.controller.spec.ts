@@ -9,7 +9,7 @@ describe('AdminEstatisticasController', () => {
 
   beforeEach(async () => {
     service = {
-      getEstatisticas: jest.fn().mockResolvedValue({ receita_total: 100000, total_produtos: 50 }),
+      getEstatisticas: jest.fn().mockResolvedValue({ totalRevenue: 100000, totalProducts: 50 }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminEstatisticasController],
@@ -18,14 +18,14 @@ describe('AdminEstatisticasController', () => {
     controller = mod.get(AdminEstatisticasController);
   });
 
-  it('GET /admin/estatisticas deve chamar service com query e retornar {data,dados}', async () => {
+  it('GET /admin/estatisticas deve chamar service com query e retornar {data} English-only', async () => {
     const dto = new QueryEstatisticasDto();
     dto.dias = 30;
     dto.page = 1;
     dto.limit = 20;
     const result = await controller.getEstatisticas(dto);
     expect(service.getEstatisticas).toHaveBeenCalledWith(dto);
-    expect(result).toEqual({ data: expect.any(Object), dados: expect.any(Object) });
+    expect(result).toEqual({ data: expect.any(Object) });
   });
 
   it('deve suportar dias parametrizável e paginação', async () => {

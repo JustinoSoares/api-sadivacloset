@@ -52,22 +52,19 @@ describe('NotificationsService', () => {
       expect(prisma.notification.create).toHaveBeenCalledWith({
         data: { buyerId, title: 'Pedido atualizado', description: 'Seu pedido foi enviado' },
       });
-      expect(result.titulo).toBe('Pedido atualizado');
       expect(result.title).toBe('Pedido atualizado');
-      expect(result.descricao).toBe('Seu pedido foi enviado');
-      expect(result.criadoEm).toEqual(notificationMock.createdAt);
+      expect(result.description).toBe('Seu pedido foi enviado');
       expect(result.createdAt).toEqual(notificationMock.createdAt);
-      expect(result.lida).toBe(false);
       expect(result.isRead).toBe(false);
       // ISO check
-      expect(result.criadoEm.toISOString()).toBe('2026-08-26T10:00:00.000Z');
+      expect(result.createdAt.toISOString()).toBe('2026-08-26T10:00:00.000Z');
     });
 
     it('create alias should delegate to criar', async () => {
       prisma.notification.create.mockResolvedValue(notificationMock);
       const result = await service.create(buyerId, 'Title', 'Desc');
       expect(prisma.notification.create).toHaveBeenCalled();
-      expect(result.titulo).toBe('Pedido atualizado');
+      expect(result.title).toBe('Pedido atualizado');
     });
 
     it('should be reusable by Pedido/Pagamento modules', async () => {
@@ -76,12 +73,12 @@ describe('NotificationsService', () => {
         title: 'Pagamento confirmado',
       });
       const result = await service.criar(buyerId, 'Pagamento confirmado', 'Pagamento aprovado');
-      expect(result.titulo).toBe('Pagamento confirmado');
+      expect(result.title).toBe('Pagamento confirmado');
     });
   });
 
   describe('findAll', () => {
-    it('should list ordered by criadoEm desc with bilingual fields', async () => {
+    it('should list ordered by createdAt desc with English-only fields', async () => {
       prisma.notification.findMany.mockResolvedValue([
         notificationMock,
         {
@@ -99,9 +96,8 @@ describe('NotificationsService', () => {
       });
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe(notificationMock.id);
-      expect(result[0].lida).toBe(false);
       expect(result[0].isRead).toBe(false);
-      expect(result[0].criadoEm).toBeInstanceOf(Date);
+      expect(result[0].createdAt).toBeInstanceOf(Date);
     });
   });
 
@@ -114,7 +110,7 @@ describe('NotificationsService', () => {
         where: { id: notificationMock.id },
         data: { isRead: true },
       });
-      expect(result.lida).toBe(true);
+      expect(result.isRead).toBe(true);
     });
 
     it('should throw 404 if not found or not owner', async () => {
@@ -132,7 +128,7 @@ describe('NotificationsService', () => {
       prisma.notification.findUnique.mockResolvedValue(notificationMock);
       prisma.notification.update.mockResolvedValue({ ...notificationMock, isRead: true });
       const result = await service.markAsRead(buyerId, notificationMock.id);
-      expect(result.lida).toBe(true);
+      expect(result.isRead).toBe(true);
     });
   });
 

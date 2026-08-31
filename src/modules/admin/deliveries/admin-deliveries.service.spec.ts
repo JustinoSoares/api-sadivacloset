@@ -109,7 +109,6 @@ describe('AdminDeliveriesService', () => {
       deliveryId,
       expect.any(Object),
     );
-    expect(result.estado).toBe(DeliveryStatus.ON_THE_WAY);
     expect(result.status).toBe(DeliveryStatus.ON_THE_WAY);
   });
 
@@ -136,7 +135,7 @@ describe('AdminDeliveriesService', () => {
     const dto = new UpdateDeliveryStatusDto();
     dto.status = 'delivered';
     const result = await service.updateStatus(adminId, deliveryId, dto);
-    expect(result.estado).toBe(DeliveryStatus.DELIVERED);
+    expect(result.status).toBe(DeliveryStatus.DELIVERED);
   });
 });
 

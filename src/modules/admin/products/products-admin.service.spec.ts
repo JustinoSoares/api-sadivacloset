@@ -99,7 +99,7 @@ describe('ProductsAdminService', () => {
           category: Category.SUITS,
         },
       });
-      expect(result).toMatchObject({ dados: [productMock], pagina: 1, total: 1 });
+      expect(result).toMatchObject({ data: [productMock], page: 1, total: 1 });
       // also check english alias
       expect((result as any).data).toBeDefined();
     });
@@ -113,8 +113,8 @@ describe('ProductsAdminService', () => {
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 2, take: 2, orderBy: { createdAt: 'desc' } }),
       );
-      expect(result.pagina).toBe(2);
-      expect(result.total_paginas).toBe(3);
+      expect(result.page).toBe(2);
+      expect(result.totalPages).toBe(3);
     });
 
     it('should return correct total_paginas for total 4 limit 2', async () => {
@@ -122,7 +122,7 @@ describe('ProductsAdminService', () => {
       prisma.product.findMany.mockResolvedValue([]);
       const query: any = { page: 1, limit: 2, skip: 0, take: 2 };
       const result = await service.findAll(query);
-      expect(result.total_paginas).toBe(2);
+      expect(result.totalPages).toBe(2);
     });
 
     it('legacy portuguese filter categoria should still work', async () => {
@@ -221,7 +221,7 @@ describe('ProductsAdminService', () => {
       prisma.product.findUnique.mockResolvedValue(null);
       await expect(service.update('no-id', {} as any)).rejects.toBeInstanceOf(NotFoundException);
       await expect(service.update('no-id', {} as any)).rejects.toMatchObject({
-        response: { erro: { codigo: 'NAO_ENCONTRADO' } },
+        response: { error: { code: 'NOT_FOUND' } },
       });
     });
 
@@ -253,8 +253,7 @@ describe('ProductsAdminService', () => {
       const res = await service.remove('prod-1');
       expect(prisma.product.delete).toHaveBeenCalledWith({ where: { id: 'prod-1' } });
       expect(redis.delByPattern).toHaveBeenCalledWith('cache:products:*');
-      expect(res).toMatchObject({ mensagem: 'Produto removido com sucesso' });
-      expect((res as any).message).toBe('Product removed successfully');
+      expect(res).toMatchObject({ message: 'Product removed successfully' });
     });
 
     it('should throw NotFound if not exists', async () => {

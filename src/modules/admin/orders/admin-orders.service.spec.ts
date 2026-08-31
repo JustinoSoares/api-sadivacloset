@@ -102,7 +102,6 @@ describe('AdminOrdersService', () => {
       orderId,
       expect.any(Object),
     );
-    expect(result.estado).toBe(OrderStatus.PAID);
     expect(result.status).toBe(OrderStatus.PAID);
   });
 
@@ -129,7 +128,7 @@ describe('AdminOrdersService', () => {
     const dto = new UpdateOrderStatusDto();
     dto.status = 'completed';
     const result = await service.updateStatus(adminId, orderId, dto);
-    expect(result.estado).toBe(OrderStatus.COMPLETED);
+    expect(result.status).toBe(OrderStatus.COMPLETED);
   });
 });
 

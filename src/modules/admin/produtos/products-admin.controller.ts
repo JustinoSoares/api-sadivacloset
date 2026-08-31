@@ -58,7 +58,7 @@ export class ProdutosAdminController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateProductDto) {
     const product = await this.productsService.create(dto as any, user.sub);
-    return { data: product, dados: product };
+    return { data: product };
   }
 
   @Patch(':id')
@@ -75,7 +75,7 @@ export class ProdutosAdminController {
     @Body() dto: UpdateProductDto,
   ) {
     const product = await this.productsService.update(id, dto as any, user.sub);
-    return { data: product, dados: product };
+    return { data: product };
   }
 
   @Delete(':id')

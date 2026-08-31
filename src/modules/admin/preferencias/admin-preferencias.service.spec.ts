@@ -34,9 +34,8 @@ describe('AdminPreferenciasService', () => {
   it('GET deve retornar preferências existentes', async () => {
     prisma.adminPreferences.findUnique.mockResolvedValue(prefMock);
     const result = await service.getPreferencias();
-    expect(result.taxaEntregaPadrao).toBe(3000);
     expect(result.defaultDeliveryFee).toBe(3000);
-    expect(result.notificarNovosPedidos).toBe(true);
+    expect(result.notifyNewOrders).toBe(true);
   });
 
   it('GET deve criar singleton se não existir', async () => {
@@ -64,7 +63,7 @@ describe('AdminPreferenciasService', () => {
         update: expect.objectContaining({ notifyNewOrders: false, defaultDeliveryFee: 5000 }),
       }),
     );
-    expect(result.notificarNovosPedidos).toBe(false);
-    expect(result.taxaEntregaPadrao).toBe(5000);
+    expect(result.notifyNewOrders).toBe(false);
+    expect(result.defaultDeliveryFee).toBe(5000);
   });
 });

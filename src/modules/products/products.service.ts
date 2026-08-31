@@ -133,7 +133,7 @@ export class ProductsService {
     await this.redis.set(cacheKey, JSON.stringify(result), 60);
     // also set legacy key for backward compat
     await this.redis.set(legacyKey, JSON.stringify(result), 60);
-    this.logger.debug(`Cache SET ${cacheKey} ttl 60s (${result.dados.length}/${total})`);
+    this.logger.debug(`Cache SET ${cacheKey} ttl 60s (${result.data.length}/${total})`);
 
     return result;
   }
@@ -142,7 +142,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Produto não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Product not found' },
       });
     }
     return product;

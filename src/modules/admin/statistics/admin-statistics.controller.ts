@@ -31,7 +31,7 @@ export class AdminStatisticsController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async getStatistics(@Query() dto: QueryStatisticsDto) {
     const result = await this.statisticsService.getStatistics(dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   // legacy alias

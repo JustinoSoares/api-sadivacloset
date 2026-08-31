@@ -34,7 +34,6 @@ describe('CategoriesService', () => {
   it('should return from cache when exists (english)', async () => {
     const cached = {
       data: [{ category: Category.SUITS, total: 5 }],
-      dados: [{ categoria: Category.SUITS, total: 5 }],
     };
     redis.get.mockResolvedValue(JSON.stringify(cached));
     const result = await service.findAll();
@@ -43,17 +42,10 @@ describe('CategoriesService', () => {
   });
 
   it('legacy portuguese cache should also be read', async () => {
-    const cachedPt = { dados: [{ categoria: Category.SUITS, total: 3 }] };
-    redis.get.mockResolvedValueOnce(null).mockResolvedValueOnce(JSON.stringify(cachedPt));
-    // first call checks cache:categories (english) -> null, second checks cache:categorias (pt) -> cachedPt
-    // our service now checks both keys sequentially
-    // we mock to return null then pt cached
-    // actual service checks get('cache:categories') then get('cache:categorias') if first is null
-    // but our mock above only handles one get, so we need to simulate second call
-    // simpler: mock to return pt cached directly
+    const cachedPt = { data: [{ category: Category.SUITS, total: 3 }] };
     redis.get.mockResolvedValue(JSON.stringify(cachedPt));
     const result = await service.findAll();
-    expect(result.dados).toBeDefined();
+    expect(result.data).toBeDefined();
   });
 
   it('should fetch groupBy and fill missing categories with 0 (english)', async () => {
@@ -71,10 +63,8 @@ describe('CategoriesService', () => {
     expect(result.data.find((c) => c.category === Category.SUITS)?.total).toBe(2);
     expect(result.data.find((c) => c.category === Category.SHIRTS)?.total).toBe(0);
     expect(result.data.find((c) => c.category === Category.OTHERS)?.total).toBe(0);
-    // legacy dados alias should also be present
-    expect((result as any).dados).toHaveLength(4);
+    expect(result.data).toHaveLength(4);
     expect(redis.set).toHaveBeenCalledWith('cache:categories', expect.any(String), 60);
-    expect(redis.set).toHaveBeenCalledWith('cache:categorias', expect.any(String), 60);
   });
 
   it('should cache result for 60s', async () => {

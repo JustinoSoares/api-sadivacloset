@@ -35,10 +35,10 @@ export class PerfilEnderecosController {
   @Get()
   @ApiOperation({ summary: 'Lista endereços do comprador', description: 'Returns buyer addresses' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const addresses = await this.addressesService.findAll(user.sub);
-    return { data: addresses, dados: addresses };
+    return { data: addresses };
   }
 
   @Post()
@@ -50,40 +50,38 @@ export class PerfilEnderecosController {
   @ApiBody({ type: CreateAddressDto })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateAddressDto) {
-    const etiqueta = dto.labelNormalized;
-    const provincia = dto.provinceNormalized;
-    const municipio = dto.municipalityNormalized;
-    const bairro = dto.neighborhoodNormalized;
-    const rua = dto.streetNormalized;
-    const referencia = dto.referenceNormalized ?? null;
+    const label = dto.labelNormalized;
+    const province = dto.provinceNormalized;
+    const municipality = dto.municipalityNormalized;
+    const neighborhood = dto.neighborhoodNormalized;
+    const street = dto.streetNormalized;
+    const reference = dto.referenceNormalized ?? null;
 
-    if (!etiqueta || !provincia || !municipio || !bairro || !rua) {
-      const detalhes: { campo: string; erros: string[] }[] = [];
-      if (!etiqueta) detalhes.push({ campo: 'etiqueta', erros: ['etiqueta não pode ser vazia'] });
-      if (!provincia)
-        detalhes.push({ campo: 'provincia', erros: ['provincia não pode ser vazia'] });
-      if (!municipio)
-        detalhes.push({ campo: 'municipio', erros: ['municipio não pode ser vazio'] });
-      if (!bairro) detalhes.push({ campo: 'bairro', erros: ['bairro não pode ser vazio'] });
-      if (!rua) detalhes.push({ campo: 'rua', erros: ['rua não pode ser vazia'] });
+    if (!label || !province || !municipality || !neighborhood || !street) {
+      const details: { field: string; errors: string[] }[] = [];
+      if (!label) details.push({ field: 'label', errors: ['label is required'] });
+      if (!province) details.push({ field: 'province', errors: ['province is required'] });
+      if (!municipality) details.push({ field: 'municipality', errors: ['municipality is required'] });
+      if (!neighborhood) details.push({ field: 'neighborhood', errors: ['neighborhood is required'] });
+      if (!street) details.push({ field: 'street', errors: ['street is required'] });
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes },
+        error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details },
       });
     }
 
     const address = await this.addressesService.create(user.sub, {
-      etiqueta,
-      provincia,
-      municipio,
-      bairro,
-      rua,
-      referencia,
+      label,
+      province,
+      municipality,
+      neighborhood,
+      street,
+      reference,
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
     });
-    return { data: address, dados: address };
+    return { data: address };
   }
 
   @Patch(':id')
@@ -92,44 +90,44 @@ export class PerfilEnderecosController {
   @ApiBody({ type: UpdateAddressDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async update(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAddressDto,
   ) {
-    const etiqueta = dto.labelNormalized;
-    const provincia = dto.provinceNormalized;
-    const municipio = dto.municipalityNormalized;
-    const bairro = dto.neighborhoodNormalized;
-    const rua = dto.streetNormalized;
-    const referencia = dto.referenceNormalized;
+    const label = dto.labelNormalized;
+    const province = dto.provinceNormalized;
+    const municipality = dto.municipalityNormalized;
+    const neighborhood = dto.neighborhoodNormalized;
+    const street = dto.streetNormalized;
+    const reference = dto.referenceNormalized;
     const hasAny =
-      etiqueta !== undefined ||
-      provincia !== undefined ||
-      municipio !== undefined ||
-      bairro !== undefined ||
-      rua !== undefined ||
-      referencia !== undefined ||
+      label !== undefined ||
+      province !== undefined ||
+      municipality !== undefined ||
+      neighborhood !== undefined ||
+      street !== undefined ||
+      reference !== undefined ||
       dto.latitude !== undefined ||
       dto.longitude !== undefined;
     if (!hasAny) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Nenhum campo para atualizar', detalhes: [] },
+        error: { code: 'VALIDATION_ERROR', message: 'No fields to update', details: [] },
       });
     }
     const address = await this.addressesService.update(user.sub, id, {
-      etiqueta,
-      provincia,
-      municipio,
-      bairro,
-      rua,
-      referencia: referencia !== undefined ? referencia : undefined,
+      label,
+      province,
+      municipality,
+      neighborhood,
+      street,
+      reference: reference !== undefined ? reference : undefined,
       latitude: dto.latitude,
       longitude: dto.longitude,
     });
-    return { data: address, dados: address };
+    return { data: address };
   }
 
   @Delete(':id')
@@ -140,12 +138,12 @@ export class PerfilEnderecosController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 409, description: 'Conflict' })
   async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.addressesService.remove(user.sub, id);
-    return { mensagem: 'Endereço removido', data: null, dados: null };
+    return { message: 'Address removed', data: null };
   }
 
   @Patch(':id/predefinir')
@@ -155,11 +153,11 @@ export class PerfilEnderecosController {
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async setDefault(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const address = await this.addressesService.setDefault(user.sub, id);
-    return { data: address, dados: address };
+    return { data: address };
   }
 }
 
@@ -177,7 +175,7 @@ export class ProfileAddressesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const addresses = await this.addressesService.findAll(user.sub);
-    return { data: addresses, dados: addresses };
+    return { data: addresses };
   }
 
   @Post()
@@ -192,33 +190,33 @@ export class ProfileAddressesController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateAddressDto) {
-    const etiqueta = dto.labelNormalized;
-    const provincia = dto.provinceNormalized;
-    const municipio = dto.municipalityNormalized;
-    const bairro = dto.neighborhoodNormalized;
-    const rua = dto.streetNormalized;
-    if (!etiqueta || !provincia || !municipio || !bairro || !rua) {
-      const detalhes: { campo: string; erros: string[] }[] = [];
-      if (!etiqueta) detalhes.push({ campo: 'label', erros: ['label is required'] });
-      if (!provincia) detalhes.push({ campo: 'province', erros: ['province is required'] });
-      if (!municipio) detalhes.push({ campo: 'municipality', erros: ['municipality is required'] });
-      if (!bairro) detalhes.push({ campo: 'neighborhood', erros: ['neighborhood is required'] });
-      if (!rua) detalhes.push({ campo: 'street', erros: ['street is required'] });
+    const label = dto.labelNormalized;
+    const province = dto.provinceNormalized;
+    const municipality = dto.municipalityNormalized;
+    const neighborhood = dto.neighborhoodNormalized;
+    const street = dto.streetNormalized;
+    if (!label || !province || !municipality || !neighborhood || !street) {
+      const details: { field: string; errors: string[] }[] = [];
+      if (!label) details.push({ field: 'label', errors: ['label is required'] });
+      if (!province) details.push({ field: 'province', errors: ['province is required'] });
+      if (!municipality) details.push({ field: 'municipality', errors: ['municipality is required'] });
+      if (!neighborhood) details.push({ field: 'neighborhood', errors: ['neighborhood is required'] });
+      if (!street) details.push({ field: 'street', errors: ['street is required'] });
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes },
+        error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details },
       });
     }
     const address = await this.addressesService.create(user.sub, {
-      etiqueta: etiqueta!,
-      provincia: provincia!,
-      municipio: municipio!,
-      bairro: bairro!,
-      rua: rua!,
-      referencia: dto.referenceNormalized ?? null,
+      label: label!,
+      province: province!,
+      municipality: municipality!,
+      neighborhood: neighborhood!,
+      street: street!,
+      reference: dto.referenceNormalized ?? null,
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
     });
-    return { data: address, dados: address };
+    return { data: address };
   }
 
   @Patch(':id')
@@ -235,37 +233,37 @@ export class ProfileAddressesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAddressDto,
   ) {
-    const etiqueta = dto.labelNormalized;
-    const provincia = dto.provinceNormalized;
-    const municipio = dto.municipalityNormalized;
-    const bairro = dto.neighborhoodNormalized;
-    const rua = dto.streetNormalized;
-    const referencia = dto.referenceNormalized;
+    const label = dto.labelNormalized;
+    const province = dto.provinceNormalized;
+    const municipality = dto.municipalityNormalized;
+    const neighborhood = dto.neighborhoodNormalized;
+    const street = dto.streetNormalized;
+    const reference = dto.referenceNormalized;
     const hasAny =
-      etiqueta !== undefined ||
-      provincia !== undefined ||
-      municipio !== undefined ||
-      bairro !== undefined ||
-      rua !== undefined ||
-      referencia !== undefined ||
+      label !== undefined ||
+      province !== undefined ||
+      municipality !== undefined ||
+      neighborhood !== undefined ||
+      street !== undefined ||
+      reference !== undefined ||
       dto.latitude !== undefined ||
       dto.longitude !== undefined;
     if (!hasAny) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'No fields to update', detalhes: [] },
+        error: { code: 'VALIDATION_ERROR', message: 'No fields to update', details: [] },
       });
     }
     const address = await this.addressesService.update(user.sub, id, {
-      etiqueta,
-      provincia,
-      municipio,
-      bairro,
-      rua,
-      referencia: referencia !== undefined ? referencia : undefined,
+      label,
+      province,
+      municipality,
+      neighborhood,
+      street,
+      reference: reference !== undefined ? reference : undefined,
       latitude: dto.latitude,
       longitude: dto.longitude,
     });
-    return { data: address, dados: address };
+    return { data: address };
   }
 
   @Delete(':id')
@@ -279,7 +277,7 @@ export class ProfileAddressesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.addressesService.remove(user.sub, id);
-    return { message: 'Address removed', mensagem: 'Endereço removido', data: null, dados: null };
+    return { message: 'Address removed', data: null };
   }
 
   @Patch(':id/default')
@@ -294,6 +292,6 @@ export class ProfileAddressesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async setDefault(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const address = await this.addressesService.setDefault(user.sub, id);
-    return { data: address, dados: address };
+    return { data: address };
   }
 }

@@ -38,7 +38,7 @@ export class ProductsController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const product = await this.productsService.findOne(id);
-    return { data: product, dados: product };
+    return { data: product };
   }
 }
 

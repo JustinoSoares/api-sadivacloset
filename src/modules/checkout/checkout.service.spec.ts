@@ -113,7 +113,7 @@ describe('CheckoutService', () => {
     });
 
     expect(result.id).toBe('order1');
-    expect(result.taxa_entrega).toBe(2200);
+    expect(result.deliveryFee).toBe(2200);
     expect(prisma.$transaction).toHaveBeenCalled();
   });
 
@@ -132,7 +132,7 @@ describe('CheckoutService', () => {
         dataAgendada: new Date(Date.now() + 86400000).toISOString().split('T')[0],
         janelaHorario: '09:00-12:00',
       }),
-    ).rejects.toMatchObject({ response: { erro: { codigo: 'CARRINHO_VAZIO' } } });
+    ).rejects.toMatchObject({ response: { error: { code: 'CART_EMPTY' } } });
   });
 
   it('should block if stock insuficiente and cancel transaction', async () => {
@@ -158,7 +158,7 @@ describe('CheckoutService', () => {
         dataAgendada: new Date(Date.now() + 86400000).toISOString().split('T')[0],
         janelaHorario: '09:00-12:00',
       }),
-    ).rejects.toMatchObject({ response: { erro: { codigo: 'STOCK_INSUFICIENTE' } } });
+    ).rejects.toMatchObject({ response: { error: { code: 'INSUFFICIENT_STOCK' } } });
     // ensure product update not called beyond validation (transaction would abort)
   });
 

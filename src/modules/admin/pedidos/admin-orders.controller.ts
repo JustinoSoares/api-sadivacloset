@@ -53,7 +53,7 @@ export class AdminPedidosController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     const result = await this.adminOrdersService.updateStatus(user.sub, id, dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 }
 

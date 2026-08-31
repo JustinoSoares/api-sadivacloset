@@ -24,10 +24,10 @@ export class PerfilNotificacoesController {
     description: 'Returns buyer notifications',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const notifications = await this.notificationsService.findAll(user.sub);
-    return { data: notifications, dados: notifications };
+    return { data: notifications };
   }
 
   // IMPORTANTE: /lidas antes de /:id/lida para não capturar "lidas" como :id
@@ -37,10 +37,10 @@ export class PerfilNotificacoesController {
     description: 'Marks all notifications as read',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async markAllAsRead(@CurrentUser() user: JwtPayload) {
     const result = await this.notificationsService.marcarTodasComoLidas(user.sub);
-    return { data: result, dados: result, mensagem: 'Todas as notificações marcadas como lidas' };
+    return { data: result, message: 'All notifications marked as read' };
   }
 
   @Patch(':id/lida')
@@ -50,11 +50,11 @@ export class PerfilNotificacoesController {
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async markOneAsRead(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const notification = await this.notificationsService.marcarComoLida(user.sub, id);
-    return { data: notification, dados: notification };
+    return { data: notification };
   }
 }
 
@@ -75,7 +75,7 @@ export class ProfileNotificationsController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const notifications = await this.notificationsService.findAll(user.sub);
-    return { data: notifications, dados: notifications };
+    return { data: notifications };
   }
 
   @Patch('read')
@@ -89,7 +89,7 @@ export class ProfileNotificationsController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async markAllAsRead(@CurrentUser() user: JwtPayload) {
     const result = await this.notificationsService.marcarTodasComoLidas(user.sub);
-    return { data: result, dados: result, message: 'All notifications marked as read' };
+    return { data: result, message: 'All notifications marked as read' };
   }
 
   @Patch(':id/read')
@@ -104,6 +104,6 @@ export class ProfileNotificationsController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async markOneAsRead(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const notification = await this.notificationsService.marcarComoLida(user.sub, id);
-    return { data: notification, dados: notification };
+    return { data: notification };
   }
 }

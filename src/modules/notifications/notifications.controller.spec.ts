@@ -22,15 +22,10 @@ describe('PerfilNotificacoesController', () => {
 
   const notifMock = {
     id: notifId,
-    titulo: 'Pedido enviado',
     title: 'Pedido enviado',
-    descricao: 'Seu pedido saiu para entrega',
     description: 'Seu pedido saiu para entrega',
-    criadoEm: new Date('2026-08-26T10:00:00.000Z'),
     createdAt: new Date('2026-08-26T10:00:00.000Z'),
-    lida: false,
     isRead: false,
-    compradorId: buyerId,
     buyerId,
   };
 
@@ -38,7 +33,7 @@ describe('PerfilNotificacoesController', () => {
     service = {
       findAll: jest.fn().mockResolvedValue([notifMock]),
       criar: jest.fn().mockResolvedValue(notifMock),
-      marcarComoLida: jest.fn().mockResolvedValue({ ...notifMock, lida: true, isRead: true }),
+      marcarComoLida: jest.fn().mockResolvedValue({ ...notifMock, isRead: true }),
       marcarTodasComoLidas: jest.fn().mockResolvedValue({ count: 3 }),
     };
 
@@ -51,12 +46,12 @@ describe('PerfilNotificacoesController', () => {
     profileController = mod.get(ProfileNotificationsController);
   });
 
-  it('GET /perfil/notificacoes should return {data,dados} with ISO criadoEm', async () => {
+  it('GET /perfil/notificacoes should return {data} with ISO createdAt', async () => {
     const result = await perfilController.findAll(user);
     expect(service.findAll).toHaveBeenCalledWith(buyerId);
-    expect(result).toEqual({ data: [notifMock], dados: [notifMock] });
-    expect(result.data[0].criadoEm.toISOString()).toBe('2026-08-26T10:00:00.000Z');
-    expect(typeof result.data[0].lida).toBe('boolean');
+    expect(result).toEqual({ data: [notifMock] });
+    expect(result.data[0].createdAt.toISOString()).toBe('2026-08-26T10:00:00.000Z');
+    expect(typeof result.data[0].isRead).toBe('boolean');
   });
 
   it('PATCH /perfil/notificacoes/lidas should mark all as read', async () => {
@@ -64,8 +59,7 @@ describe('PerfilNotificacoesController', () => {
     expect(service.marcarTodasComoLidas).toHaveBeenCalledWith(buyerId);
     expect(result).toEqual({
       data: { count: 3 },
-      dados: { count: 3 },
-      mensagem: expect.any(String),
+      message: expect.any(String),
     });
   });
 
@@ -73,14 +67,13 @@ describe('PerfilNotificacoesController', () => {
     const result = await perfilController.markOneAsRead(user, notifId);
     expect(service.marcarComoLida).toHaveBeenCalledWith(buyerId, notifId);
     expect(result).toEqual({
-      data: expect.objectContaining({ lida: true }),
-      dados: expect.objectContaining({ lida: true }),
+      data: expect.objectContaining({ isRead: true }),
     });
   });
 
   it('should propagate 404 if notification not owner', async () => {
     service.marcarComoLida.mockRejectedValue(
-      new NotFoundException({ erro: { codigo: 'NAO_ENCONTRADO' } }),
+      new NotFoundException({ error: { code: 'NOT_FOUND' } }),
     );
     await expect(perfilController.markOneAsRead(user, notifId)).rejects.toBeInstanceOf(
       NotFoundException,

@@ -73,16 +73,10 @@ export class AuditoriaService {
     const mapped = logs.map((log: any) => ({
       id: log.id,
       adminId: log.adminId,
-      admin_id: log.adminId,
-      acao: log.action,
       action: log.action,
-      entidade: log.entity,
       entity: log.entity,
-      entidadeId: log.entityId,
       entityId: log.entityId,
-      detalhes: log.details,
       details: log.details,
-      criadoEm: log.createdAt,
       createdAt: log.createdAt,
     }));
 

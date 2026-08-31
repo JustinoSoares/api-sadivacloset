@@ -17,28 +17,25 @@ describe('PaginationDto', () => {
 });
 
 describe('buildPaginatedResponse', () => {
-  it('deve retornar {dados, pagina, total, total_paginas} (bilingual: também data/page/totalPages)', () => {
+  it('deve retornar {data, page, total, totalPages} (English-only)', () => {
     const dto = new PaginationDto();
     dto.page = 2;
     dto.limit = 10;
     const result = buildPaginatedResponse([{ id: 1 }, { id: 2 }] as any, 25, dto);
     expect(result).toEqual({
       data: [{ id: 1 }, { id: 2 }],
-      dados: [{ id: 1 }, { id: 2 }],
       page: 2,
-      pagina: 2,
       total: 25,
       totalPages: 3,
-      total_paginas: 3,
     });
   });
 
-  it('deve calcular total_paginas com teto', () => {
+  it('deve calcular totalPages com teto', () => {
     const dto = new PaginationDto();
     dto.page = 1;
     dto.limit = 2;
     const result = buildPaginatedResponse([], 5, dto);
-    expect(result.total_paginas).toBe(3);
+    expect(result.totalPages).toBe(3);
   });
 });
 

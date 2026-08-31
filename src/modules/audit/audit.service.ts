@@ -73,17 +73,11 @@ export class AuditService {
     const mapped = logs.map((log: any) => ({
       id: log.id,
       adminId: log.adminId,
-      admin_id: log.adminId,
       action: log.action,
-      acao: log.action,
       entity: log.entity,
-      entidade: log.entity,
       entityId: log.entityId,
-      entidadeId: log.entityId,
       details: log.details,
-      detalhes: log.details,
       createdAt: log.createdAt,
-      criadoEm: log.createdAt,
     }));
 
     return buildPaginatedResponse(mapped, total, dto);

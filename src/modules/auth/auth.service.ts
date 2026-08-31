@@ -71,7 +71,7 @@ export class AuthService {
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) {
       throw new ConflictException({
-        erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está registado' },
+        error: { code: 'EMAIL_ALREADY_EXISTS', message: 'This email is already registered' },
       });
     }
 
@@ -101,20 +101,20 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException({
-        erro: { codigo: 'CREDENCIAIS_INVALIDAS', mensagem: 'Email ou password inválidos' },
+        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
       });
     }
 
     if (!user.isActive) {
       throw new UnauthorizedException({
-        erro: { codigo: 'CONTA_INATIVA', mensagem: 'Conta desativada' },
+        error: { code: 'ACCOUNT_INACTIVE', message: 'Account is deactivated' },
       });
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedException({
-        erro: { codigo: 'CREDENCIAIS_INVALIDAS', mensagem: 'Email ou password inválidos' },
+        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
       });
     }
 
@@ -132,7 +132,7 @@ export class AuthService {
     const blacklisted = await this.redis.exists(blKey);
     if (blacklisted) {
       throw new UnauthorizedException({
-        erro: { codigo: 'TOKEN_REVOGADO', mensagem: 'Refresh token revogado (logout)' },
+        error: { code: 'REVOKED_TOKEN', message: 'Refresh token revoked (logout)' },
       });
     }
 
@@ -141,7 +141,7 @@ export class AuthService {
       payload = await this.jwt.verifyAsync(refreshToken, { secret: refreshSecret });
     } catch {
       throw new UnauthorizedException({
-        erro: { codigo: 'TOKEN_INVALIDO', mensagem: 'Refresh token inválido ou expirado' },
+        error: { code: 'INVALID_TOKEN', message: 'Invalid or expired refresh token' },
       });
     }
 
@@ -150,7 +150,7 @@ export class AuthService {
     });
     if (!user || !user.isActive) {
       throw new UnauthorizedException({
-        erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Utilizador não encontrado ou inativo' },
+        error: { code: 'UNAUTHENTICATED', message: 'User not found or inactive' },
       });
     }
 
@@ -166,7 +166,7 @@ export class AuthService {
   async logout(refreshToken: string) {
     if (!refreshToken) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_INVALIDO', mensagem: 'refresh_token é obrigatório' },
+        error: { code: 'BAD_REQUEST', message: 'refresh_token is required' },
       });
     }
 
@@ -175,7 +175,7 @@ export class AuthService {
       await this.jwt.verifyAsync(refreshToken, { secret: refreshSecret });
     } catch {
       throw new UnauthorizedException({
-        erro: { codigo: 'TOKEN_INVALIDO', mensagem: 'Refresh token inválido ou expirado' },
+        error: { code: 'INVALID_TOKEN', message: 'Invalid or expired refresh token' },
       });
     }
 
@@ -184,7 +184,7 @@ export class AuthService {
     const blKey = this.refreshKey(refreshToken);
     await this.redis.set(blKey, '1', ttl);
 
-    return { mensagem: 'Sessão terminada com sucesso' };
+    return { message: 'Session terminated successfully' };
   }
 
   // ── Forgot password ────────────────────────────────────────
@@ -208,7 +208,7 @@ export class AuthService {
     }
 
     return {
-      mensagem: 'Se o email existir, um link de redefinição foi enviado',
+      message: 'If the email exists, a reset link has been sent',
     };
   }
 
@@ -225,9 +225,9 @@ export class AuthService {
 
     if (!userId) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'TOKEN_EXPIRADO',
-          mensagem: 'Token inválido ou expirado (15min)',
+        error: {
+          code: 'TOKEN_EXPIRED',
+          message: 'Invalid or expired token (15min)',
         },
       });
     }
@@ -237,7 +237,7 @@ export class AuthService {
     });
     if (!user) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Utilizador não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'User not found' },
       });
     }
 
@@ -249,7 +249,7 @@ export class AuthService {
 
     await this.redis.del(key);
 
-    return { mensagem: 'Password redefinida com sucesso' };
+    return { message: 'Password reset successfully' };
   }
 
   async redefinirPassword(token: string, novaPassword: string) {
@@ -272,7 +272,7 @@ export class AuthService {
     });
     if (!user) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Utilizador não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'User not found' },
       });
     }
     return user;
@@ -289,7 +289,7 @@ export class AuthService {
       });
       if (other && other.id !== userId) {
         throw new ConflictException({
-          erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Este email já está em uso' },
+          error: { code: 'EMAIL_ALREADY_EXISTS', message: 'This email is already registered' },
         });
       }
     }

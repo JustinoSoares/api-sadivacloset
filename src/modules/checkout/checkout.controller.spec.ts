@@ -46,7 +46,7 @@ describe('CheckoutController', () => {
         janelaHorario: '09:00-12:00',
       }),
     );
-    expect(result).toEqual({ data: orderMock, dados: orderMock });
+    expect(result).toEqual({ data: orderMock });
   });
 
   it('should accept aliases (address_id, delivery_zone_id, type, scheduled_date, time_window)', async () => {

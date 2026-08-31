@@ -40,9 +40,9 @@ function mapMetodoToEnum(metodo: string): PaymentMethod {
   const e = map[n];
   if (!e)
     throw new BadRequestException({
-      erro: {
-        codigo: 'METODO_INVALIDO',
-        mensagem: `Método '${metodo}' inválido. Use: multicaixa_express (gpo), referencia_multicaixa (gpr), transferencia, pagamento_entrega, cartao`,
+      error: {
+        code: 'INVALID_PAYMENT_METHOD',
+        message: `Method '${metodo}' is invalid. Use: multicaixa_express (gpo), referencia_multicaixa (gpr), transferencia, pagamento_entrega, cartao`,
       },
     });
   return e;
@@ -57,35 +57,19 @@ function isGatewayMethod(method: PaymentMethod): boolean {
 function toPaymentResponse(payment: any) {
   return {
     id: payment.id,
-    pedido_id: payment.orderId,
-    order_id: payment.orderId,
     orderId: payment.orderId,
-    metodo: payment.method,
     method: payment.method,
-    valor: payment.amount,
     amount: payment.amount,
-    estado: payment.status,
     status: payment.status,
-    referencia_externa: payment.externalReference ?? null,
-    external_reference: payment.externalReference ?? null,
     externalReference: payment.externalReference ?? null,
-    comprovativo_url: payment.receiptUrl ?? null,
-    receipt_url: payment.receiptUrl ?? null,
     receiptUrl: payment.receiptUrl ?? null,
-    provider_tx_id: payment.providerTxId ?? null,
     providerTxId: payment.providerTxId ?? null,
-    bridpay_intent_id: payment.bridpayIntentId ?? null,
     bridpayIntentId: payment.bridpayIntentId ?? null,
-    bridpay_merchant_tx_id: payment.bridpayMerchantTxId ?? null,
     bridpayMerchantTxId: payment.bridpayMerchantTxId ?? null,
-    provider_details: payment.providerDetails ?? null,
     providerDetails: payment.providerDetails ?? null,
-    telefone: payment.phoneNumber ?? null,
     phoneNumber: payment.phoneNumber ?? null,
     iban: payment.iban ?? null,
-    criado_em: payment.createdAt,
     createdAt: payment.createdAt,
-    atualizado_em: payment.updatedAt,
     updatedAt: payment.updatedAt,
   };
 }
@@ -137,34 +121,34 @@ export class PaymentsService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
     if (order.status === OrderStatus.CANCELLED) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_CANCELADO', mensagem: 'Pedido cancelado não pode ser pago' },
+        error: { code: 'ORDER_CANCELLED', message: 'Cancelled order cannot be paid' },
       });
     }
     if (order.status === OrderStatus.PAID || order.status === OrderStatus.COMPLETED) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_JA_PAGO', mensagem: 'Pedido já está pago' },
+        error: { code: 'ORDER_ALREADY_PAID', message: 'Order already paid' },
       });
     }
     if (order.payment && order.payment.status === PaymentStatus.PAID) {
       throw new BadRequestException({
-        erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' },
+        error: { code: 'PAYMENT_ALREADY_VALIDATED', message: 'Payment already validated' },
       });
     }
 
     const method = mapMetodoToEnum(dto.metodo);
-    // validar campos específicos por método
+    // validate method-specific fields
     if (method === PaymentMethod.MULTICAIXA_EXPRESS) {
       if (!dto.phoneNumber) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'phoneNumber é obrigatório para multicaixa_express (gpo)',
-            detalhes: [{ campo: 'phoneNumber', erros: ['obrigatório para GPO'] }],
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'phoneNumber is required for multicaixa_express (gpo)',
+            details: [{ field: 'phoneNumber', errors: ['required for GPO'] }],
           },
         });
       }
@@ -381,12 +365,12 @@ export class PaymentsService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
     if (!order.payment) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado para este pedido' },
+        error: { code: 'NOT_FOUND', message: 'Payment not found for this order' },
       });
     }
     return toPaymentResponse(order.payment);
@@ -399,20 +383,20 @@ export class PaymentsService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
     if (!order.payment) {
       throw new NotFoundException({
-        erro: {
-          codigo: 'NAO_ENCONTRADO',
-          mensagem: 'Pagamento não iniciado. Use POST /pagamento/iniciar primeiro',
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Payment not initiated. Use POST /orders/:id/payment/init first',
         },
       });
     }
     if (order.payment.status === PaymentStatus.PAID) {
       throw new BadRequestException({
-        erro: { codigo: 'PAGAMENTO_JA_VALIDADO', mensagem: 'Pagamento já validado' },
+        error: { code: 'PAYMENT_ALREADY_VALIDATED', message: 'Payment already validated' },
       });
     }
     // Só permite comprovativo para transferência bancária (ou todos? mas spec diz transferência)
@@ -450,7 +434,7 @@ export class PaymentsService {
     });
     if (!payment) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pagamento não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Payment not found' },
       });
     }
     if (payment.status === PaymentStatus.PAID) {
@@ -469,11 +453,11 @@ export class PaymentsService {
       include: { payment: true },
     });
 
-    await this.auditoria.registar(adminId, 'validar_pagamento', 'pagamento', paymentId, {
+    await this.auditoria.registar(adminId, 'validate_payment', 'payment', paymentId, {
       orderId: payment.orderId,
-      metodo: payment.method,
-      valor: payment.amount,
-      comprovativo: payment.receiptUrl,
+      method: payment.method,
+      amount: payment.amount,
+      receiptUrl: payment.receiptUrl,
     });
 
     // Wallet ledger settled credit
@@ -505,11 +489,9 @@ export class PaymentsService {
     }
 
     return {
-      pagamento: toPaymentResponse(updatedPayment),
       payment: toPaymentResponse(updatedPayment),
-      pedido: {
+      order: {
         id: order.id,
-        estado: order.status,
         status: order.status,
       },
     };
@@ -699,9 +681,9 @@ export class PaymentsService {
         (headers as any)['X-Signature'];
       if (!signatureHeader) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ASSINATURA_EM_FALTA',
-            mensagem: 'Assinatura HMAC em falta (x-signature)',
+          error: {
+            code: 'MISSING_SIGNATURE',
+            message: 'Missing HMAC signature (x-signature)',
           },
         });
       }
@@ -720,7 +702,7 @@ export class PaymentsService {
           timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(altExpected, 'utf8')));
       if (!isValid) {
         throw new BadRequestException({
-          erro: { codigo: 'ASSINATURA_INVALIDA', mensagem: 'Assinatura HMAC inválida' },
+          error: { code: 'INVALID_SIGNATURE', message: 'Invalid HMAC signature' },
         });
       }
     } else {
@@ -745,26 +727,26 @@ export class PaymentsService {
 
     if (!referenciaExterna) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'REFERENCIA_EM_FALTA',
-          mensagem: 'referencia_externa é obrigatória no payload do webhook',
+        error: {
+          code: 'MISSING_REFERENCE',
+          message: 'externalReference is required in webhook payload',
         },
       });
     }
     const referencia = String(referenciaExterna).trim();
-    const redisKey = `webhook:pagamento:${gatewayNorm}:${referencia}`;
+    const redisKey = `webhook:payment:${gatewayNorm}:${referencia}`;
 
     // 3. Idempotência: Redis Set/hash + coluna webhookProcessedAt
     try {
       const alreadyInRedis = await this.redis.exists(redisKey);
       if (alreadyInRedis) {
         this.logger.log(
-          `Webhook idempotente já processado (Redis) gateway=${gatewayNorm} ref=${referencia}`,
+          `Webhook idempotent already processed (Redis) gateway=${gatewayNorm} ref=${referencia}`,
         );
-        return { ok: true, idempotente: true, message: 'Já processado (Redis)' };
+        return { ok: true, idempotent: true, message: 'Already processed (Redis)' };
       }
     } catch (e: any) {
-      this.logger.warn(`Redis idempotência check falhou: ${e.message}`);
+      this.logger.warn(`Redis idempotency check failed: ${e.message}`);
     }
 
     // Tenta encontrar pagamento por referencia_externa
@@ -785,22 +767,21 @@ export class PaymentsService {
     }
     if (!payment) {
       throw new NotFoundException({
-        erro: {
-          codigo: 'NAO_ENCONTRADO',
-          mensagem: `Pagamento não encontrado para referencia_externa=${referencia}`,
+        error: {
+          code: 'NOT_FOUND',
+          message: `Payment not found for externalReference=${referencia}`,
         },
       });
     }
 
     if (payment.webhookProcessedAt) {
-      // já processado via coluna
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
       this.logger.log(
-        `Webhook idempotente já processado (DB) pagamento=${payment.id} ref=${referencia}`,
+        `Webhook idempotent already processed (DB) payment=${payment.id} ref=${referencia}`,
       );
-      return { ok: true, idempotente: true, message: 'Já processado (DB)' };
+      return { ok: true, idempotent: true, message: 'Already processed (DB)' };
     }
     if (payment.status === PaymentStatus.PAID) {
       try {
@@ -810,7 +791,7 @@ export class PaymentsService {
           data: { webhookProcessedAt: new Date() },
         });
       } catch {}
-      return { ok: true, idempotente: true, message: 'Pagamento já pago' };
+      return { ok: true, idempotent: true, message: 'Payment already paid' };
     }
 
     // 4. Confirma pagamento: atualiza Pagamento e Pedido, dispara notificação, enfileira BullMQ
@@ -845,7 +826,7 @@ export class PaymentsService {
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
-      return { ok: true, status: 'failed', referencia_externa: referencia };
+      return { ok: true, status: 'failed', externalReference: referencia };
     }
 
     // sucesso (default)
@@ -864,10 +845,10 @@ export class PaymentsService {
     await this.auditoria
       .registar(
         `system-webhook-${gatewayNorm}`,
-        `webhook_pagamento_${gatewayNorm}_confirmado`,
-        'pagamento',
+        `webhook_payment_${gatewayNorm}_confirmed`,
+        'payment',
         payment.id,
-        { gateway: gatewayNorm, referencia_externa: referencia, payload },
+        { gateway: gatewayNorm, externalReference: referencia, payload },
       )
       .catch(() => {});
     await this.prisma.walletTransaction.create({
@@ -915,7 +896,7 @@ export class PaymentsService {
       this.logger.warn(`Enqueue BullMQ falhou: ${e.message}`);
     }
 
-    return { ok: true, status: 'paid', referencia_externa: referencia, gateway: gatewayNorm };
+    return { ok: true, status: 'paid', externalReference: referencia, gateway: gatewayNorm };
   }
 
   async historico(buyerId: string, dto: PaginationDto) {
@@ -940,15 +921,17 @@ export class PaymentsService {
     return buildPaginatedResponse(mapped, total, dto);
   }
 
-  async historicoAdmin(dto: PaginationDto & { metodo?: string; estado?: string }) {
+  async historicoAdmin(dto: PaginationDto & { metodo?: string; method?: string; estado?: string; status?: string }) {
     const where: any = {};
-    if ((dto as any).metodo) {
+    const rawMethod = (dto as any).method ?? (dto as any).metodo;
+    if (rawMethod) {
       try {
-        where.method = mapMetodoToEnum((dto as any).metodo);
+        where.method = mapMetodoToEnum(String(rawMethod));
       } catch {}
     }
-    if ((dto as any).estado) {
-      const s = String((dto as any).estado).toLowerCase();
+    const rawStatus = (dto as any).status ?? (dto as any).estado;
+    if (rawStatus) {
+      const s = String(rawStatus).toLowerCase();
       const map: Record<string, PaymentStatus> = {
         pendente: PaymentStatus.PENDING,
         pending: PaymentStatus.PENDING,
@@ -976,16 +959,16 @@ export class PaymentsService {
     return buildPaginatedResponse(payments.map(toPaymentResponse), total, dto);
   }
 
-  async walletHistorico(buyerId: string | null, dto: PaginationDto & { tipo?: string }) {
+  async walletHistorico(buyerId: string | null, dto: PaginationDto & { tipo?: string; type?: string }) {
     const where: any = {};
     if (buyerId) {
-      // filtra transações ligadas a pedidos do comprador
       const orders = await this.prisma.order.findMany({ where: { buyerId }, select: { id: true } });
       const orderIds = orders.map((o: any) => o.id);
       where.orderId = { in: orderIds.length ? orderIds : ['00000000-0000-0000-0000-000000000000'] };
     }
-    if ((dto as any).tipo) {
-      const t = String((dto as any).tipo).toLowerCase();
+    const rawType = (dto as any).type ?? (dto as any).tipo;
+    if (rawType) {
+      const t = String(rawType).toLowerCase();
       if (t === 'entrada' || t === 'credit' || t === 'credito') where.type = 'credit';
       if (t === 'saida' || t === 'saída' || t === 'debit' || t === 'debito') where.type = 'debit';
     }
@@ -1000,27 +983,17 @@ export class PaymentsService {
     ]);
     const mapped = txs.map((tx: any) => ({
       id: tx.id,
-      tipo: tx.type === 'credit' ? 'entrada' : 'saida',
       type: tx.type,
-      valor: tx.amount,
       amount: tx.amount,
-      saldo_antes: tx.balanceBefore,
       balanceBefore: tx.balanceBefore,
-      saldo_depois: tx.balanceAfter,
       balanceAfter: tx.balanceAfter,
-      estado: tx.status,
       status: tx.status,
-      tipo_referencia: tx.referenceType,
       referenceType: tx.referenceType,
-      referencia_id: tx.referenceId,
       referenceId: tx.referenceId,
-      descricao: tx.description,
       description: tx.description,
-      pedido_id: tx.orderId,
       orderId: tx.orderId,
-      pagamento_id: tx.paymentId,
       paymentId: tx.paymentId,
-      criado_em: tx.createdAt,
+      bridpayTxId: tx.bridpayTxId ?? null,
       createdAt: tx.createdAt,
     }));
     return buildPaginatedResponse(mapped, total, dto);

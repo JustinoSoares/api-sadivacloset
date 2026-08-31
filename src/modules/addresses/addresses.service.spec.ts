@@ -66,7 +66,7 @@ describe('AddressesService', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('findAll', () => {
-    it('should list with predefinida/isDefault bilingual', async () => {
+    it('should list with isDefault English-only', async () => {
       prisma.address.findMany.mockResolvedValue([addressMock]);
       const result = await service.findAll(buyerId);
       expect(prisma.address.findMany).toHaveBeenCalledWith({
@@ -74,61 +74,59 @@ describe('AddressesService', () => {
         orderBy: [{ isDefault: 'desc' }, { id: 'asc' }],
       });
       expect(result).toHaveLength(1);
-      expect(result[0].etiqueta).toBe('Casa');
       expect(result[0].label).toBe('Casa');
-      expect(result[0].predefinida).toBe(true);
       expect(result[0].isDefault).toBe(true);
     });
   });
 
   describe('create', () => {
-    it('should mark first address as predefinida=true', async () => {
+    it('should mark first address as isDefault=true', async () => {
       prisma.address.count.mockResolvedValue(0);
       prisma.address.create.mockResolvedValue(addressMock);
       const result = await service.create(buyerId, {
-        etiqueta: 'Casa',
-        provincia: 'Luanda',
-        municipio: 'Talatona',
-        bairro: 'Benfica',
-        rua: 'Rua 1',
-        referencia: null,
+        label: 'Casa',
+        province: 'Luanda',
+        municipality: 'Talatona',
+        neighborhood: 'Benfica',
+        street: 'Rua 1',
+        reference: null,
         latitude: null,
         longitude: null,
       });
       expect(prisma.address.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ isDefault: true }),
       });
-      expect(result.predefinida).toBe(true);
+      expect(result.isDefault).toBe(true);
     });
 
-    it('should create subsequent address as predefinida=false', async () => {
+    it('should create subsequent address as isDefault=false', async () => {
       prisma.address.count.mockResolvedValue(1);
       prisma.address.create.mockResolvedValue({ ...addressMock, id: '3333', isDefault: false });
       const result = await service.create(buyerId, {
-        etiqueta: 'Trabalho',
-        provincia: 'Luanda',
-        municipio: 'Ingombota',
-        bairro: 'Maianga',
-        rua: 'Rua 2',
-        referencia: 'ref',
+        label: 'Trabalho',
+        province: 'Luanda',
+        municipality: 'Ingombota',
+        neighborhood: 'Maianga',
+        street: 'Rua 2',
+        reference: 'ref',
         latitude: -8.8,
         longitude: 13.2,
       });
       expect(prisma.address.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ isDefault: false }),
       });
-      expect(result.predefinida).toBe(false);
+      expect(result.isDefault).toBe(false);
     });
 
     it('should handle bilingual mapping', async () => {
       prisma.address.count.mockResolvedValue(0);
       prisma.address.create.mockResolvedValue(addressMock);
       await service.create(buyerId, {
-        etiqueta: 'Casa',
-        provincia: 'Luanda',
-        municipio: 'Talatona',
-        bairro: 'Benfica',
-        rua: 'Rua 1',
+        label: 'Casa',
+        province: 'Luanda',
+        municipality: 'Talatona',
+        neighborhood: 'Benfica',
+        street: 'Rua 1',
       } as any);
       expect(prisma.address.create).toHaveBeenCalled();
     });
@@ -138,21 +136,21 @@ describe('AddressesService', () => {
     it('should edit own address', async () => {
       prisma.address.findUnique.mockResolvedValue(addressMock);
       prisma.address.update.mockResolvedValue({ ...addressMock, label: 'Casa Nova' });
-      const result = await service.update(buyerId, addressId, { etiqueta: 'Casa Nova' });
+      const result = await service.update(buyerId, addressId, { label: 'Casa Nova' });
       expect(prisma.address.update).toHaveBeenCalledWith({
         where: { id: addressId },
         data: { label: 'Casa Nova' },
       });
-      expect(result.etiqueta).toBe('Casa Nova');
+      expect(result.label).toBe('Casa Nova');
     });
 
     it('should throw 404 if not owner', async () => {
       prisma.address.findUnique.mockResolvedValue({ ...addressMock, buyerId: otherBuyerId });
-      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(
+      await expect(service.update(buyerId, addressId, { label: 'x' })).rejects.toBeInstanceOf(
         NotFoundException,
       );
       prisma.address.findUnique.mockResolvedValue(null);
-      await expect(service.update(buyerId, addressId, { etiqueta: 'x' })).rejects.toBeInstanceOf(
+      await expect(service.update(buyerId, addressId, { label: 'x' })).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
@@ -183,7 +181,7 @@ describe('AddressesService', () => {
       });
       await expect(service.remove(buyerId, addressId)).rejects.toBeInstanceOf(BadRequestException);
       await expect(service.remove(buyerId, addressId)).rejects.toMatchObject({
-        response: { erro: { codigo: 'ENDERECO_EM_USO' } },
+        response: { error: { code: 'ADDRESS_IN_USE' } },
       });
       expect(prisma.address.delete).not.toHaveBeenCalled();
     });
@@ -225,7 +223,7 @@ describe('AddressesService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       const calls = prisma.$transaction.mock.calls[0][0] as any[];
       expect(calls).toHaveLength(2);
-      expect(result.predefinida).toBe(true);
+      expect(result.isDefault).toBe(true);
     });
 
     it('should throw 404 if not owner', async () => {

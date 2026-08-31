@@ -14,8 +14,8 @@ describe('AdminOrdersController', () => {
 
   beforeEach(async () => {
     service = {
-      findAll: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
-      updateStatus: jest.fn().mockResolvedValue({ id: orderId, status: 'PAID', estado: 'pago' }),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 }),
+      updateStatus: jest.fn().mockResolvedValue({ id: orderId, status: 'PAID' }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminOrdersController],
@@ -37,7 +37,7 @@ describe('AdminOrdersController', () => {
     dto.status = 'paid';
     const result = await controller.updateStatus(user, orderId, dto);
     expect(service.updateStatus).toHaveBeenCalledWith(adminId, orderId, dto);
-    expect(result.data.estado).toBe('pago');
+    expect(result.data.status).toBe('PAID');
   });
 
   it('PATCH /admin/orders/:id/estado legacy should also update', async () => {

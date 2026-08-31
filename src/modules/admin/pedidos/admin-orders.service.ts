@@ -10,60 +10,39 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 function toOrderResponse(order: any) {
   return {
     id: order.id,
-    pedido_id: order.id,
-    order_id: order.id,
-    comprador_id: order.buyerId,
-    buyer_id: order.buyerId,
     buyerId: order.buyerId,
     subtotal: order.subtotal,
-    taxa_entrega: order.deliveryFee,
-    delivery_fee: order.deliveryFee,
     deliveryFee: order.deliveryFee,
     total: order.total,
-    estado: order.status,
     status: order.status,
-    criado_em: order.createdAt,
-    created_at: order.createdAt,
     createdAt: order.createdAt,
-    comprador: order.buyer
-      ? { id: order.buyer.id, nome: order.buyer.name, email: order.buyer.email }
+    buyer: order.buyer
+      ? {
+          id: order.buyer.id,
+          name: order.buyer.name,
+          email: order.buyer.email,
+        }
       : undefined,
-    buyer: order.buyer,
-    itens: (order.items ?? []).map((it: any) => ({
+    items: (order.items ?? []).map((it: any) => ({
       id: it.id,
-      produto_id: it.productId,
-      product_id: it.productId,
       productId: it.productId,
-      nome_produto: it.productName,
       productName: it.productName,
-      preco_unitario: it.unitPrice,
       unitPrice: it.unitPrice,
-      desconto: it.discount,
       discount: it.discount,
-      quantidade: it.quantity,
       quantity: it.quantity,
     })),
-    entrega: order.delivery
+    delivery: order.delivery
       ? {
           id: order.delivery.id,
-          pedido_id: order.delivery.orderId,
           orderId: order.delivery.orderId,
-          tipo: order.delivery.type,
           type: order.delivery.type,
-          endereco_id: order.delivery.addressId,
           addressId: order.delivery.addressId,
-          data_agendada: order.delivery.scheduledDate,
           scheduledDate: order.delivery.scheduledDate,
-          janela_horario: order.delivery.timeWindow,
           timeWindow: order.delivery.timeWindow,
-          estado: order.delivery.status,
           status: order.delivery.status,
-          taxa_entrega: order.delivery.deliveryFee,
           deliveryFee: order.delivery.deliveryFee,
         }
       : null,
-    delivery: order.delivery,
-    pagamento: order.payment ?? null,
     payment: order.payment ?? null,
   };
 }
@@ -115,14 +94,14 @@ export class AdminOrdersService {
     const normalized = dto.estadoNormalized;
     if (!normalized || !UpdateOrderStatusDto.isValid(normalized)) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'ERRO_VALIDACAO',
-          mensagem: 'Estado inválido',
-          detalhes: [
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid status',
+          details: [
             {
-              campo: 'estado',
-              erros: [
-                `estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`,
+              field: 'status',
+              errors: [
+                `status must be one of: awaiting_payment, paid, preparing, shipping, completed, cancelled`,
               ],
             },
           ],
@@ -137,7 +116,7 @@ export class AdminOrdersService {
     });
     if (!order) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
 
@@ -151,19 +130,18 @@ export class AdminOrdersService {
       include: { items: true, delivery: true, payment: true, buyer: true },
     });
 
-    // Audit log via AuditoriaService
-    await this.auditoria.registar(adminId, 'atualizar_estado_pedido', 'pedido', orderId, {
-      de: order.status,
-      para: newStatus,
-      estado: newStatus,
+    await this.auditoria.registar(adminId, 'update_order_status', 'order', orderId, {
+      from: order.status,
+      to: newStatus,
+      status: newStatus,
     });
 
     // Notificação ao comprador
     try {
-      await this.notificationsService.criar(
+      await this.notificationsService.create(
         order.buyerId,
-        'Pedido atualizado',
-        `O estado do seu pedido #${orderId.slice(0, 8)} foi atualizado para ${normalized} (${newStatus})`,
+        'Order updated',
+        `Your order #${orderId.slice(0, 8)} status was updated to ${normalized} (${newStatus})`,
       );
     } catch {}
 

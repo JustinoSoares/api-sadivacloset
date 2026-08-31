@@ -40,32 +40,32 @@ export class FilterOrdersDto extends PaginationDto {
 
   @ApiPropertyOptional({ description: 'Data início intervalo (ISO)', example: '2026-01-01' })
   @IsOptional()
-  @IsDateString({}, { message: 'data_inicio deve ser data ISO válida' })
+  @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   data_inicio?: string;
 
   @ApiPropertyOptional({ description: 'Alias dataInicio' })
   @IsOptional()
-  @IsDateString({}, { message: 'dataInicio deve ser data ISO válida' })
+  @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   dataInicio?: string;
 
   @ApiPropertyOptional({ description: 'Alias startDate' })
   @IsOptional()
-  @IsDateString({}, { message: 'startDate deve ser data ISO válida' })
+  @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   startDate?: string;
 
   @ApiPropertyOptional({ description: 'Data fim intervalo (ISO)', example: '2026-12-31' })
   @IsOptional()
-  @IsDateString({}, { message: 'data_fim deve ser data ISO válida' })
+  @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   data_fim?: string;
 
   @ApiPropertyOptional({ description: 'Alias dataFim' })
   @IsOptional()
-  @IsDateString({}, { message: 'dataFim deve ser data ISO válida' })
+  @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   dataFim?: string;
 
   @ApiPropertyOptional({ description: 'Alias endDate' })
   @IsOptional()
-  @IsDateString({}, { message: 'endDate deve ser data ISO válida' })
+  @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   endDate?: string;
 
   get estadoNormalized(): OrderStatus | undefined {

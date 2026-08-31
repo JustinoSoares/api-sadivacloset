@@ -4,30 +4,20 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export interface NotificationResponse {
   id: string;
-  titulo: string;
   title: string;
-  descricao: string;
   description: string;
-  criadoEm: Date;
   createdAt: Date;
-  lida: boolean;
   isRead: boolean;
-  compradorId: string;
   buyerId: string;
 }
 
 function toResponse(n: Notification): NotificationResponse {
   return {
     id: n.id,
-    titulo: n.title,
     title: n.title,
-    descricao: n.description,
     description: n.description,
-    criadoEm: n.createdAt,
     createdAt: n.createdAt,
-    lida: n.isRead,
     isRead: n.isRead,
-    compradorId: n.buyerId,
     buyerId: n.buyerId,
   };
 }
@@ -37,12 +27,12 @@ export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async criar(
-    compradorId: string,
-    titulo: string,
-    descricao: string,
+    buyerId: string,
+    title: string,
+    description: string,
   ): Promise<NotificationResponse> {
     const notification = await this.prisma.notification.create({
-      data: { buyerId: compradorId, title: titulo, description: descricao },
+      data: { buyerId, title, description },
     });
     return toResponse(notification);
   }
@@ -52,9 +42,9 @@ export class NotificationsService {
     return this.criar(buyerId, title, description);
   }
 
-  async findAll(compradorId: string): Promise<NotificationResponse[]> {
+  async findAll(buyerId: string): Promise<NotificationResponse[]> {
     const notifications = await this.prisma.notification.findMany({
-      where: { buyerId: compradorId },
+      where: { buyerId },
       orderBy: { createdAt: 'desc' },
     });
     return notifications.map(toResponse);
@@ -65,11 +55,11 @@ export class NotificationsService {
     return this.findAll(buyerId);
   }
 
-  async marcarComoLida(compradorId: string, id: string): Promise<NotificationResponse> {
+  async marcarComoLida(buyerId: string, id: string): Promise<NotificationResponse> {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
-    if (!notification || notification.buyerId !== compradorId) {
+    if (!notification || notification.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Notificação não encontrada' },
+        error: { code: 'NOT_FOUND', message: 'Notification not found' },
       });
     }
     const updated = await this.prisma.notification.update({
@@ -84,9 +74,9 @@ export class NotificationsService {
     return this.marcarComoLida(buyerId, id);
   }
 
-  async marcarTodasComoLidas(compradorId: string): Promise<{ count: number }> {
+  async marcarTodasComoLidas(buyerId: string): Promise<{ count: number }> {
     const result = await this.prisma.notification.updateMany({
-      where: { buyerId: compradorId, isRead: false },
+      where: { buyerId, isRead: false },
       data: { isRead: true },
     });
     return { count: result.count };

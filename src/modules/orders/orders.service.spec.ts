@@ -82,8 +82,8 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(orderMock);
       const result = await service.findOne(buyerId, orderId);
       expect(result.id).toBe(orderId);
-      expect(result.itens).toHaveLength(1);
-      expect(result.entrega).toBeDefined();
+      expect(result.items).toHaveLength(1);
+      expect(result.delivery).toBeDefined();
     });
     it('should throw 404 if not owner', async () => {
       prisma.order.findUnique.mockResolvedValue({ ...orderMock, buyerId: otherId });
@@ -103,7 +103,7 @@ describe('OrdersService', () => {
       const result = await service.findAllPaginated(buyerId, dto);
       expect(result.total).toBe(1);
       expect(result.data).toHaveLength(1);
-      expect(result.pagina).toBe(1);
+      expect(result.page).toBe(1);
     });
   });
 
@@ -112,7 +112,7 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(orderMock);
       const result = await service.cancel(buyerId, orderId);
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(result.estado).toBe(OrderStatus.CANCELLED);
+      expect(result.status).toBe(OrderStatus.CANCELLED);
     });
     it('should block if delivery ON_THE_WAY (a_caminho/em_entrega)', async () => {
       prisma.order.findUnique.mockResolvedValue({
@@ -122,7 +122,7 @@ describe('OrdersService', () => {
       });
       await expect(service.cancel(buyerId, orderId)).rejects.toBeInstanceOf(BadRequestException);
       await expect(service.cancel(buyerId, orderId)).rejects.toMatchObject({
-        response: { erro: { codigo: 'ENTREGA_EM_CURSO' } },
+        response: { error: { code: 'DELIVERY_IN_PROGRESS' } },
       });
     });
     it('should block if already cancelled', async () => {

@@ -11,27 +11,13 @@ function toMemberResponse(
   return {
     id: user.id,
     name: user.name,
-    nome: user.name,
     email: user.email,
     role: user.role,
     createdAt: user.createdAt,
-    criadoEm: user.createdAt,
     isActive: user.isActive,
-    ativo: user.isActive,
     totalOrders: stats.totalOrders,
-    totalPedidos: stats.totalOrders,
-    total_pedidos: stats.totalOrders,
-    nOrders: stats.totalOrders,
-    nPedidos: stats.totalOrders,
-    n_pedidos: stats.totalOrders,
-    ordersCount: stats.totalOrders,
-    pedidosCount: stats.totalOrders,
     totalSpent: stats.totalSpentPaid,
-    totalGasto: stats.totalSpentPaid,
-    total_gasto: stats.totalSpentPaid,
     totalSpentGross: stats.totalSpentGross,
-    totalGastoBruto: stats.totalSpentGross,
-    total_gasto_bruto: stats.totalSpentGross,
   };
 }
 
@@ -113,12 +99,12 @@ export class AdminMembersService {
       const exists = await this.prisma.user.findUnique({ where: { id: memberId } });
       if (!exists) {
         throw new NotFoundException({
-          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' },
+          error: { code: 'NOT_FOUND', message: 'Member not found' },
         });
       }
       if (exists.role !== Role.BUYER) {
         throw new NotFoundException({
-          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' },
+          error: { code: 'NOT_FOUND', message: 'Member not found (not a buyer)' },
         });
       }
     }
@@ -138,26 +124,15 @@ export class AdminMembersService {
 
     const mapped = orders.map((order: any) => ({
       id: order.id,
-      order_id: order.id,
-      pedido_id: order.id,
       buyerId: order.buyerId,
-      buyer_id: order.buyerId,
-      comprador_id: order.buyerId,
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,
-      delivery_fee: order.deliveryFee,
-      taxa_entrega: order.deliveryFee,
       total: order.total,
       status: order.status,
-      estado: order.status,
       createdAt: order.createdAt,
-      criado_em: order.createdAt,
       items: order.items,
-      itens: order.items,
       delivery: order.delivery,
-      entrega: order.delivery,
       payment: order.payment,
-      pagamento: order.payment,
     }));
 
     return buildPaginatedResponse(mapped, total, dto);

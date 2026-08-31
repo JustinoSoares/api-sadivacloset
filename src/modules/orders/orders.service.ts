@@ -6,40 +6,12 @@ import { PaginationDto, buildPaginatedResponse } from '../../common/dto/paginati
 function toOrderResponse(order: any) {
   return {
     id: order.id,
-    pedido_id: order.id,
-    order_id: order.id,
-    comprador_id: order.buyerId,
-    buyer_id: order.buyerId,
     buyerId: order.buyerId,
     subtotal: order.subtotal,
-    taxa_entrega: order.deliveryFee,
-    delivery_fee: order.deliveryFee,
     deliveryFee: order.deliveryFee,
     total: order.total,
-    estado: order.status,
     status: order.status,
-    criado_em: order.createdAt,
-    created_at: order.createdAt,
     createdAt: order.createdAt,
-    itens: (order.items ?? []).map((it: any) => ({
-      id: it.id,
-      pedido_id: it.orderId,
-      order_id: it.orderId,
-      orderId: it.orderId,
-      produto_id: it.productId,
-      product_id: it.productId,
-      productId: it.productId,
-      nome_produto: it.productName,
-      product_name: it.productName,
-      productName: it.productName,
-      preco_unitario: it.unitPrice,
-      unit_price: it.unitPrice,
-      unitPrice: it.unitPrice,
-      desconto: it.discount,
-      discount: it.discount,
-      quantidade: it.quantity,
-      quantity: it.quantity,
-    })),
     items: (order.items ?? []).map((it: any) => ({
       id: it.id,
       orderId: it.orderId,
@@ -49,32 +21,6 @@ function toOrderResponse(order: any) {
       discount: it.discount,
       quantity: it.quantity,
     })),
-    entrega: order.delivery
-      ? {
-          id: order.delivery.id,
-          pedido_id: order.delivery.orderId,
-          order_id: order.delivery.orderId,
-          orderId: order.delivery.orderId,
-          tipo: order.delivery.type,
-          type: order.delivery.type,
-          endereco_id: order.delivery.addressId,
-          address_id: order.delivery.addressId,
-          addressId: order.delivery.addressId,
-          data_agendada: order.delivery.scheduledDate,
-          scheduled_date: order.delivery.scheduledDate,
-          scheduledDate: order.delivery.scheduledDate,
-          janela_horario: order.delivery.timeWindow,
-          time_window: order.delivery.timeWindow,
-          timeWindow: order.delivery.timeWindow,
-          estado: order.delivery.status,
-          status: order.delivery.status,
-          taxa_entrega: order.delivery.deliveryFee,
-          delivery_fee: order.delivery.deliveryFee,
-          deliveryFee: order.delivery.deliveryFee,
-          instrucoes: order.delivery.instructions ?? null,
-          instructions: order.delivery.instructions ?? null,
-        }
-      : null,
     delivery: order.delivery
       ? {
           id: order.delivery.id,
@@ -88,26 +34,6 @@ function toOrderResponse(order: any) {
           instructions: order.delivery.instructions ?? null,
         }
       : null,
-    pagamento: order.payment
-      ? {
-          id: order.payment.id,
-          pedido_id: order.payment.orderId,
-          order_id: order.payment.orderId,
-          orderId: order.payment.orderId,
-          metodo: order.payment.method,
-          method: order.payment.method,
-          valor: order.payment.amount,
-          amount: order.payment.amount,
-          estado: order.payment.status,
-          status: order.payment.status,
-          referencia_externa: order.payment.externalReference ?? null,
-          external_reference: order.payment.externalReference ?? null,
-          externalReference: order.payment.externalReference ?? null,
-          comprovativo_url: order.payment.receiptUrl ?? null,
-          receipt_url: order.payment.receiptUrl ?? null,
-          receiptUrl: order.payment.receiptUrl ?? null,
-        }
-      : null,
     payment: order.payment
       ? {
           id: order.payment.id,
@@ -117,6 +43,12 @@ function toOrderResponse(order: any) {
           status: order.payment.status,
           externalReference: order.payment.externalReference ?? null,
           receiptUrl: order.payment.receiptUrl ?? null,
+          providerTxId: order.payment.providerTxId ?? null,
+          bridpayIntentId: order.payment.bridpayIntentId ?? null,
+          bridpayMerchantTxId: order.payment.bridpayMerchantTxId ?? null,
+          providerDetails: order.payment.providerDetails ?? null,
+          phoneNumber: order.payment.phoneNumber ?? null,
+          iban: order.payment.iban ?? null,
         }
       : null,
   };
@@ -133,7 +65,7 @@ export class OrdersService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
     return toOrderResponse(order);
@@ -162,27 +94,24 @@ export class OrdersService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
 
     if (order.status === OrderStatus.CANCELLED) {
       throw new BadRequestException({
-        erro: { codigo: 'PEDIDO_JA_CANCELADO', mensagem: 'Pedido já cancelado' },
+        error: { code: 'ORDER_ALREADY_CANCELLED', message: 'Order already cancelled' },
       });
     }
     if (order.status === OrderStatus.COMPLETED) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'PEDIDO_NAO_CANCELAVEL',
-          mensagem: 'Pedido já concluído não pode ser cancelado',
+        error: {
+          code: 'ORDER_NOT_CANCELLABLE',
+          message: 'Completed order cannot be cancelled',
         },
       });
     }
 
-    // Só permitido se Entrega.estado ainda não for em_entrega
-    // Mapeia "em_entrega" para DeliveryStatus.ON_THE_WAY (a_caminho) e também bloqueia DELIVERED
-    // Também bloqueia se OrderStatus.SHIPPING (em_entrega) — compatibilidade
     const deliveryStatus = order.delivery?.status;
     if (
       deliveryStatus === DeliveryStatus.ON_THE_WAY ||
@@ -190,19 +119,18 @@ export class OrdersService {
       order.status === OrderStatus.SHIPPING
     ) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'ENTREGA_EM_CURSO',
-          mensagem: 'Não é possível cancelar pedido com entrega em curso (a caminho / em entrega)',
+        error: {
+          code: 'DELIVERY_IN_PROGRESS',
+          message: 'Cannot cancel order with delivery in progress',
         },
       });
     }
     if (deliveryStatus === DeliveryStatus.CANCELLED) {
       throw new BadRequestException({
-        erro: { codigo: 'ENTREGA_JA_CANCELADA', mensagem: 'Entrega já cancelada' },
+        error: { code: 'DELIVERY_ALREADY_CANCELLED', message: 'Delivery already cancelled' },
       });
     }
 
-    // Transação: repõe stock + atualiza pedido e entrega
     return await this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
         await tx.product.update({
@@ -223,7 +151,6 @@ export class OrdersService {
           data: { status: DeliveryStatus.CANCELLED },
         });
       } else if (order.delivery) {
-        // fallback se include não trouxe
         await tx.delivery.update({
           where: { id: order.delivery.id },
           data: { status: DeliveryStatus.CANCELLED },
@@ -255,15 +182,15 @@ export class OrdersService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
 
     if (order.status === OrderStatus.CANCELLED) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'PEDIDO_CANCELADO',
-          mensagem: 'Não é possível alterar entrega de pedido cancelado',
+        error: {
+          code: 'ORDER_CANCELLED',
+          message: 'Cannot update delivery of cancelled order',
         },
       });
     }
@@ -276,7 +203,7 @@ export class OrdersService {
         const address = await this.prisma.address.findUnique({ where: { id: data.enderecoId } });
         if (!address || address.buyerId !== buyerId) {
           throw new NotFoundException({
-            erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Endereço não encontrado' },
+            error: { code: 'NOT_FOUND', message: 'Address not found' },
           });
         }
         addressId = address.id;
@@ -288,10 +215,10 @@ export class OrdersService {
       const d = new Date(data.dataAgendada);
       if (isNaN(d.getTime())) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'Erro de validação',
-            detalhes: [{ campo: 'data_agendada', erros: ['data_agendada inválida'] }],
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation error',
+            details: [{ field: 'scheduledDate', errors: ['scheduledDate is invalid'] }],
           },
         });
       }
@@ -301,11 +228,11 @@ export class OrdersService {
       schedOnly.setHours(0, 0, 0, 0);
       if (schedOnly < today) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'Erro de validação',
-            detalhes: [
-              { campo: 'data_agendada', erros: ['data_agendada não pode ser no passado'] },
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation error',
+            details: [
+              { field: 'scheduledDate', errors: ['scheduledDate cannot be in the past'] },
             ],
           },
         });
@@ -318,10 +245,10 @@ export class OrdersService {
       const t = data.janelaHorario.trim();
       if (!t) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'Erro de validação',
-            detalhes: [{ campo: 'janela_horario', erros: ['janela_horario não pode ser vazia'] }],
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation error',
+            details: [{ field: 'timeWindow', errors: ['timeWindow cannot be empty'] }],
           },
         });
       }
@@ -333,20 +260,18 @@ export class OrdersService {
       instructions = data.instrucoes;
     }
 
-    // Se não há entrega, cria; se há, atualiza apenas campos fornecidos
     if (!order.delivery) {
-      // exige data_agendada e janela_horario para criar
       if (!scheduledDate || !timeWindow) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'ERRO_VALIDACAO',
-            mensagem: 'Erro de validação',
-            detalhes: [
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation error',
+            details: [
               ...(!scheduledDate
-                ? [{ campo: 'data_agendada', erros: ['data_agendada é obrigatória'] }]
+                ? [{ field: 'scheduledDate', errors: ['scheduledDate is required'] }]
                 : []),
               ...(!timeWindow
-                ? [{ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] }]
+                ? [{ field: 'timeWindow', errors: ['timeWindow is required'] }]
                 : []),
             ],
           },
@@ -371,13 +296,12 @@ export class OrdersService {
       return toOrderResponse(refreshed);
     }
 
-    // update existente — bloqueia se já a caminho/entregue
     if (
       order.delivery.status === DeliveryStatus.ON_THE_WAY ||
       order.delivery.status === DeliveryStatus.DELIVERED
     ) {
       throw new BadRequestException({
-        erro: { codigo: 'ENTREGA_EM_CURSO', mensagem: 'Não é possível alterar entrega em curso' },
+        error: { code: 'DELIVERY_IN_PROGRESS', message: 'Cannot update delivery in progress' },
       });
     }
 

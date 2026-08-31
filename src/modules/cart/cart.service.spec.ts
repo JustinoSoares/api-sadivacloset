@@ -87,20 +87,18 @@ describe('CartService', () => {
       });
       // discounted suit 40500*2=81000, dress 20000*1=20000 => subtotal 101000
       expect(result.subtotal).toBe(101000);
-      expect(result.itens).toHaveLength(2);
-      expect(result.itens[0].preco_com_desconto).toBe(40500);
-      expect(result.itens[0].subtotal_item).toBe(81000);
-      expect(result.total_itens).toBe(2);
-      expect(result.total_quantidade).toBe(3);
-      // bilingual aliases
-      expect(result.items).toEqual(result.itens);
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].priceWithDiscount).toBe(40500);
+      expect(result.items[0].subtotal).toBe(81000);
+      expect(result.totalItems).toBe(2);
+      expect(result.totalQuantity).toBe(3);
     });
 
     it('should return empty cart with subtotal 0', async () => {
       prisma.cartItem.findMany.mockResolvedValue([]);
       const result = await service.getCart(buyerId);
       expect(result.subtotal).toBe(0);
-      expect(result.itens).toEqual([]);
+      expect(result.items).toEqual([]);
     });
   });
 
@@ -122,8 +120,8 @@ describe('CartService', () => {
         data: { buyerId, productId, quantity: 2 },
         include: { product: true },
       });
-      expect(result.quantidade).toBe(2);
-      expect(result.preco_com_desconto).toBe(40500);
+      expect(result.quantity).toBe(2);
+      expect(result.priceWithDiscount).toBe(40500);
     });
 
     it('should increment quantity if already exists (idempotent additive)', async () => {
@@ -149,7 +147,7 @@ describe('CartService', () => {
         data: { quantity: 5 },
         include: { product: true },
       });
-      expect(result.quantidade).toBe(5);
+      expect(result.quantity).toBe(5);
     });
 
     it('should throw 404 if product not found', async () => {
@@ -165,7 +163,7 @@ describe('CartService', () => {
         BadRequestException,
       );
       await expect(service.addItem(buyerId, productId, 2)).rejects.toMatchObject({
-        response: { erro: { codigo: 'STOCK_INSUFICIENTE' } },
+        response: { error: { code: 'INSUFFICIENT_STOCK' } },
       });
     });
 
@@ -201,8 +199,8 @@ describe('CartService', () => {
       });
 
       const result = await service.updateItem(buyerId, cartItemId, 5);
-      expect(result.quantidade).toBe(5);
-      expect(result.preco_com_desconto).toBe(40500);
+      expect(result.quantity).toBe(5);
+      expect(result.priceWithDiscount).toBe(40500);
     });
 
     it('should throw 404 if item not found or not owner', async () => {
@@ -235,7 +233,7 @@ describe('CartService', () => {
         BadRequestException,
       );
       await expect(service.updateItem(buyerId, cartItemId, 5)).rejects.toMatchObject({
-        response: { erro: { codigo: 'STOCK_INSUFICIENTE' } },
+        response: { error: { code: 'INSUFFICIENT_STOCK' } },
       });
     });
   });

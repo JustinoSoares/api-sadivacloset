@@ -71,11 +71,8 @@ describe('AdminMembersService', () => {
     expect(result.total).toBe(2);
     expect(result.data[0].id).toBe('u1');
     expect(result.data[0].totalOrders).toBe(3);
-    expect(result.data[0].totalPedidos).toBe(3);
     expect(result.data[0].totalSpent).toBe(10000);
-    expect(result.data[0].totalGasto).toBe(10000);
     expect(result.data[0].totalSpentGross).toBe(15000);
-    expect(result.data[0].totalGastoBruto).toBe(15000);
   });
 
   it('should not compare by name – always by buyerId', async () => {

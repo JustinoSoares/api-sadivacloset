@@ -7,15 +7,10 @@ function toResponse(pref: any) {
   return {
     id: pref.id,
     notifyNewOrders: pref.notifyNewOrders,
-    notificarNovosPedidos: pref.notifyNewOrders,
     notifyLowStock: pref.notifyLowStock,
-    notificarStockBaixo: pref.notifyLowStock,
     notifyNewMessages: pref.notifyNewMessages,
-    notificarNovasMensagens: pref.notifyNewMessages,
     defaultDeliveryFee: pref.defaultDeliveryFee,
-    taxaEntregaPadrao: pref.defaultDeliveryFee,
     activePaymentMethods: pref.activePaymentMethods,
-    metodosPagamentoAtivos: pref.activePaymentMethods,
   };
 }
 

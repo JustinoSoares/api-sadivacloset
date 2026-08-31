@@ -33,19 +33,19 @@ describe('HttpExceptionFilter', () => {
     } as unknown as ArgumentsHost;
   }
 
-  it('deve formatar erro já no formato {erro:{codigo,mensagem}}', () => {
+  it('deve formatar erro já no formato {error:{code,message}}', () => {
     const exc = new HttpException(
-      { erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Já existe' } },
+      { error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Já existe' } },
       HttpStatus.CONFLICT,
     );
     filter.catch(exc, createHost());
     expect(statusMock).toHaveBeenCalledWith(409);
     expect(jsonMock).toHaveBeenCalledWith({
-      erro: { codigo: 'EMAIL_JA_EXISTE', mensagem: 'Já existe' },
+      error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Já existe' },
     });
   });
 
-  it('deve mapear class-validator array para ERRO_VALIDACAO', () => {
+  it('deve mapear class-validator array para VALIDATION_ERROR', () => {
     const exc = new HttpException(
       { message: ['field error'], error: 'Bad Request' },
       HttpStatus.BAD_REQUEST,
@@ -54,7 +54,7 @@ describe('HttpExceptionFilter', () => {
     filter.catch(exc, createHost());
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        erro: expect.objectContaining({ codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação' }),
+        error: expect.objectContaining({ code: 'VALIDATION_ERROR', message: 'Validation failed' }),
       }),
     );
   });
@@ -63,7 +63,7 @@ describe('HttpExceptionFilter', () => {
     const exc = new HttpException('Erro simples', HttpStatus.BAD_REQUEST);
     filter.catch(exc, createHost());
     expect(jsonMock).toHaveBeenCalledWith(
-      expect.objectContaining({ erro: expect.objectContaining({ codigo: 'PEDIDO_INVALIDO' }) }),
+      expect.objectContaining({ error: expect.objectContaining({ code: 'BAD_REQUEST' }) }),
     );
   });
 
@@ -71,7 +71,7 @@ describe('HttpExceptionFilter', () => {
     const exc = new HttpException({ message: 'Too Many Requests' }, HttpStatus.TOO_MANY_REQUESTS);
     filter.catch(exc, createHost());
     expect(jsonMock).toHaveBeenCalledWith(
-      expect.objectContaining({ erro: expect.objectContaining({ codigo: 'LIMITE_EXCEDIDO' }) }),
+      expect.objectContaining({ error: expect.objectContaining({ code: 'RATE_LIMIT_EXCEEDED' }) }),
     );
   });
 
@@ -80,27 +80,27 @@ describe('HttpExceptionFilter', () => {
     filter.catch(err, createHost());
     expect(statusMock).toHaveBeenCalledWith(500);
     expect(jsonMock).toHaveBeenCalledWith(
-      expect.objectContaining({ erro: expect.objectContaining({ codigo: 'ERRO_INTERNO' }) }),
+      expect.objectContaining({ error: expect.objectContaining({ code: 'INTERNAL_ERROR' }) }),
     );
   });
 
-  it('deve preservar detalhes quando já vem em erro.detalhes', () => {
+  it('deve preservar detalhes quando já vem em error.details', () => {
     const exc = new HttpException(
       {
-        erro: {
-          codigo: 'ERRO_VALIDACAO',
-          mensagem: 'Erro de validação',
-          detalhes: [{ campo: 'nome' }],
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          details: [{ field: 'nome' }],
         },
       },
       HttpStatus.BAD_REQUEST,
     );
     filter.catch(exc, createHost());
     expect(jsonMock).toHaveBeenCalledWith({
-      erro: {
-        codigo: 'ERRO_VALIDACAO',
-        mensagem: 'Erro de validação',
-        detalhes: [{ campo: 'nome' }],
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: [{ field: 'nome' }],
       },
     });
   });

@@ -18,14 +18,14 @@ describe('Payments Controllers', () => {
   const user = { sub: buyerId, email: 'buyer@test.com', role: 'buyer' } as any;
   const adminUser = { sub: adminId, email: 'admin@test.com', role: 'admin' } as any;
 
-  const paymentMock = { id: paymentId, orderId, metodo: 'transferencia', estado: 'pendente' };
+  const paymentMock = { id: paymentId, orderId, method: 'BANK_TRANSFER', status: 'PENDING' };
 
   beforeEach(async () => {
     service = {
       iniciar: jest.fn().mockResolvedValue(paymentMock),
       get: jest.fn().mockResolvedValue(paymentMock),
-      comprovativo: jest.fn().mockResolvedValue({ ...paymentMock, estado: 'processando' }),
-      validarAdmin: jest.fn().mockResolvedValue({ pagamento: paymentMock }),
+      comprovativo: jest.fn().mockResolvedValue({ ...paymentMock, status: 'PROCESSING' }),
+      validarAdmin: jest.fn().mockResolvedValue({ payment: paymentMock }),
       historico: jest.fn().mockResolvedValue({ data: [paymentMock], total: 1 }),
       walletHistorico: jest.fn().mockResolvedValue({ data: [], total: 0 }),
     };
@@ -65,7 +65,7 @@ describe('Payments Controllers', () => {
     } as any;
     const result = await controller.comprovativo(user, orderId, file);
     expect(service.comprovativo).toHaveBeenCalledWith(buyerId, orderId, file);
-    expect(result.data.estado).toBe('processando');
+    expect(result.data.status).toBe('PROCESSING');
   });
 
   it('PATCH /admin/pagamentos/:id/validar should validate (only admin can mark paid)', async () => {

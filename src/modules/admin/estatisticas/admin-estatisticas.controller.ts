@@ -31,7 +31,7 @@ export class AdminEstatisticasController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getEstatisticas(@Query() dto: QueryEstatisticasDto) {
     const result = await this.estatisticasService.getEstatisticas(dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 }
 

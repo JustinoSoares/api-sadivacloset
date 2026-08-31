@@ -38,7 +38,7 @@ describe('AdminContaService', () => {
   it('GET deve retornar dados do admin', async () => {
     prisma.user.findUnique.mockResolvedValue(adminMock);
     const result = await service.getConta(adminId);
-    expect(result.nome).toBe('Admin');
+    expect(result.name).toBe('Admin');
     expect(result.email).toBe('admin@sadivacloset.local');
   });
 
@@ -55,7 +55,7 @@ describe('AdminContaService', () => {
         data: expect.objectContaining({ name: 'Novo Nome', email: 'novo@a.ao' }),
       }),
     );
-    expect(result.nome).toBe('Novo Nome');
+    expect(result.name).toBe('Novo Nome');
   });
 
   it('PATCH deve exigir passwordActual para trocar password', async () => {

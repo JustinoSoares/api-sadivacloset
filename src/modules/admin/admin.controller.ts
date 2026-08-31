@@ -13,7 +13,7 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   ping() {
-    return { dados: { mensagem: 'pong admin' } };
+    return { data: { message: 'pong admin' } };
   }
 
   // Rota sem decorador explícito mas com path /admin — RolesGuard auto-protege
@@ -23,6 +23,6 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   auto() {
-    return { dados: { mensagem: 'auto pong admin' } };
+    return { data: { message: 'auto pong admin' } };
   }
 }

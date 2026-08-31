@@ -53,7 +53,7 @@ export class AdminEntregasController {
     @Body() dto: UpdateDeliveryStatusDto,
   ) {
     const result = await this.adminDeliveriesService.updateStatus(user.sub, id, dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 }
 

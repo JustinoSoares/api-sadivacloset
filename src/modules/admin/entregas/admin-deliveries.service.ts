@@ -10,40 +10,23 @@ import { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto';
 function toDeliveryResponse(delivery: any) {
   return {
     id: delivery.id,
-    pedido_id: delivery.orderId,
-    order_id: delivery.orderId,
     orderId: delivery.orderId,
-    tipo: delivery.type,
     type: delivery.type,
-    endereco_id: delivery.addressId,
-    address_id: delivery.addressId,
     addressId: delivery.addressId,
-    data_agendada: delivery.scheduledDate,
-    scheduled_date: delivery.scheduledDate,
     scheduledDate: delivery.scheduledDate,
-    janela_horario: delivery.timeWindow,
-    time_window: delivery.timeWindow,
     timeWindow: delivery.timeWindow,
-    estado: delivery.status,
     status: delivery.status,
-    taxa_entrega: delivery.deliveryFee,
-    delivery_fee: delivery.deliveryFee,
     deliveryFee: delivery.deliveryFee,
-    instrucoes: delivery.instructions ?? null,
     instructions: delivery.instructions ?? null,
-    pedido: delivery.order
+    order: delivery.order
       ? {
           id: delivery.order.id,
-          comprador_id: delivery.order.buyerId,
           buyerId: delivery.order.buyerId,
-          estado: delivery.order.status,
           status: delivery.order.status,
           total: delivery.order.total,
-          criado_em: delivery.order.createdAt,
           createdAt: delivery.order.createdAt,
         }
       : undefined,
-    order: delivery.order,
   };
 }
 
@@ -94,13 +77,13 @@ export class AdminDeliveriesService {
     const normalized = dto.estadoNormalized;
     if (!normalized || !UpdateDeliveryStatusDto.isValid(normalized)) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'ERRO_VALIDACAO',
-          mensagem: 'Estado inválido',
-          detalhes: [
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid status',
+          details: [
             {
-              campo: 'estado',
-              erros: [`estado deve ser um de: agendada, a_caminho, entregue, falhada, cancelada`],
+              field: 'status',
+              errors: [`status must be one of: scheduled, on_the_way, delivered, failed, cancelled`],
             },
           ],
         },
@@ -114,7 +97,7 @@ export class AdminDeliveriesService {
     });
     if (!delivery) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Entrega não encontrada' },
+        error: { code: 'NOT_FOUND', message: 'Delivery not found' },
       });
     }
 
@@ -128,17 +111,17 @@ export class AdminDeliveriesService {
       include: { order: true, address: true },
     });
 
-    await this.auditoria.registar(adminId, 'atualizar_estado_entrega', 'entrega', deliveryId, {
-      de: delivery.status,
-      para: newStatus,
-      estado: newStatus,
+    await this.auditoria.registar(adminId, 'update_delivery_status', 'delivery', deliveryId, {
+      from: delivery.status,
+      to: newStatus,
+      status: newStatus,
     });
 
     try {
-      await this.notificationsService.criar(
+      await this.notificationsService.create(
         delivery.order.buyerId,
-        'Entrega atualizada',
-        `O estado da entrega do pedido #${delivery.orderId.slice(0, 8)} foi atualizado para ${normalized} (${newStatus})`,
+        'Delivery updated',
+        `Delivery for order #${delivery.orderId.slice(0, 8)} status updated to ${normalized} (${newStatus})`,
       );
     } catch {}
 

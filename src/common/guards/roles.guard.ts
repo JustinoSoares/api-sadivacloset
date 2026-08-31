@@ -32,7 +32,7 @@ export class RolesGuard implements CanActivate {
 
     if (!user) {
       throw new ForbiddenException({
-        erro: { codigo: 'ACESSO_NEGADO', mensagem: 'Utilizador não autenticado' },
+        error: { code: 'FORBIDDEN', message: 'User not authenticated' },
       });
     }
 
@@ -41,9 +41,9 @@ export class RolesGuard implements CanActivate {
 
     if (!normalizedRequired.includes(userRole)) {
       throw new ForbiddenException({
-        erro: {
-          codigo: 'ACESSO_NEGADO',
-          mensagem: 'Sem permissão para aceder a este recurso',
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Forbidden: insufficient permissions',
         },
       });
     }

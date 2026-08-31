@@ -53,14 +53,13 @@ describe('AdminAccountService', () => {
     prisma.user.findUnique.mockResolvedValue(adminMock);
     const result = await service.getAccount(adminId);
     expect(result.name).toBe('Admin');
-    expect(result.nome).toBe('Admin');
     expect(result.email).toBe('admin@sadivacloset.local');
   });
 
   it('GET legacy alias should also return', async () => {
     prisma.user.findUnique.mockResolvedValue(adminMock);
     const result = await service.getConta(adminId);
-    expect(result.nome).toBe('Admin');
+    expect(result.name).toBe('Admin');
   });
 
   it('PATCH should update name/email', async () => {
@@ -77,7 +76,6 @@ describe('AdminAccountService', () => {
       }),
     );
     expect(result.name).toBe('Novo Nome');
-    expect(result.nome).toBe('Novo Nome');
   });
 
   it('PATCH legacy alias should map Portuguese keys', async () => {
@@ -88,7 +86,7 @@ describe('AdminAccountService', () => {
       email: 'novo@a.ao',
     } as any);
     const result = await service.updateConta(adminId, { nome: 'Novo Nome', email: 'novo@a.ao' });
-    expect(result.nome).toBe('Novo Nome');
+    expect(result.name).toBe('Novo Nome');
   });
 
   it('PATCH should require currentPassword to change password', async () => {

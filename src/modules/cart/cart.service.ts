@@ -21,49 +21,40 @@ export class CartService {
       const subtotalItem = unit * item.quantity;
       return {
         id: item.id,
-        produto_id: item.productId,
-        product_id: item.productId,
         productId: item.productId,
-        quantidade: item.quantity,
         quantity: item.quantity,
-        produto: item.product,
         product: item.product,
-        preco_com_desconto: unit,
-        price_with_discount: unit,
-        subtotal_item: subtotalItem,
-        subtotalItem: subtotalItem,
+        priceWithDiscount: unit,
+        subtotal: subtotalItem,
       };
     });
 
-    const subtotal = enriched.reduce((acc, cur) => acc + cur.subtotal_item, 0);
-    const totalItens = enriched.length;
-    const totalQuantidade = enriched.reduce((acc, cur) => acc + cur.quantidade, 0);
+    const subtotal = enriched.reduce((acc, cur) => acc + cur.subtotal, 0);
+    const totalItems = enriched.length;
+    const totalQuantity = enriched.reduce((acc, cur) => acc + cur.quantity, 0);
 
     return {
-      itens: enriched,
       items: enriched,
       subtotal,
-      total_itens: totalItens,
-      totalItens,
-      total_quantidade: totalQuantidade,
-      totalQuantity: totalQuantidade,
+      totalItems,
+      totalQuantity,
     };
   }
 
-  async addItem(buyerId: string, productId: string, quantidade: number) {
+  async addItem(buyerId: string, productId: string, quantity: number) {
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Produto não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Product not found' },
       });
     }
 
-    if (quantidade > product.stock) {
+    if (quantity > product.stock) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'STOCK_INSUFICIENTE',
-          mensagem: `Stock insuficiente. Disponível: ${product.stock}, solicitado: ${quantidade}`,
-          detalhes: { disponivel: product.stock, solicitado: quantidade },
+        error: {
+          code: 'INSUFFICIENT_STOCK',
+          message: `Insufficient stock. Available: ${product.stock}, requested: ${quantity}`,
+          details: { available: product.stock, requested: quantity },
         },
       });
     }
@@ -73,59 +64,53 @@ export class CartService {
     });
 
     if (existing) {
-      const novaQuantidade = existing.quantity + quantidade;
-      if (novaQuantidade > product.stock) {
+      const newQuantity = existing.quantity + quantity;
+      if (newQuantity > product.stock) {
         throw new BadRequestException({
-          erro: {
-            codigo: 'STOCK_INSUFICIENTE',
-            mensagem: `Stock insuficiente. Disponível: ${product.stock}, no carrinho: ${existing.quantity}, solicitado adicional: ${quantidade} (total ${novaQuantidade})`,
-            detalhes: {
-              disponivel: product.stock,
-              noCarrinho: existing.quantity,
-              solicitado: quantidade,
-              total: novaQuantidade,
+          error: {
+            code: 'INSUFFICIENT_STOCK',
+            message: `Insufficient stock. Available: ${product.stock}, in cart: ${existing.quantity}, additional requested: ${quantity} (total ${newQuantity})`,
+            details: {
+              available: product.stock,
+              inCart: existing.quantity,
+              requested: quantity,
+              total: newQuantity,
             },
           },
         });
       }
       const updated = await this.prisma.cartItem.update({
         where: { id: existing.id },
-        data: { quantity: novaQuantidade },
+        data: { quantity: newQuantity },
         include: { product: true },
       });
       const unit = discountedPrice(updated.product.price, updated.product.discount);
       return {
         id: updated.id,
-        produto_id: updated.productId,
-        product_id: updated.productId,
-        quantidade: updated.quantity,
+        productId: updated.productId,
         quantity: updated.quantity,
-        produto: updated.product,
         product: updated.product,
-        preco_com_desconto: unit,
-        subtotal_item: unit * updated.quantity,
+        priceWithDiscount: unit,
+        subtotal: unit * updated.quantity,
       };
     }
 
     const created = await this.prisma.cartItem.create({
-      data: { buyerId, productId, quantity: quantidade },
+      data: { buyerId, productId, quantity },
       include: { product: true },
     });
     const unit = discountedPrice(created.product.price, created.product.discount);
     return {
       id: created.id,
-      produto_id: created.productId,
-      product_id: created.productId,
-      quantidade: created.quantity,
+      productId: created.productId,
       quantity: created.quantity,
-      produto: created.product,
       product: created.product,
-      preco_com_desconto: unit,
-      subtotal_item: unit * created.quantity,
+      priceWithDiscount: unit,
+      subtotal: unit * created.quantity,
     };
   }
 
-  async updateItem(buyerId: string, itemId: string, quantidade: number) {
+  async updateItem(buyerId: string, itemId: string, quantity: number) {
     const item = await this.prisma.cartItem.findUnique({
       where: { id: itemId },
       include: { product: true },
@@ -133,36 +118,33 @@ export class CartService {
 
     if (!item || item.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Item do carrinho não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Cart item not found' },
       });
     }
 
-    if (quantidade > item.product.stock) {
+    if (quantity > item.product.stock) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'STOCK_INSUFICIENTE',
-          mensagem: `Stock insuficiente. Disponível: ${item.product.stock}, solicitado: ${quantidade}`,
-          detalhes: { disponivel: item.product.stock, solicitado: quantidade },
+        error: {
+          code: 'INSUFFICIENT_STOCK',
+          message: `Insufficient stock. Available: ${item.product.stock}, requested: ${quantity}`,
+          details: { available: item.product.stock, requested: quantity },
         },
       });
     }
 
     const updated = await this.prisma.cartItem.update({
       where: { id: itemId },
-      data: { quantity: quantidade },
+      data: { quantity },
       include: { product: true },
     });
     const unit = discountedPrice(updated.product.price, updated.product.discount);
     return {
       id: updated.id,
-      produto_id: updated.productId,
-      product_id: updated.productId,
-      quantidade: updated.quantity,
+      productId: updated.productId,
       quantity: updated.quantity,
-      produto: updated.product,
       product: updated.product,
-      preco_com_desconto: unit,
-      subtotal_item: unit * updated.quantity,
+      priceWithDiscount: unit,
+      subtotal: unit * updated.quantity,
     };
   }
 
@@ -170,7 +152,7 @@ export class CartService {
     const item = await this.prisma.cartItem.findUnique({ where: { id: itemId } });
     if (!item || item.buyerId !== buyerId) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Item do carrinho não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Cart item not found' },
       });
     }
     await this.prisma.cartItem.delete({ where: { id: itemId } });

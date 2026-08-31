@@ -35,11 +35,11 @@ export class PerfilFavoritosController {
     description: 'Returns buyer favorite products',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const products = await this.favoritesService.findAll(user.sub);
-    return { data: products, dados: products };
+    return { data: products };
   }
 
   @Post(':produto_id')
@@ -51,14 +51,14 @@ export class PerfilFavoritosController {
   @ApiParam({ name: 'produto_id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 201, description: 'Created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async add(
     @CurrentUser() user: JwtPayload,
     @Param('produto_id', ParseUUIDPipe) produtoId: string,
   ) {
     const product = await this.favoritesService.add(user.sub, produtoId);
-    return { data: product, dados: product };
+    return { data: product };
   }
 
   @Delete(':produto_id')
@@ -69,14 +69,14 @@ export class PerfilFavoritosController {
   })
   @ApiParam({ name: 'produto_id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async remove(
     @CurrentUser() user: JwtPayload,
     @Param('produto_id', ParseUUIDPipe) produtoId: string,
   ) {
     await this.favoritesService.remove(user.sub, produtoId);
-    return { mensagem: 'Removido dos favoritos', data: null, dados: null };
+    return { message: 'Removed from favorites', data: null };
   }
 }
 
@@ -98,7 +98,7 @@ export class ProfileFavoritesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findAll(@CurrentUser() user: JwtPayload) {
     const products = await this.favoritesService.findAll(user.sub);
-    return { data: products, dados: products };
+    return { data: products };
   }
 
   @Post(':productId')
@@ -115,7 +115,7 @@ export class ProfileFavoritesController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async add(@CurrentUser() user: JwtPayload, @Param('productId', ParseUUIDPipe) productId: string) {
     const product = await this.favoritesService.add(user.sub, productId);
-    return { data: product, dados: product };
+    return { data: product };
   }
 
   @Delete(':productId')
@@ -136,9 +136,7 @@ export class ProfileFavoritesController {
     await this.favoritesService.remove(user.sub, productId);
     return {
       message: 'Removed from favorites',
-      mensagem: 'Removido dos favoritos',
       data: null,
-      dados: null,
     };
   }
 }

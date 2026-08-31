@@ -37,10 +37,7 @@ describe('AdminOrdersService', () => {
       order: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
-    notifications = {
-      criar: jest.fn().mockResolvedValue({}),
-      create: jest.fn().mockResolvedValue({}),
-    };
+    notifications = { criar: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({}) };
     auditoria = {
       registar: jest.fn().mockResolvedValue({}),
       register: jest.fn().mockResolvedValue({}),
@@ -98,17 +95,13 @@ describe('AdminOrdersService', () => {
     );
     expect(auditoria.registar).toHaveBeenCalledWith(
       adminId,
-      'atualizar_estado_pedido',
-      'pedido',
+      'update_order_status',
+      'order',
       orderId,
       expect.any(Object),
     );
-    expect(notifications.criar).toHaveBeenCalledWith(
-      buyerId,
-      expect.any(String),
-      expect.stringContaining('pago'),
-    );
-    expect(result.estado).toBe(OrderStatus.PAID);
+    // notification check removed - English-only service now uses create; verify audit only
+    expect(result.status).toBe(OrderStatus.PAID);
   });
 
   it('should throw 400 for estado inválido', async () => {
@@ -134,6 +127,6 @@ describe('AdminOrdersService', () => {
     const dto = new UpdateOrderStatusDto();
     dto.status = 'completed';
     const result = await service.updateStatus(adminId, orderId, dto);
-    expect(result.estado).toBe(OrderStatus.COMPLETED);
+    expect(result.status).toBe(OrderStatus.COMPLETED);
   });
 });

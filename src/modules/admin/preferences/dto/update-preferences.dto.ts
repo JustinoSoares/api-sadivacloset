@@ -43,7 +43,7 @@ export class UpdatePreferencesDto {
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
   )
-  @IsBoolean({ message: 'notificarNovosPedidos deve ser booleano' })
+  @IsBoolean({ message: 'notifyNewOrders must be a boolean' })
   notificarNovosPedidos?: boolean;
 
   @ApiPropertyOptional({ description: 'Notify low stock', example: true })
@@ -59,7 +59,7 @@ export class UpdatePreferencesDto {
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
   )
-  @IsBoolean({ message: 'notificarStockBaixo deve ser booleano' })
+  @IsBoolean({ message: 'notifyLowStock must be a boolean' })
   notificarStockBaixo?: boolean;
 
   @ApiPropertyOptional({ description: 'Notify new messages', example: true })
@@ -75,7 +75,7 @@ export class UpdatePreferencesDto {
   @Transform(({ value }) =>
     value === 'true' || value === '1' ? true : value === 'false' || value === '0' ? false : value,
   )
-  @IsBoolean({ message: 'notificarNovasMensagens deve ser booleano' })
+  @IsBoolean({ message: 'notifyNewMessages must be a boolean' })
   notificarNovasMensagens?: boolean;
 
   @ApiPropertyOptional({ description: 'Default delivery fee (AOA)', example: 2500, minimum: 0 })
@@ -88,8 +88,8 @@ export class UpdatePreferencesDto {
   @ApiPropertyOptional({ description: 'Alias taxaEntregaPadrao' })
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: 'taxaEntregaPadrao deve ser inteiro' })
-  @Min(0, { message: 'taxaEntregaPadrao não pode ser negativa' })
+  @IsInt({ message: 'defaultDeliveryFee must be an integer' })
+  @Min(0, { message: 'defaultDeliveryFee cannot be negative' })
   taxaEntregaPadrao?: number;
 
   @ApiPropertyOptional({
@@ -107,10 +107,10 @@ export class UpdatePreferencesDto {
   @ApiPropertyOptional({ description: 'Alias metodosPagamentoAtivos' })
   @IsOptional()
   @Transform(({ value }) => normalizePaymentMethods(value))
-  @IsArray({ message: 'metodosPagamentoAtivos deve ser array' })
+  @IsArray({ message: 'activePaymentMethods must be an array' })
   @IsEnum(PaymentMethod, {
     each: true,
-    message: `cada metodo deve ser um de: ${Object.values(PaymentMethod).join(', ')}`,
+    message: `each method must be one of: ${Object.values(PaymentMethod).join(', ')}`,
   })
   metodosPagamentoAtivos?: PaymentMethod[];
 

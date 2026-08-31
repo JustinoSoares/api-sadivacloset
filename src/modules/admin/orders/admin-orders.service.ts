@@ -10,80 +10,40 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 function toOrderResponse(order: any) {
   return {
     id: order.id,
-    order_id: order.id,
-    pedido_id: order.id,
     buyerId: order.buyerId,
-    buyer_id: order.buyerId,
-    comprador_id: order.buyerId,
     subtotal: order.subtotal,
     deliveryFee: order.deliveryFee,
-    delivery_fee: order.deliveryFee,
-    taxa_entrega: order.deliveryFee,
     total: order.total,
     status: order.status,
-    estado: order.status,
     createdAt: order.createdAt,
-    created_at: order.createdAt,
-    criado_em: order.createdAt,
-    buyer: order.buyer,
-    comprador: order.buyer
+    buyer: order.buyer
       ? {
           id: order.buyer.id,
           name: order.buyer.name,
-          nome: order.buyer.name,
           email: order.buyer.email,
         }
       : undefined,
     items: (order.items ?? []).map((it: any) => ({
       id: it.id,
       productId: it.productId,
-      product_id: it.productId,
-      produto_id: it.productId,
       productName: it.productName,
-      nome_produto: it.productName,
       unitPrice: it.unitPrice,
-      preco_unitario: it.unitPrice,
       discount: it.discount,
-      desconto: it.discount,
       quantity: it.quantity,
-      quantidade: it.quantity,
     })),
-    itens: (order.items ?? []).map((it: any) => ({
-      id: it.id,
-      productId: it.productId,
-      product_id: it.productId,
-      produto_id: it.productId,
-      productName: it.productName,
-      nome_produto: it.productName,
-      unitPrice: it.unitPrice,
-      preco_unitario: it.unitPrice,
-      discount: it.discount,
-      desconto: it.discount,
-      quantity: it.quantity,
-      quantidade: it.quantity,
-    })),
-    delivery: order.delivery,
-    entrega: order.delivery
+    delivery: order.delivery
       ? {
           id: order.delivery.id,
           orderId: order.delivery.orderId,
-          pedido_id: order.delivery.orderId,
           type: order.delivery.type,
-          tipo: order.delivery.type,
           addressId: order.delivery.addressId,
-          endereco_id: order.delivery.addressId,
           scheduledDate: order.delivery.scheduledDate,
-          data_agendada: order.delivery.scheduledDate,
           timeWindow: order.delivery.timeWindow,
-          janela_horario: order.delivery.timeWindow,
           status: order.delivery.status,
-          estado: order.delivery.status,
           deliveryFee: order.delivery.deliveryFee,
-          taxa_entrega: order.delivery.deliveryFee,
         }
       : null,
     payment: order.payment ?? null,
-    pagamento: order.payment ?? null,
   };
 }
 
@@ -134,14 +94,14 @@ export class AdminOrdersService {
     const normalized = dto.estadoNormalized;
     if (!normalized || !UpdateOrderStatusDto.isValid(normalized)) {
       throw new BadRequestException({
-        erro: {
-          codigo: 'ERRO_VALIDACAO',
-          mensagem: 'Estado inválido',
-          detalhes: [
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid status',
+          details: [
             {
-              campo: 'estado',
-              erros: [
-                `estado deve ser um de: aguardando_pagamento, pago, em_preparacao, em_entrega, concluido, cancelado`,
+              field: 'status',
+              errors: [
+                `status must be one of: awaiting_payment, paid, preparing, shipping, completed, cancelled`,
               ],
             },
           ],
@@ -156,7 +116,7 @@ export class AdminOrdersService {
     });
     if (!order) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Pedido não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Order not found' },
       });
     }
 
@@ -175,9 +135,6 @@ export class AdminOrdersService {
       from: order.status,
       to: newStatus,
       status: newStatus,
-      de: order.status,
-      para: newStatus,
-      estado: newStatus,
     });
 
     // Notification to buyer (bilingual service method)
@@ -186,14 +143,14 @@ export class AdminOrdersService {
       if (typeof notif.create === 'function') {
         await notif.create(
           order.buyerId,
-          'Pedido atualizado',
-          `O estado do seu pedido #${orderId.slice(0, 8)} foi atualizado para ${normalized} (${newStatus})`,
+          'Order updated',
+          `Your order #${orderId.slice(0, 8)} status was updated to ${normalized} (${newStatus})`,
         );
       } else if (typeof notif.criar === 'function') {
         await notif.criar(
           order.buyerId,
-          'Pedido atualizado',
-          `O estado do seu pedido #${orderId.slice(0, 8)} foi atualizado para ${normalized} (${newStatus})`,
+          'Order updated',
+          `Your order #${orderId.slice(0, 8)} status was updated to ${normalized} (${newStatus})`,
         );
       }
     } catch {}

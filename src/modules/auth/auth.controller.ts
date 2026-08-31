@@ -52,7 +52,7 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Register new user (PT alias)',
-    description: 'Alias for register - cria nova conta',
+    description: 'Alias for register',
   })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, description: 'Created' })
@@ -61,7 +61,7 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async registarAlias(@Body() dto: RegisterDto) {
     const user = await this.authService.register(dto.name, dto.email, dto.password);
-    return { data: user, dados: user };
+    return { data: user };
   }
 
   // ── POST /api/v1/auth/login ────────────────────────────────
@@ -185,7 +185,7 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   async getProfile(@CurrentUser() user: JwtPayload) {
     const profile = await this.authService.getProfile(user.sub);
-    return { data: profile, dados: profile };
+    return { data: profile };
   }
 
   // legacy alias
@@ -198,7 +198,7 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   async getPerfilAlias(@CurrentUser() user: JwtPayload) {
     const profile = await this.authService.getProfile(user.sub);
-    return { dados: profile, data: profile };
+    return { data: profile };
   }
 
   // ── PATCH /api/v1/profile ───────────────────────────────────
@@ -212,7 +212,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Conflict' })
   async updateProfile(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
     const profile = await this.authService.updateProfile(user.sub, dto);
-    return { data: profile, dados: profile };
+    return { data: profile };
   }
 
   @ApiExcludeEndpoint()
@@ -226,6 +226,6 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Conflict' })
   async patchPerfilAlias(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
     const profile = await this.authService.updateProfile(user.sub, dto as any);
-    return { dados: profile, data: profile };
+    return { data: profile };
   }
 }

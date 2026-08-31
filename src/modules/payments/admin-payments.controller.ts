@@ -14,7 +14,7 @@ import { PaymentsService } from './payments.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiExcludeController()
-@ApiTags('admin-pagamentos')
+@ApiTags('admin-payments')
 @ApiBearerAuth('bearer')
 @Roles('admin')
 @Controller('admin/pagamentos')
@@ -23,12 +23,12 @@ export class AdminPagamentosController {
 
   @Patch(':id/validar')
   @ApiOperation({
-    summary: 'Validação manual de pagamento (só aqui pedido passa a pago) – cria audit e notifica',
+    summary: 'Manual payment validation (only here order becomes paid) – creates audit and notifies',
     description: 'Manually validates payment, marks order as paid, creates audit and notifies',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid', description: 'Payment ID' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 409, description: 'Conflict' })
@@ -36,18 +36,17 @@ export class AdminPagamentosController {
     const result = await this.paymentsService.validarAdmin(user.sub, id);
     return {
       data: result,
-      dados: result,
-      mensagem: 'Pagamento validado, pedido marcado como pago',
+      message: 'Payment validated, order marked as paid',
     };
   }
 
   @Get('historico')
   @ApiOperation({
-    summary: 'Histórico global de pagamentos (admin)',
+    summary: 'Global payment history (admin)',
     description: 'Returns global payment history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async historicoAdmin(@Query() dto: PaginationDto) {
     return this.paymentsService.historicoAdmin(dto as any);
@@ -55,11 +54,11 @@ export class AdminPagamentosController {
 
   @Get('carteira/historico')
   @ApiOperation({
-    summary: 'Histórico global da carteira (entradas/saídas) – admin',
+    summary: 'Global wallet history (credits/debits) – admin',
     description: 'Returns global wallet history',
   })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async carteiraAdmin(@Query() dto: PaginationDto) {
     return this.paymentsService.walletHistorico(null, dto as any);

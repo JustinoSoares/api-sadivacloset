@@ -6,15 +6,10 @@ import { PaymentMethod } from '@prisma/client';
 function toResponse(pref: any) {
   return {
     id: pref.id,
-    notificarNovosPedidos: pref.notifyNewOrders,
     notifyNewOrders: pref.notifyNewOrders,
-    notificarStockBaixo: pref.notifyLowStock,
     notifyLowStock: pref.notifyLowStock,
-    notificarNovasMensagens: pref.notifyNewMessages,
     notifyNewMessages: pref.notifyNewMessages,
-    taxaEntregaPadrao: pref.defaultDeliveryFee,
     defaultDeliveryFee: pref.defaultDeliveryFee,
-    metodosPagamentoAtivos: pref.activePaymentMethods,
     activePaymentMethods: pref.activePaymentMethods,
   };
 }
@@ -86,10 +81,10 @@ export class AdminPreferenciasService {
     });
     if (adminId) {
       await this.auditoria
-        .registar(adminId, 'atualizar_preferencias', 'preferencias', 'singleton', {
-          antes: before,
-          depois: updated,
-          alteracoes: payload,
+        .registar(adminId, 'update_preferences', 'preferences', 'singleton', {
+          before,
+          after: updated,
+          changes: payload,
         })
         .catch(() => {});
     }

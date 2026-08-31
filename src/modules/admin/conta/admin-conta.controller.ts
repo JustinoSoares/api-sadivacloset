@@ -31,7 +31,7 @@ export class AdminContaController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getConta(@CurrentUser() user: JwtPayload) {
     const conta = await this.contaService.getConta(user.sub);
-    return { data: conta, dados: conta };
+    return { data: conta };
   }
 
   @Patch()
@@ -51,7 +51,7 @@ export class AdminContaController {
       passwordActual: dto.passwordActualNormalized,
       novaPassword: dto.novaPasswordNormalized,
     });
-    return { data: conta, dados: conta };
+    return { data: conta };
   }
 }
 

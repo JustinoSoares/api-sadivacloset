@@ -6,14 +6,9 @@ function toResponse(config: any) {
   return {
     id: config.id,
     name: config.name,
-    nome: config.name,
     contactEmail: config.contactEmail,
-    email: config.contactEmail,
-    email_contacto: config.contactEmail,
     phone: config.phone,
-    telefone: config.phone,
     address: config.address,
-    morada: config.address,
   };
 }
 

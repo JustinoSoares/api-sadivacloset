@@ -49,9 +49,7 @@ export class ProductsAdminService {
       }),
     ]);
 
-    const result: any = buildPaginatedResponse(data as any, total, query as any);
-    result.dados = result.data ?? result.dados;
-    return result;
+    return buildPaginatedResponse(data as any, total, query as any);
   }
 
   async create(dto: CreateProductDto & any, adminId?: string): Promise<Product> {
@@ -84,8 +82,6 @@ export class ProductsAdminService {
         .register(adminId, 'create_product', 'product', product.id, {
           name,
           price,
-          nome: name,
-          preco: price,
         })
         .catch(() => {});
     }
@@ -96,7 +92,7 @@ export class ProductsAdminService {
     const exists = await this.prisma.product.findUnique({ where: { id } });
     if (!exists) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Produto não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Product not found' },
       });
     }
 
@@ -129,19 +125,17 @@ export class ProductsAdminService {
         .register(adminId, 'update_product', 'product', id, {
           before: exists,
           after: updated,
-          antes: exists,
-          depois: updated,
         })
         .catch(() => {});
     }
     return updated;
   }
 
-  async remove(id: string, adminId?: string): Promise<{ message: string; mensagem: string }> {
+  async remove(id: string, adminId?: string): Promise<{ message: string }> {
     const exists = await this.prisma.product.findUnique({ where: { id } });
     if (!exists) {
       throw new NotFoundException({
-        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Produto não encontrado' },
+        error: { code: 'NOT_FOUND', message: 'Product not found' },
       });
     }
 
@@ -151,11 +145,10 @@ export class ProductsAdminService {
       await this.audit
         .register(adminId, 'remove_product', 'product', id, {
           name: exists.name,
-          nome: exists.name,
         })
         .catch(() => {});
     }
-    return { message: 'Product removed successfully', mensagem: 'Produto removido com sucesso' };
+    return { message: 'Product removed successfully' };
   }
 }
 

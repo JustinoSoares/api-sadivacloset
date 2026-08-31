@@ -41,12 +41,12 @@ export class QueryStatisticsDto extends PaginationDto {
 
   @ApiPropertyOptional({ description: 'Alias data_inicio' })
   @IsOptional()
-  @IsDateString({}, { message: 'data_inicio deve ser data ISO válida' })
+  @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   data_inicio?: string;
 
   @ApiPropertyOptional({ description: 'Alias dataInicio/startDate' })
   @IsOptional()
-  @IsDateString({}, { message: 'dataInicio deve ser data ISO válida' })
+  @IsDateString({}, { message: 'startDate must be a valid ISO date' })
   dataInicio?: string;
 
   @ApiPropertyOptional({ description: 'Alias startDate' })
@@ -61,12 +61,12 @@ export class QueryStatisticsDto extends PaginationDto {
 
   @ApiPropertyOptional({ description: 'Alias data_fim' })
   @IsOptional()
-  @IsDateString({}, { message: 'data_fim deve ser data ISO válida' })
+  @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   data_fim?: string;
 
   @ApiPropertyOptional({ description: 'Alias dataFim/endDate' })
   @IsOptional()
-  @IsDateString({}, { message: 'dataFim deve ser data ISO válida' })
+  @IsDateString({}, { message: 'endDate must be a valid ISO date' })
   dataFim?: string;
 
   @ApiPropertyOptional({ description: 'Alias endDate' })

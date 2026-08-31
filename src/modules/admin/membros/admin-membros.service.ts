@@ -6,29 +6,18 @@ import { FilterMembrosDto } from './dto/filter-membros.dto';
 
 function toMemberResponse(
   user: any,
-  stats: { totalPedidos: number; totalGasto: number; totalGastoPago: number },
+  stats: { totalOrders: number; totalSpentGross: number; totalSpentPaid: number },
 ) {
   return {
     id: user.id,
-    nome: user.name,
     name: user.name,
     email: user.email,
     role: user.role,
-    criadoEm: user.createdAt,
     createdAt: user.createdAt,
-    ativo: user.isActive,
     isActive: user.isActive,
-    // agregados via join real por comprador_id
-    totalPedidos: stats.totalPedidos,
-    total_pedidos: stats.totalPedidos,
-    nPedidos: stats.totalPedidos,
-    n_pedidos: stats.totalPedidos,
-    pedidosCount: stats.totalPedidos,
-    totalGasto: stats.totalGastoPago,
-    total_gasto: stats.totalGastoPago,
-    totalSpent: stats.totalGastoPago,
-    total_gasto_bruto: stats.totalGasto,
-    totalGastoBruto: stats.totalGasto,
+    totalOrders: stats.totalOrders,
+    totalSpent: stats.totalSpentPaid,
+    totalSpentGross: stats.totalSpentGross,
   };
 }
 
@@ -95,9 +84,9 @@ export class AdminMembrosService {
       // totalPedidos = todos os pedidos; totalGasto = soma apenas pago/concluido (receita real)
       // mantemos também totalGastoBruto (soma todos) para debug
       return toMemberResponse(u, {
-        totalPedidos: all.count,
-        totalGasto: all.sum,
-        totalGastoPago: pago.sum,
+        totalOrders: all.count,
+        totalSpentGross: all.sum,
+        totalSpentPaid: pago.sum,
       });
     });
 
@@ -115,13 +104,13 @@ export class AdminMembrosService {
       const exists = await this.prisma.user.findUnique({ where: { id: membroId } });
       if (!exists) {
         throw new NotFoundException({
-          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado' },
+          error: { code: 'NOT_FOUND', message: 'Member not found' },
         });
       }
       // se for admin, não tem pedidos – mas ainda permite ver vazio? Exigir buyer
       if (exists.role !== Role.BUYER) {
         throw new NotFoundException({
-          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Membro não encontrado (não é comprador)' },
+          error: { code: 'NOT_FOUND', message: 'Member not found (not a buyer)' },
         });
       }
     }
@@ -141,24 +130,14 @@ export class AdminMembrosService {
 
     const mapped = orders.map((order: any) => ({
       id: order.id,
-      pedido_id: order.id,
-      order_id: order.id,
-      comprador_id: order.buyerId,
       buyerId: order.buyerId,
-      buyer_id: order.buyerId,
       subtotal: order.subtotal,
-      taxa_entrega: order.deliveryFee,
       deliveryFee: order.deliveryFee,
       total: order.total,
-      estado: order.status,
       status: order.status,
-      criado_em: order.createdAt,
       createdAt: order.createdAt,
-      itens: order.items,
       items: order.items,
-      entrega: order.delivery,
       delivery: order.delivery,
-      pagamento: order.payment,
       payment: order.payment,
     }));
 

@@ -50,25 +50,23 @@ describe('AdminEstatisticasService', () => {
     dto.limit = 20;
     const result = await service.getEstatisticas(dto);
 
-    expect(result.receita_total).toBe(100000);
-    expect(result.receitaTotal).toBe(100000);
-    expect(result.receita.valor).toBe(30000);
-    expect(result.receita.valorAnterior).toBe(20000);
-    expect(result.receita.percentual).toBe(50); // (30000-20000)/20000*100=50
-    expect(result.receita.crescimento).toBe(true);
+    expect(result.totalRevenue).toBe(100000);
+    expect(result.revenue.value).toBe(30000);
+    expect(result.revenue.previousValue).toBe(20000);
+    expect(result.revenue.percentage).toBe(50); // (30000-20000)/20000*100=50
+    expect(result.revenue.grew).toBe(true);
 
-    expect(result.total_produtos).toBe(50);
-    expect(result.produtos.percentual).toBe(100); // (10-5)/5*100
+    expect(result.totalProducts).toBe(50);
+    expect(result.products.percentage).toBe(100); // (10-5)/5*100
 
-    expect(result.total_membros).toBe(100);
-    expect(result.membros.percentual).toBe(100);
+    expect(result.totalMembers).toBe(100);
+    expect(result.members.percentage).toBe(100);
 
-    expect(result.total_pedidos).toBe(80);
-    expect(result.pedidos.percentual).toBe(50);
+    expect(result.totalOrders).toBe(80);
+    expect(result.orders.percentage).toBe(50);
 
-    expect(result.periodo.dias).toBe(30);
-    expect(result.pedidosRecentes).toBeDefined();
-    expect(result.data).toEqual([]);
+    expect(result.period.days).toBe(30);
+    expect(result.recentOrders).toBeDefined();
   });
 
   it('deve tratar anterior 0 como 100% se atual >0', async () => {
@@ -84,8 +82,8 @@ describe('AdminEstatisticasService', () => {
     const dto2 = new QueryEstatisticasDto();
     dto2.dias = 7;
     const result2 = await service.getEstatisticas(dto2);
-    expect(result2.receita.percentual).toBe(100);
-    expect(result2.receita.crescimento).toBe(true);
+    expect(result2.revenue.percentage).toBe(100);
+    expect(result2.revenue.grew).toBe(true);
   });
 
   it('deve suportar intervalo custom data_inicio/data_fim', async () => {
@@ -101,12 +99,12 @@ describe('AdminEstatisticasService', () => {
     dto.page = 1;
     dto.limit = 10;
     const result = await service.getEstatisticas(dto);
-    expect(result.periodo.inicio.toISOString().startsWith('2026-07-01')).toBe(true);
-    expect(result.periodo.fim.toISOString().startsWith('2026-07-31')).toBe(true);
+    expect(result.period.start.toISOString().startsWith('2026-07-01')).toBe(true);
+    expect(result.period.end.toISOString().startsWith('2026-07-31')).toBe(true);
     // período anterior deve ter mesma duração
-    const durAtual = result.periodo.fim.getTime() - result.periodo.inicio.getTime();
+    const durAtual = result.period.end.getTime() - result.period.start.getTime();
     const durAnterior =
-      result.periodo.fimAnterior.getTime() - result.periodo.inicioAnterior.getTime();
+      result.period.previousEnd.getTime() - result.period.previousStart.getTime();
     expect(Math.abs(durAtual - durAnterior)).toBeLessThan(2000);
   });
 
@@ -127,7 +125,7 @@ describe('AdminEstatisticasService', () => {
     expect(prisma.order.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ skip: 2, take: 2 }),
     );
-    expect(result.pedidosRecentes.page).toBe(2);
-    expect(result.pedidosRecentes.total).toBe(5);
+    expect(result.recentOrders.page).toBe(2);
+    expect(result.recentOrders.total).toBe(5);
   });
 });

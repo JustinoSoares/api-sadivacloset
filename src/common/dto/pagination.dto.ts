@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * DTO base para paginação clássica ?page=&limit=
+ * Base DTO for classic pagination ?page=&limit=
  * Used in all listable endpoints, including /admin/products.
  */
 export class PaginationDto {
@@ -60,38 +60,29 @@ export function buildPaginatedResult<T>(
   };
 }
 
-// ── Bilingual format: English + Portuguese (code English, messages Portuguese) ─────────────────────────
+// ── English-only paginated response ─────────────────────────
 export interface PaginatedResponse<T> {
   data: T[];
-  dados: T[];
   page: number;
-  pagina: number;
   total: number;
   totalPages: number;
-  total_paginas: number;
 }
 
 export function buildPaginatedResponse<T>(
-  dados: T[],
+  data: T[],
   total: number,
   dto: PaginationDto,
 ): PaginatedResponse<T> {
-  const pagina = dto.page ?? 1;
-  const page = pagina;
+  const page = dto.page ?? 1;
   const limit = dto.limit ?? 20;
   const totalPages = Math.ceil(total / limit);
-  const total_paginas = totalPages;
   return {
-    data: dados,
-    dados,
+    data,
     page,
-    pagina,
     total,
     totalPages,
-    total_paginas,
   };
 }
 
 // Alias for reusable helper
 export const paginate = buildPaginatedResponse;
-export const paginar = buildPaginatedResponse;

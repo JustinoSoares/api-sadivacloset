@@ -3,15 +3,13 @@ import { Observable, map } from 'rxjs';
 import { PaginationDto, buildPaginatedResponse } from '../dto/pagination.dto';
 
 /**
- * Interceptor opcional de paginação.
- * Se o handler retornar { dados: T[], total: number } e houver query page/limit,
- * transforma automaticamente para { dados, pagina, total, total_paginas }.
+ * Optional pagination interceptor.
+ * If handler returns { data: T[], total: number } and has query page/limit,
+ * automatically transforms to { data, page, total, totalPages }.
  *
- * Uso:
+ * Usage:
  *   @UseInterceptors(PaginationInterceptor)
- *   @Get() findAll(@Query() q: PaginationDto) { return { dados, total } }
- *
- * Na maioria dos casos prefira usar o helper `paginate(dados, total, dto)` directamente no service/controller.
+ *   @Get() findAll(@Query() q: PaginationDto) { return { data, total } }
  */
 @Injectable()
 export class PaginationInterceptor<T> implements NestInterceptor<T, unknown> {
@@ -26,15 +24,6 @@ export class PaginationInterceptor<T> implements NestInterceptor<T, unknown> {
 
     return next.handle().pipe(
       map((data) => {
-        if (
-          data &&
-          typeof data === 'object' &&
-          'dados' in (data as Record<string, unknown>) &&
-          'total' in (data as Record<string, unknown>)
-        ) {
-          const raw = data as { dados: T[]; total: number };
-          return buildPaginatedResponse(raw.dados, raw.total, dto);
-        }
         if (
           data &&
           typeof data === 'object' &&

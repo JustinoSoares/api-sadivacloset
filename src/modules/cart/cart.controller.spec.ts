@@ -19,34 +19,25 @@ describe('CarrinhoController', () => {
   const user = { sub: buyerId, email: 'buyer@test.com', role: 'buyer' } as any;
 
   const cartMock = {
-    itens: [
-      {
-        id: cartItemId,
-        produto_id: productId,
-        quantidade: 2,
-        preco_com_desconto: 40500,
-        subtotal_item: 81000,
-      },
-    ],
     items: [
       {
         id: cartItemId,
-        produto_id: productId,
-        quantidade: 2,
-        preco_com_desconto: 40500,
-        subtotal_item: 81000,
+        productId: productId,
+        quantity: 2,
+        priceWithDiscount: 40500,
+        subtotal: 81000,
       },
     ],
     subtotal: 81000,
-    total_itens: 1,
-    totalItens: 1,
+    totalItems: 1,
+    totalQuantity: 1,
   };
   const itemMock = {
     id: cartItemId,
-    produto_id: productId,
-    quantidade: 2,
-    preco_com_desconto: 40500,
-    subtotal_item: 81000,
+    productId: productId,
+    quantity: 2,
+    priceWithDiscount: 40500,
+    subtotal: 81000,
   };
 
   beforeEach(async () => {
@@ -66,10 +57,10 @@ describe('CarrinhoController', () => {
     cartController = mod.get(CartController);
   });
 
-  it('GET /carrinho should return {data,dados}', async () => {
+  it('GET /carrinho should return {data} English-only', async () => {
     const result = await carrinhoController.getCart(user);
     expect(service.getCart).toHaveBeenCalledWith(buyerId);
-    expect(result).toEqual({ data: cartMock, dados: cartMock });
+    expect(result).toEqual({ data: cartMock });
   });
 
   it('POST /carrinho/itens should handle produto_id and quantidade', async () => {
@@ -84,7 +75,7 @@ describe('CarrinhoController', () => {
     Object.defineProperty(dto, 'quantityNormalized', { get: () => 2 });
     const result = await carrinhoController.addItem(user, dto);
     expect(service.addItem).toHaveBeenCalledWith(buyerId, productId, 2);
-    expect(result).toEqual({ data: itemMock, dados: itemMock });
+    expect(result).toEqual({ data: itemMock });
   });
 
   it('POST should throw validation if produto_id missing', async () => {
@@ -103,11 +94,11 @@ describe('CarrinhoController', () => {
   });
 
   it('PATCH /carrinho/itens/:id should update', async () => {
-    const dto: any = { quantidade: 5 };
+    const dto: any = { quantity: 5 };
     Object.defineProperty(dto, 'quantityNormalized', { get: () => 5 });
     const result = await carrinhoController.updateItem(user, cartItemId, dto);
     expect(service.updateItem).toHaveBeenCalledWith(buyerId, cartItemId, 5);
-    expect(result).toEqual({ data: itemMock, dados: itemMock });
+    expect(result).toEqual({ data: itemMock });
   });
 
   it('PATCH should throw if quantidade missing', async () => {
@@ -121,7 +112,7 @@ describe('CarrinhoController', () => {
   it('DELETE /carrinho/itens/:id should remove', async () => {
     const result = await carrinhoController.removeItem(user, cartItemId);
     expect(service.removeItem).toHaveBeenCalledWith(buyerId, cartItemId);
-    expect(result).toEqual({ mensagem: 'Item removido do carrinho', data: null, dados: null });
+    expect(result).toEqual({ message: 'Cart item removed', data: null });
   });
 
   it('aliases /cart should mirror behavior', async () => {

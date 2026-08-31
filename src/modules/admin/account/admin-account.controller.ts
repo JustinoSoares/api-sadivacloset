@@ -31,7 +31,7 @@ export class AdminAccountController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async getAccount(@CurrentUser() user: JwtPayload) {
     const account = await this.accountService.getAccount(user.sub);
-    return { data: account, dados: account };
+    return { data: account };
   }
 
   // legacy alias
@@ -58,7 +58,7 @@ export class AdminAccountController {
         (dto as any).currentPasswordNormalized ?? (dto as any).passwordActualNormalized,
       newPassword: (dto as any).newPasswordNormalized ?? (dto as any).novaPasswordNormalized,
     });
-    return { data: account, dados: account };
+    return { data: account };
   }
 
   // legacy alias method delegate

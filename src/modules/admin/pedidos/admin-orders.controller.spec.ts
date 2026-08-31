@@ -14,8 +14,8 @@ describe('AdminPedidosController', () => {
 
   beforeEach(async () => {
     service = {
-      findAll: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
-      updateStatus: jest.fn().mockResolvedValue({ id: orderId, estado: 'pago' }),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 }),
+      updateStatus: jest.fn().mockResolvedValue({ id: orderId, status: 'PAID' }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminPedidosController],
@@ -37,7 +37,7 @@ describe('AdminPedidosController', () => {
     dto.estado = 'pago';
     const result = await controller.updateStatus(user, orderId, dto);
     expect(service.updateStatus).toHaveBeenCalledWith(adminId, orderId, dto);
-    expect(result.data.estado).toBe('pago');
+    expect(result.data.status).toBe('PAID');
   });
 
   it('should have correct path and roles', () => {

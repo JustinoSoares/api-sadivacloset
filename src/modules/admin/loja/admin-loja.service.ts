@@ -5,14 +5,9 @@ import { AuditoriaService } from '../../auditoria/auditoria.service';
 function toResponse(config: any) {
   return {
     id: config.id,
-    nome: config.name,
     name: config.name,
-    email: config.contactEmail,
-    email_contacto: config.contactEmail,
     contactEmail: config.contactEmail,
-    telefone: config.phone,
     phone: config.phone,
-    morada: config.address,
     address: config.address,
   };
 }
@@ -64,10 +59,10 @@ export class AdminLojaService {
     });
     if (adminId) {
       await this.auditoria
-        .registar(adminId, 'atualizar_loja', 'loja', 'singleton', {
-          antes: before,
-          depois: updated,
-          alteracoes: payload,
+        .registar(adminId, 'update_store', 'store', 'singleton', {
+          before,
+          after: updated,
+          changes: payload,
         })
         .catch(() => {});
     }

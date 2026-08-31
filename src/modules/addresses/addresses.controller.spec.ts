@@ -21,23 +21,15 @@ describe('PerfilEnderecosController', () => {
 
   const addressMock = {
     id: addressId,
-    compradorId: buyerId,
     buyerId,
-    etiqueta: 'Casa',
     label: 'Casa',
-    provincia: 'Luanda',
     province: 'Luanda',
-    municipio: 'Talatona',
     municipality: 'Talatona',
-    bairro: 'Benfica',
     neighborhood: 'Benfica',
-    rua: 'Rua 1',
     street: 'Rua 1',
-    referencia: null,
     reference: null,
     latitude: null,
     longitude: null,
-    predefinida: true,
     isDefault: true,
   };
 
@@ -59,55 +51,55 @@ describe('PerfilEnderecosController', () => {
     profileController = mod.get(ProfileAddressesController);
   });
 
-  it('GET /perfil/enderecos should return {data,dados}', async () => {
+  it('GET /perfil/enderecos should return {data} English-only', async () => {
     const result = await perfilController.findAll(user);
     expect(service.findAll).toHaveBeenCalledWith(buyerId);
-    expect(result).toEqual({ data: [addressMock], dados: [addressMock] });
+    expect(result).toEqual({ data: [addressMock] });
   });
 
   it('POST /perfil/enderecos should validate required fields', async () => {
     const dto = new CreateAddressDto();
-    dto.etiqueta = 'Casa';
-    dto.provincia = 'Luanda';
-    dto.municipio = 'Talatona';
-    dto.bairro = 'Benfica';
-    dto.rua = 'Rua 1';
+    dto.label = 'Casa';
+    dto.province = 'Luanda';
+    dto.municipality = 'Talatona';
+    dto.neighborhood = 'Benfica';
+    dto.street = 'Rua 1';
     const result = await perfilController.create(user, dto);
     expect(service.create).toHaveBeenCalledWith(
       buyerId,
-      expect.objectContaining({ etiqueta: 'Casa' }),
+      expect.objectContaining({ label: 'Casa' }),
     );
-    expect(result).toEqual({ data: addressMock, dados: addressMock });
+    expect(result).toEqual({ data: addressMock });
   });
 
   it('POST should throw 400 if missing fields', async () => {
     const dto = new CreateAddressDto();
-    dto.etiqueta = 'Casa';
+    dto.label = 'Casa';
     // missing provincia etc
     await expect(perfilController.create(user, dto)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('PATCH /perfil/enderecos/:id should edit', async () => {
     const dto = new UpdateAddressDto();
-    dto.etiqueta = 'Casa Nova';
+    dto.label = 'Casa Nova';
     await perfilController.update(user, addressId, dto);
     expect(service.update).toHaveBeenCalledWith(
       buyerId,
       addressId,
-      expect.objectContaining({ etiqueta: 'Casa Nova' }),
+      expect.objectContaining({ label: 'Casa Nova' }),
     );
   });
 
   it('DELETE /perfil/enderecos/:id should remove', async () => {
     const result = await perfilController.remove(user, addressId);
     expect(service.remove).toHaveBeenCalledWith(buyerId, addressId);
-    expect(result).toEqual({ mensagem: 'Endereço removido', data: null, dados: null });
+    expect(result).toEqual({ message: 'Address removed', data: null });
   });
 
   it('PATCH /perfil/enderecos/:id/predefinir should set default', async () => {
     const result = await perfilController.setDefault(user, addressId);
     expect(service.setDefault).toHaveBeenCalledWith(buyerId, addressId);
-    expect(result).toEqual({ data: addressMock, dados: addressMock });
+    expect(result).toEqual({ data: addressMock });
   });
 
   it('aliases /profile/addresses should mirror', async () => {

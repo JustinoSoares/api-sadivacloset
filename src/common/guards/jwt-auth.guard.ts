@@ -35,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractToken(request.headers);
     if (!token) {
       throw new UnauthorizedException({
-        erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Token não fornecido' },
+        error: { code: 'UNAUTHENTICATED', message: 'Token not provided' },
       });
     }
 
@@ -49,10 +49,10 @@ export class JwtAuthGuard implements CanActivate {
     } catch (err: unknown) {
       const msg =
         err instanceof Error && err.name === 'TokenExpiredError'
-          ? 'Token expirado'
-          : 'Token inválido';
+          ? 'Token expired'
+          : 'Invalid token';
       throw new UnauthorizedException({
-        erro: { codigo: 'NAO_AUTENTICADO', mensagem: msg },
+        error: { code: 'UNAUTHENTICATED', message: msg },
       });
     }
   }

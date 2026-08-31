@@ -39,60 +39,60 @@ export class CreateProductDto {
     description: 'Image URL (from frontend)',
   })
   @Transform(({ obj }) => obj.image ?? obj.imagem)
-  @IsString({ message: 'image deve ser uma string' })
-  @IsNotEmpty({ message: 'image é obrigatório' })
-  @IsUrl({}, { message: 'image deve ser uma URL válida' })
+  @IsString({ message: 'image must be a string' })
+  @IsNotEmpty({ message: 'image is required' })
+  @IsUrl({}, { message: 'image must be a valid URL' })
   image!: string;
 
   @ApiProperty({ example: 'Floral Dress' })
   @Transform(({ obj }) => obj.name ?? obj.nomeProduto ?? obj.nome)
-  @IsString({ message: 'name deve ser uma string' })
-  @IsNotEmpty({ message: 'name é obrigatório' })
+  @IsString({ message: 'name must be a string' })
+  @IsNotEmpty({ message: 'name is required' })
   name!: string;
 
   @ApiProperty({ example: 'Light dress for summer, size M' })
   @Transform(({ obj }) => obj.description ?? obj.descricao)
-  @IsString({ message: 'description deve ser uma string' })
-  @IsNotEmpty({ message: 'description é obrigatória' })
+  @IsString({ message: 'description must be a string' })
+  @IsNotEmpty({ message: 'description is required' })
   description!: string;
 
   @ApiProperty({ enum: Category, example: Category.DRESSES })
   @Transform(({ obj }) => mapCategory(obj.category ?? obj.categoria))
   @IsEnum(Category, {
-    message: `category deve ser um dos valores: ${Object.values(Category).join(', ')}`,
+    message: `category must be one of: ${Object.values(Category).join(', ')}`,
   })
   category!: Category;
 
   @ApiProperty({ example: 'M' })
   @Transform(({ obj }) => obj.size ?? obj.tamanho)
-  @IsString({ message: 'size deve ser uma string' })
-  @IsNotEmpty({ message: 'size é obrigatório' })
+  @IsString({ message: 'size must be a string' })
+  @IsNotEmpty({ message: 'size is required' })
   size!: string;
 
   @ApiProperty({ enum: ProductCondition, example: ProductCondition.NEW })
   @Transform(({ obj }) => mapCondition(obj.condition ?? obj.estado))
   @IsEnum(ProductCondition, {
-    message: `condition deve ser um dos valores: ${Object.values(ProductCondition).join(', ')}`,
+    message: `condition must be one of: ${Object.values(ProductCondition).join(', ')}`,
   })
   condition!: ProductCondition;
 
   @ApiProperty({ example: 10, description: 'Stock available, integer >= 0' })
   @Transform(({ obj }) => obj.stock ?? obj.volume)
-  @IsInt({ message: 'stock deve ser um inteiro' })
-  @Min(0, { message: 'stock deve ser >= 0' })
+  @IsInt({ message: 'stock must be an integer' })
+  @Min(0, { message: 'stock must be >= 0' })
   stock!: number;
 
   @ApiProperty({ example: 25000, description: 'Price in AOA (integer) >= 0' })
-  @IsInt({ message: 'price deve ser um inteiro' })
-  @Min(0, { message: 'price deve ser >= 0' })
+  @IsInt({ message: 'price must be an integer' })
+  @Min(0, { message: 'price must be >= 0' })
   price!: number;
 
   @ApiPropertyOptional({ example: 10, description: 'Discount 0-100' })
   @Transform(({ obj }) => obj.discount ?? obj.desconto)
   @IsOptional()
-  @IsInt({ message: 'discount deve ser um inteiro' })
-  @Min(0, { message: 'discount deve ser >= 0' })
-  @Max(100, { message: 'discount deve ser <= 100' })
+  @IsInt({ message: 'discount must be an integer' })
+  @Min(0, { message: 'discount must be >= 0' })
+  @Max(100, { message: 'discount must be <= 100' })
   discount?: number;
 
   // legacy aliases for validation whitelist

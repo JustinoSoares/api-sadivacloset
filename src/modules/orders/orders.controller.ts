@@ -32,60 +32,60 @@ export class PedidosController {
 
   @Get(':id')
   @ApiOperation({
-    summary: 'Detalhe completo do pedido (itens, entrega, pagamento)',
+    summary: 'Order detail (items, delivery, payment)',
     description: 'Returns order detail with items, delivery and payment',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async findOne(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
-    const pedido = await this.ordersService.findOne(user.sub, id);
-    return { data: pedido, dados: pedido };
+    const order = await this.ordersService.findOne(user.sub, id);
+    return { data: order };
   }
 
   @Patch(':id/cancelar')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Cancela pedido (só se entrega ainda não estiver a caminho/em entrega) e repõe stock',
-    description: 'Cancels order and restores stock if delivery not in transit',
+    summary: 'Cancel order (only if delivery not on the way) and restore stock',
+    description: 'Cancels order and restores stock',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 409, description: 'Conflict' })
   async cancelar(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
-    const pedido = await this.ordersService.cancel(user.sub, id);
-    return { data: pedido, dados: pedido, mensagem: 'Pedido cancelado' };
+    const order = await this.ordersService.cancel(user.sub, id);
+    return { data: order, message: 'Order cancelled' };
   }
 
   @Post(':id/entrega')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Regista/edita data_agendada, janela_horario e morada da entrega',
+    summary: 'Create/update delivery info',
     description: 'Create or update delivery scheduling and address',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateDeliveryDto })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async upsertEntrega(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDeliveryDto,
   ) {
-    const pedido = await this.ordersService.upsertDelivery(user.sub, id, {
+    const order = await this.ordersService.upsertDelivery(user.sub, id, {
       enderecoId: dto.enderecoIdNormalized,
       dataAgendada: dto.dataAgendadaNormalized,
       janelaHorario: dto.janelaHorarioNormalized,
       instrucoes: dto.instrucoesNormalized,
     });
-    return { data: pedido, dados: pedido };
+    return { data: order };
   }
 }
 
@@ -108,7 +108,7 @@ export class OrdersController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async findOne(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const order = await this.ordersService.findOne(user.sub, id);
-    return { data: order, dados: order };
+    return { data: order };
   }
 
   @Patch(':id/cancel')
@@ -126,7 +126,7 @@ export class OrdersController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async cancel(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     const order = await this.ordersService.cancel(user.sub, id);
-    return { data: order, dados: order, message: 'Order cancelled', mensagem: 'Pedido cancelado' };
+    return { data: order, message: 'Order cancelled' };
   }
 
   @Post(':id/delivery')
@@ -153,6 +153,6 @@ export class OrdersController {
       janelaHorario: dto.janelaHorarioNormalized,
       instrucoes: dto.instrucoesNormalized,
     });
-    return { data: order, dados: order };
+    return { data: order };
   }
 }

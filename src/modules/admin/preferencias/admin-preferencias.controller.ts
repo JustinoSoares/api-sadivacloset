@@ -31,7 +31,7 @@ export class AdminPreferenciasController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getPreferencias() {
     const pref = await this.preferenciasService.getPreferencias();
-    return { data: pref, dados: pref };
+    return { data: pref };
   }
 
   @Patch()
@@ -55,7 +55,7 @@ export class AdminPreferenciasController {
       },
       user.sub,
     );
-    return { data: pref, dados: pref };
+    return { data: pref };
   }
 }
 

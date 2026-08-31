@@ -34,31 +34,26 @@ export class CheckoutController {
     const dataAgendada = dto.dataAgendadaNormalized;
     const janelaHorario = dto.janelaHorarioNormalized;
 
-    // validação obrigatórios — bilíngue
-    const detalhes: { campo: string; erros: string[] }[] = [];
+    const details: { field: string; errors: string[] }[] = [];
     if (!tipo)
-      detalhes.push({
-        campo: 'tipo',
-        erros: ['tipo é obrigatório (domicilio | levantamento_loja)'],
+      details.push({
+        field: 'type',
+        errors: ['type is required (domicilio | levantamento_loja)'],
       });
     else if (!['domicilio', 'levantamento_loja'].includes(tipo))
-      detalhes.push({ campo: 'tipo', erros: ['tipo deve ser domicilio ou levantamento_loja'] });
+      details.push({ field: 'type', errors: ['type must be domicilio or levantamento_loja'] });
     if (!dataAgendada)
-      detalhes.push({
-        campo: 'data_agendada',
-        erros: ['data_agendada é obrigatória (YYYY-MM-DD)'],
+      details.push({
+        field: 'scheduledDate',
+        errors: ['scheduledDate is required (YYYY-MM-DD)'],
       });
     if (!janelaHorario)
-      detalhes.push({ campo: 'janela_horario', erros: ['janela_horario é obrigatória'] });
-    if (detalhes.length) {
+      details.push({ field: 'timeWindow', errors: ['timeWindow is required'] });
+    if (details.length) {
       throw new BadRequestException({
-        erro: { codigo: 'ERRO_VALIDACAO', mensagem: 'Erro de validação', detalhes },
+        error: { code: 'VALIDATION_ERROR', message: 'Validation error', details },
       });
     }
-
-    // Para domicilio, permitir sem endereco_id/zona mas serviço resolve fallback;
-    // Se quiser estrito, descomentar:
-    // if (tipo === 'domicilio' && !dto.enderecoIdNormalized && !dto.zonaEntregaIdNormalized) { ... }
 
     const result = await this.checkoutService.checkout(user.sub, {
       enderecoId: dto.enderecoIdNormalized,
@@ -68,6 +63,6 @@ export class CheckoutController {
       janelaHorario: janelaHorario!,
     });
 
-    return { data: result, dados: result };
+    return { data: result };
   }
 }

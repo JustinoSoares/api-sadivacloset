@@ -107,7 +107,7 @@ describe('FavoritesService', () => {
       prisma.product.findUnique.mockResolvedValue(null);
       await expect(service.add(buyerId, 'non-existent')).rejects.toBeInstanceOf(NotFoundException);
       await expect(service.add(buyerId, 'non-existent')).rejects.toMatchObject({
-        response: { erro: { codigo: 'NAO_ENCONTRADO' } },
+        response: { error: { code: 'NOT_FOUND' } },
       });
       expect(prisma.favorite.upsert).not.toHaveBeenCalled();
     });

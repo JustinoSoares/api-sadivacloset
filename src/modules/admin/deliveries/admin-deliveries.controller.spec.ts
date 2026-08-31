@@ -14,10 +14,10 @@ describe('AdminDeliveriesController', () => {
 
   beforeEach(async () => {
     service = {
-      findAll: jest.fn().mockResolvedValue({ data: [], dados: [], total: 0, pagina: 1, page: 1 }),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 }),
       updateStatus: jest
         .fn()
-        .mockResolvedValue({ id: deliveryId, status: 'ON_THE_WAY', estado: 'a_caminho' }),
+        .mockResolvedValue({ id: deliveryId, status: 'ON_THE_WAY' }),
     };
     const mod = await Test.createTestingModule({
       controllers: [AdminDeliveriesController],
@@ -40,7 +40,7 @@ describe('AdminDeliveriesController', () => {
     dto.status = 'on_the_way';
     const result = await controller.updateStatus(user, deliveryId, dto);
     expect(service.updateStatus).toHaveBeenCalledWith(adminId, deliveryId, dto);
-    expect(result.data.estado).toBe('a_caminho');
+    expect(result.data.status).toBe('ON_THE_WAY');
   });
 
   it('PATCH legacy alias should also update', async () => {

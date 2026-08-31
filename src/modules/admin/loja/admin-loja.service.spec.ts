@@ -32,9 +32,8 @@ describe('AdminLojaService', () => {
   it('GET deve retornar loja existente', async () => {
     prisma.storeConfig.findUnique.mockResolvedValue(lojaMock);
     const result = await service.getLoja();
-    expect(result.nome).toBe('SadivaCloset');
     expect(result.name).toBe('SadivaCloset');
-    expect(result.email).toBe('contacto@sadivacloset.co.ao');
+    expect(result.contactEmail).toBe('contacto@sadivacloset.co.ao');
   });
 
   it('GET deve criar singleton se não existir', async () => {
@@ -42,7 +41,7 @@ describe('AdminLojaService', () => {
     prisma.storeConfig.create.mockResolvedValue(lojaMock);
     const result = await service.getLoja();
     expect(prisma.storeConfig.create).toHaveBeenCalled();
-    expect(result.morada).toBe('Luanda, Talatona');
+    expect(result.address).toBe('Luanda, Talatona');
   });
 
   it('PATCH deve atualizar via upsert com aliases', async () => {
@@ -57,6 +56,6 @@ describe('AdminLojaService', () => {
         update: expect.objectContaining({ name: 'Nova Loja', phone: '+244 911' }),
       }),
     );
-    expect(result.nome).toBe('Nova Loja');
+    expect(result.name).toBe('Nova Loja');
   });
 });

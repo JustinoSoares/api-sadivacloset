@@ -8,7 +8,6 @@ import { PaymentsService } from './payments.service';
 export class WebhooksController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  // ─── Rota exigida pela tarefa: POST /api/v1/webhooks/pagamento/:gateway ───
   @ApiExcludeEndpoint()
   @Public()
   @Post('pagamento/:gateway')
@@ -16,7 +15,7 @@ export class WebhooksController {
   @ApiOperation({
     summary: 'Generic payment webhook (public, HMAC, idempotent)',
     description:
-      'Validates HMAC signature configurable by env (PAYMENT_WEBHOOK_SECRET or PAYMENT_WEBHOOK_SECRET_<GATEWAY>), uses external reference as idempotent key (Redis + webhook_processed_at column), updates Payment and Order to paid, triggers notifications and enqueues BullMQ queue pagamento-confirmado.',
+      'Validates HMAC signature configurable by env (PAYMENT_WEBHOOK_SECRET or PAYMENT_WEBHOOK_SECRET_<GATEWAY>), uses external reference as idempotent key (Redis + webhookProcessedAt column), updates Payment and Order to paid, triggers notifications and enqueues BullMQ queue payment-confirmed.',
   })
   @ApiParam({
     name: 'gateway',
@@ -35,7 +34,6 @@ export class WebhooksController {
     return this.paymentsService.handlePagamentoWebhook(gateway, rawBody, headers, body);
   }
 
-  // Alias inglês
   @Public()
   @Post('payment/:gateway')
   @HttpCode(HttpStatus.OK)

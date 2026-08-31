@@ -37,8 +37,7 @@ describe('DeliveryZonesService', () => {
 
   it('should return from cache when exists (english)', async () => {
     const cached = {
-      data: [{ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 }],
-      dados: [{ id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 }],
+      data: [{ id: '1', neighborhood: 'Talatona', price: 2500 }],
     };
     redis.get.mockResolvedValue(JSON.stringify(cached));
     const result = await service.findAll();
@@ -50,24 +49,13 @@ describe('DeliveryZonesService', () => {
     const result = await service.findAll();
     expect(prisma.deliveryZone.findMany).toHaveBeenCalledWith({ orderBy: { neighborhood: 'asc' } });
     expect(result.data).toHaveLength(3);
-    expect(result.dados).toHaveLength(3);
-    // bilingual shape
+    // English-only shape
     expect(result.data[0]).toEqual({
       id: '1',
       neighborhood: 'Talatona',
-      bairro: 'Talatona',
       price: 2500,
-      preco: 2500,
-    });
-    expect(result.dados[0]).toEqual({
-      id: '1',
-      neighborhood: 'Talatona',
-      bairro: 'Talatona',
-      price: 2500,
-      preco: 2500,
     });
     expect(redis.set).toHaveBeenCalledWith('cache:delivery-zones', expect.any(String), 60);
-    expect(redis.set).toHaveBeenCalledWith('cache:zonas-entrega', expect.any(String), 60);
   });
 
   it('should ignore parse error and fetch from DB', async () => {
@@ -79,12 +67,11 @@ describe('DeliveryZonesService', () => {
 
   it('should support legacy plain array cache', async () => {
     const arr = [
-      { id: '1', neighborhood: 'Talatona', bairro: 'Talatona', price: 2500, preco: 2500 },
+      { id: '1', neighborhood: 'Talatona', price: 2500 },
     ];
     redis.get.mockResolvedValue(JSON.stringify(arr));
     const result = await service.findAll();
     expect(result.data).toEqual(arr);
-    expect(result.dados).toEqual(arr);
   });
 
   it('clearCache should delete both keys', async () => {

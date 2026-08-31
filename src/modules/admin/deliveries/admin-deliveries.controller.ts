@@ -56,7 +56,7 @@ export class AdminDeliveriesController {
     @Body() dto: UpdateDeliveryStatusDto,
   ) {
     const result = await this.adminDeliveriesService.updateStatus(user.sub, id, dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 
   @ApiExcludeEndpoint()
@@ -77,7 +77,7 @@ export class AdminDeliveriesController {
     @Body() dto: UpdateDeliveryStatusDto,
   ) {
     const result = await this.adminDeliveriesService.updateStatus(user.sub, id, dto);
-    return { data: result, dados: result };
+    return { data: result };
   }
 }
 
