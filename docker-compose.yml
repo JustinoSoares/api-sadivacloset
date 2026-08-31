@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - web_sadiva
+      - web_sadivacloset
 
   redis:
     image: redis:7-alpine
@@ -33,7 +33,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - web_sadiva
+      - web_sadivacloset
 
 volumes:
   postgres_data:
@@ -42,6 +42,6 @@ volumes:
     driver: local
 
 networks:
-  web_sadiva:
+  web_sadivacloset:
     driver: bridge
-    name: web_sadiva
+    name: web_sadivaclosetcloset
