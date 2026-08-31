@@ -43,5 +43,4 @@ volumes:
 
 networks:
   web_sadivacloset:
-    driver: bridge
-    name: web_sadivacloset
+    external: true
