@@ -16,7 +16,6 @@
 - [Paginação](#paginação)
 - [Erros](#erros)
 - [Rate Limiting](#rate-limiting)
-- [Uploads](#uploads)
 - [Webhooks](#webhooks)
 - [Endpoints](#endpoints)
   - [auth](#auth)
@@ -190,10 +189,10 @@ Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
 
 ---
 
-## Uploads
+## Comprovativos
 
-- **Comprovativo pagamento:** `POST /orders/:id/payment/receipt` (`multipart/form-data`, campo `file`, 5MB, auth `BUYER` dono do pedido) → `{ comprovativo_url }`
-- **Servidos em:** `GET /uploads/<file>` e `GET /api/v1/uploads/<file>` (estático `express.static`)
+- **Comprovativo pagamento:** `POST /orders/:id/payment/receipt` (`application/json`, campo `receiptUrl` / `comprovativo_url`, auth `BUYER` dono do pedido) → `{ comprovativo_url }`
+- **Fluxo:** o frontend faz o upload para o storage externo (ex: S3, Cloudinary) e envia apenas a URL para o backend. O backend **não** recebe `multipart/form-data` nem armazena ficheiros.
 
 ---
 
@@ -356,7 +355,7 @@ Aliases PT `perfil/enderecos` escondidos. Ownership idem.
 |--------|------|------|------------|----------|
 | POST | `/orders/:id/payment/init` | JWT (dono) | `{metodo,phoneNumber?,iban?,descricao?}` | `201 {data: Payment}` |
 | GET | `/orders/:id/payment` | JWT (dono) | - | `200 {data}` |
-| POST | `/orders/:id/payment/receipt` | JWT (dono) | `multipart file` | `200 {data}` |
+| POST | `/orders/:id/payment/receipt` | JWT (dono) | `JSON { receiptUrl }` (`receipt_url` / `comprovativo_url`) | `200 {data}` |
 | GET | `/payments/historico` / `/payments/entradas` / `/payments/saidas` / `/payments/carteira/historico` | JWT | `?page&limit&tipo=entrada|saida` | `200 Paginated` |
 | GET | `/wallet/historico` | JWT | `?page&limit` | `200 {local, bridpay}` |
 
@@ -534,7 +533,7 @@ curl http://localhost:3001/api/v1/admin/products -H "Authorization: Bearer $admi
 - **Trate paginação bilíngue:** prefira `res.data` e `res.page`, mas suporte `res.dados`/`pagina` para retrocompatibilidade.
 - **Exiba `mensagem` diretamente ao utilizador** (já em PT). Use `codigo` para lógica (ex: `STOCK_INSUFICIENTE` → mostrar stock disponível em `detalhes`).
 - **Cache:** `GET /products` tem `Cache 60s` no servidor (Redis) – frontend pode cachear mas não precisa invalidar.
-- **Uploads:** use `FormData` com campo `file` para `POST /orders/:id/payment/receipt`.
+- **Comprovativos:** envie `JSON { "receiptUrl": "https://..." }` (aceita também `receipt_url` / `comprovativo_url`) para `POST /orders/:id/payment/receipt`. O backend não faz upload/armazenamento — o frontend envia apenas a URL já hospedada.
 - **Webhooks:** são **públicos** (sem JWT) – frontend **nunca** chama; apenas gateways com `x-signature`.
 - **Rate limiting:** mostre `LIMITE_EXCEDIDO` com retry após `X-RateLimit-Reset`.
 - **CORS:** `origin: true` em dev; em prod será restrito via `env`.
