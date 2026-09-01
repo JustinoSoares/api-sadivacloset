@@ -11,6 +11,8 @@
 
 > **Deprecated PT aliases:** The codebase keeps Portuguese route aliases (`/produtos`, `/carrinho`, `/pedidos`, `/perfil/*`, `/admin/produtos`…) for backward compatibility but they are **hidden from documentation** (`@ApiExcludeController`/`@ApiExcludeEndpoint`) and **deprecated**. **Frontend MUST use English routes only** as the definitive contract. Swagger shows English routes only. Backend still accepts PT aliases if called, but they must not be used in new code. All responses are **English-only** — no `dados`/`pagina`/`total_paginas` or `erro`/`codigo`/`mensagem` fields.
 
+> **Field aliases (DTOs):** Swagger shows **only English fields** because every Portuguese alias (`nome`, `telefone`, `metodo`, `tipo`, `data_agendada`, `janela_horario`, `produto_id`, `categoria`, `tamanho`, `estado`, `preco_min`, `comprovativo_url`, `receipt_url`, `ordenar`, etc.) is decorated with `@ApiHideProperty()` and therefore hidden from OpenAPI/Swagger. Backend still accepts PT aliases via `class-transformer @Transform` helpers for backward compatibility (e.g., `nome → name`, `telefone → phoneNumber`, `metodo → method`, `tipo → type`, `data_agendada → scheduledDate`, `janela_horario → timeWindow`, `produto_id → productId`, `categoria → category`, `tamanho → size`, `estado → condition`, `preco_min → price_min`, `ordenar → sort`, `comprovativo_url → receiptUrl`). **Frontend MUST send English fields only**; PT examples must never appear in documentation or new client code. All DTO examples below are English-only.
+
 ---
 
 ## Summary
@@ -57,24 +59,24 @@ Authorization: Bearer <access_token>
 | `/auth/reset-password` | POST | Public | Reset password with token |
 | `/profile` | GET / PATCH | JWT | Current user profile |
 
-**Register – Request**
+**Register – Request (English-only — do not use `nome`)**
 ```json
 {
-  "name": "Buyer Test",
-  "email": "buyer@test.com",
-  "password": "BuyerPass123!"
+  "name": "Maria Silva",
+  "email": "maria@example.com",
+  "password": "StrongPass123"
 }
 ```
 **Register – Response `201`**
 ```json
 {
-  "data": { "id": "uuid", "name": "Buyer Test", "email": "buyer@test.com", "role": "BUYER", "createdAt": "2026-01-03T00:00:00.000Z" }
+  "data": { "id": "uuid", "name": "Maria Silva", "email": "maria@example.com", "role": "BUYER", "createdAt": "2026-01-03T00:00:00.000Z" }
 }
 ```
 
-**Login – Request**
+**Login – Request (English-only)**
 ```json
-{ "email": "buyer@test.com", "password": "BuyerPass123!" }
+{ "email": "maria@example.com", "password": "StrongPass123" }
 ```
 **Login – Response `200`**
 ```json
@@ -90,23 +92,31 @@ Authorization: Bearer <access_token>
 ```
 **Forgot – Request** `POST /auth/forgot-password`
 ```json
-{ "email": "buyer@test.com" }
+{ "email": "maria@example.com" }
 ```
 Always returns `200 { message: "If the email exists, a reset link has been sent." }` to avoid enumeration. In dev, logs `http://localhost:3001/reset-password?token=<raw>` to console. Token is `randomBytes 32 hex`, stored as `sha256` in `Redis reset:password:<hash> EX 900s`.
 
 **Reset – Request**
 ```json
-{ "token": "hex-64", "newPassword": "NewPass123!" }
+{ "token": "hex-64", "newPassword": "StrongPass123" }
 ```
 
 **Profile – Response `200`**
 ```json
 {
-  "data": { "id": "uuid", "name": "...", "email": "...", "role": "BUYER", "createdAt": "...", "isActive": true }
+  "data": { "id": "uuid", "name": "Maria Silva", "email": "maria@example.com", "role": "BUYER", "createdAt": "...", "isActive": true }
 }
 ```
 
-> Deprecated aliases (hidden, do not use): `POST /auth/registar`, `POST /auth/esqueci-password`, `POST /auth/redefinir-password`, `GET /perfil`, `PATCH /perfil` — still accepted by backend for backward compat.
+**Update profile – Request (English-only)**
+```json
+{
+  "name": "Maria Silva",
+  "email": "maria@example.com"
+}
+```
+
+> Deprecated aliases (hidden, do not use): `POST /auth/registar`, `POST /auth/esqueci-password`, `POST /auth/redefinir-password`, `GET /perfil`, `PATCH /perfil` — still accepted by backend for backward compat but hidden via `@ApiExcludeEndpoint`. Field alias `nome` is hidden via `@ApiHideProperty()` — use `name`.
 
 ---
 
@@ -216,7 +226,7 @@ Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
 ## Receipts
 
 - **Payment receipt:** `POST /orders/:id/payment/receipt` (`application/json`, field `receiptUrl` – English-only, auth `BUYER` owner of order) → `{ data: Payment }`
-- **Flow:** Frontend uploads the image to external storage (e.g., S3, Cloudinary, Vercel Blob) and sends **only the URL** as JSON to the backend. Backend **does not** accept `multipart/form-data` and does not store files. Previously documented `comprovativo_url` / `receipt_url` aliases are removed – use `receiptUrl` only. Sending `file` → `400 VALIDATION_ERROR`.
+- **Flow:** Frontend uploads the image to external storage (e.g., S3, Cloudinary, Vercel Blob) and sends **only the URL** as JSON to the backend. Backend **does not** accept `multipart/form-data` and does not store files. Portuguese aliases `comprovativo_url` / `receipt_url` are hidden via `@ApiHideProperty()` but still accepted via `Transform` for compat – use `receiptUrl` only. Sending `file` → `400 VALIDATION_ERROR`.
 - Example:
 ```json
 { "receiptUrl": "https://res.cloudinary.com/demo/image/upload/receipt.jpg" }
@@ -279,7 +289,7 @@ const sig = crypto.createHmac('sha256', process.env.PAYMENT_WEBHOOK_SECRET).upda
 | GET | `/profile` | JWT | - | `200 {data}` |
 | PATCH | `/profile` | JWT | `{name?,email?}` | `200 {data}` |
 
-Deprecated PT aliases (`POST /auth/registar`, `POST /auth/esqueci-password`, `POST /auth/redefinir-password`, `GET /perfil`, `PATCH /perfil`) are hidden – do not use.
+Deprecated PT aliases (`POST /auth/registar`, `POST /auth/esqueci-password`, `POST /auth/redefinir-password`, `GET /perfil`, `PATCH /perfil`) are hidden – do not use. Field `nome` hidden via `@ApiHideProperty()` — use `name`.
 
 ### products
 | Method | Route | Auth | Query/Body | Response |
@@ -287,7 +297,7 @@ Deprecated PT aliases (`POST /auth/registar`, `POST /auth/esqueci-password`, `PO
 | GET | `/products` | Public | `?q=&category=SUITS,SHIRTS&size=M&condition=NEW&price_min=&price_max=&sort=recent|price_asc|price_desc|name_asc|oldest&page=&limit=` | `200 { data: Product[], page, total, totalPages }` |
 | GET | `/products/:id` | Public | `param id UUID` | `200 {data: Product}` |
 
-`FilterProductsDto` query params (English-only; legacy PT aliases `categoria→category`, `tamanho→size`, `estado→condition`, `preco_min→price_min`, `ordenar→sort` still accepted by backend for compat but not documented for frontend – use English):
+`FilterProductsDto` query params (English-only; PT aliases `categoria→category`, `tamanho→size`, `estado→condition`, `preco_min→price_min`, `ordenar→sort` are hidden via `@ApiHideProperty()` but still accepted for backward compat via `Transform` — frontend MUST use English):
 - `q` – search `name` OR `description` `contains insensitive`
 - `category` – CSV `SUITS,SHIRTS,DRESSES,OTHERS`
 - `size` – CSV `M,L` etc
@@ -335,7 +345,7 @@ Deprecated PT `GET /categorias`, `GET /zonas-entrega` hidden.
 
 English-only DTOs. `productId` must be UUID, `quantity >=1`. Validates stock → `400 INSUFFICIENT_STOCK` with `details` `{ available, requested }`. `:id` is `CartItem.id` (not `productId`). Add is upsert (existing quantity summed). `GET /cart` enriches each item with `product`, `discountedPrice`, `subtotal`.
 
-**AddCartItemDto**
+**AddCartItemDto (English-only — do not use `produto_id`)**
 ```json
 { "productId": "uuid", "quantity": 2 }
 ```
@@ -354,24 +364,24 @@ English-only DTOs. `productId` must be UUID, `quantity >=1`. Validates stock →
 }
 ```
 
-Deprecated PT `POST /carrinho/itens` etc hidden.
+Deprecated PT `POST /carrinho/itens` etc hidden. Field `produto_id` hidden via `@ApiHideProperty()` — use `productId`.
 
 ### checkout
 | Method | Route | Auth | Body | Response | Throttle |
 |--------|------|------|------|----------|----------|
 | POST | `/checkout` | JWT | `{type,scheduledDate,timeWindow,addressId?,deliveryZoneId?}` | `201 {data: Order}` | checkout 10/min |
 
-**CheckoutDto (English-only)**
+**CheckoutDto (English-only — do not use `tipo`/`data_agendada`/`janela_horario`)**
 ```json
 {
-  "type": "HOME_DELIVERY|STORE_PICKUP",
+  "type": "HOME_DELIVERY",
   "scheduledDate": "2026-09-01",
   "timeWindow": "09:00-12:00",
   "addressId": "uuid",
   "deliveryZoneId": "uuid"
 }
 ```
-- `type`: `HOME_DELIVERY` (delivery) or `STORE_PICKUP` (pickup). Legacy `domicilio`/`levantamento_loja` still accepted by backend but deprecated – frontend must send English.
+- `type`: `HOME_DELIVERY` (delivery) or `STORE_PICKUP` (pickup). Legacy `domicilio`/`levantamento_loja` and PT fields `tipo`/`data_agendada`/`janela_horario` are hidden via `@ApiHideProperty()` but still accepted via `Transform` for compat – frontend must send English `type`/`scheduledDate`/`timeWindow`.
 - `scheduledDate`: ISO `YYYY-MM-DD`, must be `>= today 00:00 UTC` else `400 INVALID_REQUEST`.
 - `timeWindow`: `09:00-12:00` etc, required.
 - `addressId` / `deliveryZoneId`: optional, resolve `deliveryFee`:
@@ -413,7 +423,7 @@ Enums: `OrderStatus: AWAITING_PAYMENT|PAID|PREPARING|SHIPPING|COMPLETED|CANCELLE
 
 **Cancel rules:** already `CANCELLED` → `400 ORDER_ALREADY_CANCELLED`; `COMPLETED` → `ORDER_NOT_CANCELLABLE`; `delivery ON_THE_WAY/DELIVERED` or `order SHIPPING` → `DELIVERY_IN_PROGRESS`.
 
-**Upsert Delivery `POST /orders/:id/delivery` body:**
+**Upsert Delivery `POST /orders/:id/delivery` body (English-only)**
 ```json
 { "addressId": "uuid", "scheduledDate": "2026-09-12", "timeWindow": "09:00-12:00", "instructions": "Leave at door" }
 ```
@@ -430,6 +440,17 @@ Requires `scheduledDate && timeWindow` if no existing delivery. Blocks if `ON_TH
 
 Deprecated PT `perfil/enderecos` hidden.
 
+**Create Address – Request (English-only)**
+```json
+{
+  "label": "Home",
+  "province": "Luanda",
+  "municipality": "Talatona",
+  "neighborhood": "Benfica",
+  "street": "123 Main St"
+}
+```
+
 **Address DTO (English-only)**
 ```json
 {
@@ -438,8 +459,8 @@ Deprecated PT `perfil/enderecos` hidden.
   "label": "Home",
   "province": "Luanda",
   "municipality": "Talatona",
-  "neighborhood": "Talatona",
-  "street": "Street 123",
+  "neighborhood": "Benfica",
+  "street": "123 Main St",
   "reference": "Near shop",
   "latitude": -8.9,
   "longitude": 13.2,
@@ -457,9 +478,18 @@ Rules: first address auto `isDefault=true`. Delete blocked if single address wit
 | GET | `/payments/history` | JWT | `?page&limit&type=credit|debit` | `200 { data, page, total, totalPages }` |
 | GET | `/wallet/history` | JWT | `?page&limit` | `200 { data, page, total, totalPages }` |
 
-Deprecated PT `POST /pedidos/:id/pagamento/iniciar`, `GET /pagamentos/historico`, history aliases `/payments/entries`, `/payments/exits`, `/payments/wallet/history` hidden – use English.
+Deprecated PT `POST /pedidos/:id/pagamento/iniciar`, `GET /pagamentos/historico`, history aliases `/payments/entries`, `/payments/exits`, `/payments/wallet/history` hidden – use English. Fields `metodo`/`telefone` hidden via `@ApiHideProperty()` — use `method`/`phoneNumber`.
 
 `method` accepts: `multicaixa_express|gpo → MULTICAIXA_EXPRESS`, `multicaixa_reference|gpr|reference → MULTICAIXA_REFERENCE`, `bank_transfer → BANK_TRANSFER`, `cash_on_delivery → CASH_ON_DELIVERY`, `card → CARD`, `kwik → BANK_TRANSFER` (E-Kwanza). Invalid → `400 INVALID_METHOD`. GPO requires `phoneNumber`.
+
+**Payment Init – Request (English-only — do not use `metodo`/`telefone`)**
+```json
+{
+  "method": "BANK_TRANSFER",
+  "phoneNumber": "923456789",
+  "description": "Order payment"
+}
+```
 
 **Payment Response (English-only)**
 ```json
@@ -478,6 +508,11 @@ Deprecated PT `POST /pedidos/:id/pagamento/iniciar`, `GET /pagamentos/historico`
 }
 ```
 `status: PENDING|PROCESSING|PAID|FAILED|REFUNDED`, `method: MULTICAIXA_EXPRESS|MULTICAIXA_REFERENCE|BANK_TRANSFER|CASH_ON_DELIVERY|CARD`.
+
+**Payment Receipt – Request (English-only)**
+```json
+{ "receiptUrl": "https://res.cloudinary.com/demo/image/upload/receipt.jpg" }
+```
 
 ### webhooks
 | Method | Route | Auth | Headers | Body | Response |
@@ -534,6 +569,20 @@ All require `Authorization: Bearer <adminToken>` + `role=admin` (via `@Roles('ad
 
 Deprecated PT (`/admin/produtos`, `/admin/pedidos`, `/admin/entregas`, `/admin/estatisticas`, `/admin/loja`, `/admin/conta`, `/admin/preferencias`, `/admin/membros`, `/admin/auditoria`, `/admin/pagamentos`) hidden.
 
+**Admin Create Product – Request (English-only)**
+```json
+{
+  "image": "https://cdn.com/a.jpg",
+  "name": "Black Suit",
+  "description": "Classic suit for formal events",
+  "category": "SUITS",
+  "size": "M",
+  "condition": "NEW",
+  "stock": 10,
+  "price": 45000
+}
+```
+
 **Admin Statistics – Response `200` (English-only)**
 ```json
 {
@@ -563,54 +612,54 @@ Deprecated PT (`/admin/produtos`, `/admin/pedidos`, `/admin/entregas`, `/admin/e
 
 ```bash
 BASE=https://api-sadivacloset.himersus.com/api/v1
-# 1. Register
+# 1. Register (English-only)
 curl -X POST $BASE/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"Buyer","email":"buyer@test.com","password":"BuyerPass123!"}'
+  -d '{"name":"Maria Silva","email":"maria@example.com","password":"StrongPass123"}'
 
 # 2. Login
 curl -X POST $BASE/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"buyer@test.com","password":"BuyerPass123!"}'
+  -d '{"email":"maria@example.com","password":"StrongPass123"}'
 # → { access_token, refresh_token }
 
-# 3. Admin creates product (adminToken)
+# 3. Admin creates product (adminToken) — English-only
 curl -X POST $BASE/admin/products \
   -H "Authorization: Bearer $adminToken" \
   -H "Content-Type: application/json" \
-  -d '{"image":"https://cdn.com/a.jpg","name":"Black Suit","description":"...","category":"SUITS","size":"M","condition":"NEW","stock":10,"price":45000}'
+  -d '{"image":"https://cdn.com/a.jpg","name":"Black Suit","description":"Classic suit for formal events","category":"SUITS","size":"M","condition":"NEW","stock":10,"price":45000}'
 
-# 4. Public list (no auth)
-curl "$BASE/products?q=Suit&category=SUITS&page=1&limit=12"
+# 4. Public list (no auth) — English query filters
+curl "$BASE/products?q=Suit&category=SUITS&size=M&condition=NEW&price_min=10000&price_max=50000&sort=recent&page=1&limit=12"
 
-# 5. Cart (validates stock)
+# 5. Cart (validates stock) — English-only
 curl -X POST $BASE/cart/items \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
   -d '{"productId":"uuid","quantity":2}'
 # insufficient stock → 400 { error: { code:"INSUFFICIENT_STOCK", message:"Insufficient stock" } }
 
-# 6. Checkout (HOME_DELIVERY with address)
+# 6. Checkout (HOME_DELIVERY with address) — English-only
 curl -X POST $BASE/checkout \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
-  -d '{"type":"HOME_DELIVERY","scheduledDate":"2026-09-02","timeWindow":"09:00-12:00","addressId":"uuid"}'
+  -d '{"type":"HOME_DELIVERY","scheduledDate":"2026-09-01","timeWindow":"09:00-12:00","addressId":"uuid","deliveryZoneId":"uuid"}'
 # → { data: { id: "order-uuid", total, status: "AWAITING_PAYMENT" } }
 
 # Alternative: STORE_PICKUP (no fee)
 curl -X POST $BASE/checkout \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
-  -d '{"type":"STORE_PICKUP","scheduledDate":"2026-09-02","timeWindow":"09:00-12:00"}'
+  -d '{"type":"STORE_PICKUP","scheduledDate":"2026-09-01","timeWindow":"09:00-12:00"}'
 
-# 7. Initiate payment
+# 7. Initiate payment — English-only (do not use metodo/telefone)
 curl -X POST $BASE/orders/<orderId>/payment/init \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
-  -d '{"method":"BANK_TRANSFER"}'
+  -d '{"method":"BANK_TRANSFER","phoneNumber":"923456789","description":"Order payment"}'
 # or GPO: {"method":"MULTICAIXA_EXPRESS","phoneNumber":"923456789"}
 
-# 8. Upload receipt externally, then send URL only
+# 8. Upload receipt externally, then send URL only — English-only
 curl -X POST $BASE/orders/<orderId>/payment/receipt \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
@@ -627,6 +676,30 @@ curl -X POST $BASE/webhooks/payment/generic \
 # 10. Verify order paid
 curl $BASE/orders/<orderId> -H "Authorization: Bearer $buyerToken"
 # → status PAID
+```
+
+**Update profile example**
+```bash
+curl -X PATCH $BASE/profile \
+  -H "Authorization: Bearer $buyerToken" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Maria Silva","email":"maria@example.com"}'
+```
+
+**Create address example (English-only)**
+```bash
+curl -X POST $BASE/profile/addresses \
+  -H "Authorization: Bearer $buyerToken" \
+  -H "Content-Type: application/json" \
+  -d '{"label":"Home","province":"Luanda","municipality":"Talatona","neighborhood":"Benfica","street":"123 Main St"}'
+```
+
+**Update delivery example (English-only)**
+```bash
+curl -X POST $BASE/orders/<orderId>/delivery \
+  -H "Authorization: Bearer $buyerToken" \
+  -H "Content-Type: application/json" \
+  -d '{"addressId":"uuid","scheduledDate":"2026-09-01","timeWindow":"09:00-12:00"}'
 ```
 
 **2. IDOR – ownership (must return 404, not 403)**
@@ -676,8 +749,8 @@ curl $BASE/admin/products -H "Authorization: Bearer $adminToken" # → 200
 - **Pagination is English-only:** read `res.data`, `res.page`, `res.total`, `res.totalPages`. There is no `dados`/`pagina` fallback.
 - **Display `error.message` directly** (English). Use `error.code` for logic (e.g., `INSUFFICIENT_STOCK` → show `available` in `details`).
 - **Cache:** `GET /products` has server `Cache 60s` (Redis) – frontend may cache but invalidation is server-side on admin product mutations.
-- **Receipts:** send `JSON { "receiptUrl": "https://..." }` to `POST /orders/:id/payment/receipt`. Backend does not accept file uploads. Validate `IsUrl` on frontend before sending; 5MB limit should be enforced at external storage.
-- **Aliases:** Never use PT aliases (`/produtos`, `/carrinho`, etc.) – they are deprecated and hidden from Swagger. Use English routes exclusively. Legacy `tipo`/`data_agendada`/`janela_horario`/`produto_id` are still accepted by backend for compat but not part of contract – send `type`/`scheduledDate`/`timeWindow`/`productId`.
+- **Receipts:** send `JSON { "receiptUrl": "https://..." }` to `POST /orders/:id/payment/receipt`. Backend does not accept file uploads. Validate `IsUrl` on frontend before sending; 5MB limit should be enforced at external storage. PT alias `comprovativo_url` hidden via `@ApiHideProperty()` — use `receiptUrl`.
+- **Aliases:** Never use PT aliases (`/produtos`, `/carrinho`, etc.) – they are deprecated and hidden from Swagger via `@ApiExcludeController`/`@ApiExcludeEndpoint`. Use English routes exclusively. DTO PT aliases (`nome`→`name`, `telefone`→`phoneNumber`, `metodo`→`method`, `tipo`→`type`, `data_agendada`→`scheduledDate`, `janela_horario`→`timeWindow`, `produto_id`→`productId`, `categoria`→`category`, `tamanho`→`size`, `estado`→`condition`, `preco_min`→`price_min`, `ordenar`→`sort`, `comprovativo_url`→`receiptUrl`) are hidden via `@ApiHideProperty()` but still accepted via `Transform` for backward compat — frontend MUST send English. Swagger shows only English.
 - **Webhooks:** are **public** (no JWT) – frontend **never** calls them; only gateways with `x-signature`.
 - **Rate limiting:** show `RATE_LIMIT_EXCEEDED` with retry after `X-RateLimit-Reset` header.
 - **CORS:** `origin: true` in dev; restricted via `env` in prod.

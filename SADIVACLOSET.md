@@ -62,14 +62,30 @@ npx openapi-generator-cli generate -i http://localhost:3001/api/docs-json -g typ
 
 ## 2. Global Conventions (READ BEFORE CODING)
 
-### 2.1 Prefix & Deprecated PT Aliases
+### 2.1 Prefix & Deprecated PT Aliases (Routes + DTO fields now English-only in Swagger)
 The backend keeps **two routes for almost everything** for backward compat:
 - **Canonical EN** (documented, use this): `/products`, `/cart`, `/checkout`, `/orders`, `/profile/*`, `/admin/products`…
 - **Alias PT hidden** (`@ApiExcludeController`/`@ApiExcludeEndpoint`, deprecated): `/produtos`, `/carrinho`, `/pedidos`, `/perfil/*`, `/admin/produtos`…
 
-**Frontend rule:** ALWAYS use EN. The PT alias does not appear in Swagger, is deprecated, and must not be used in new code. It still works if called (backend normalizes via getters), but frontend MUST NOT rely on it. Swagger shows EN only.
+**Frontend rule:** ALWAYS use EN routes. The PT alias does not appear in Swagger, is deprecated, and must not be used in new code. It still works if called (backend normalizes via getters/normalized `*Normalized` accessors), but frontend MUST NOT rely on it. Swagger shows EN only.
 
-DTO field aliases are similar: backend may still accept legacy PT fields (`produto_id`, `quantidade`, `tipo`, `data_agendada`, `janela_horario`, `etiqueta`, `comprovativo_url`, etc.) via normalized getters, but the **contract is English-only** – frontend MUST send `productId`, `quantity`, `type`, `scheduledDate`, `timeWindow`, `label`, `receiptUrl`, etc. Examples and tables in this doc show English-only payloads.
+**DTO field aliases are now hidden from Swagger:** every DTO exposes **English fields via `@ApiProperty` / `@ApiPropertyOptional` (visible in Swagger UI at https://api-sadivacloset.himersus.com/api/docs)** and **Portuguese legacy fields via `@ApiHideProperty` (hidden from Swagger but still accepted at runtime via `class-transformer` `@Transform`/getters for backward compat)**. Frontend MUST send **English only** – examples and tables in this doc show English-only payloads.
+
+| DTO | English field (`@ApiProperty` – **visible** in Swagger) | Legacy PT alias (`@ApiHideProperty` – **hidden** from Swagger, still accepted via `Transform`/`*Normalized`) | Example English (use this) | Legacy PT (DO NOT USE) |
+|-----|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|----------------------------|------------------------|
+| `RegisterDto` (`src/modules/auth/dto/register.dto.ts:6`) | `name` | `nome` (`@ApiHideProperty` `register.dto.ts:12`) | `{ "name": "Maria Silva" }` | `{ "nome": "Maria Silva" }` hidden |
+| `AddCartItemDto` (`src/modules/cart/dto/add-cart-item.dto.ts:6`) | `productId`, `quantity` | `produto_id`, `product_id`, `quantidade` (`@ApiHideProperty` `add-cart-item.dto.ts:11`) | `{ "productId": "uuid", "quantity": 2 }` | `{ "produto_id": "uuid", "quantidade": 2 }` hidden |
+| `CheckoutDto` (`src/modules/checkout/dto/checkout.dto.ts:8`) | `type`, `scheduledDate`, `timeWindow`, `addressId`, `deliveryZoneId` | `tipo`, `data_agendada`/`scheduled_date`, `janela_horario`/`time_window`, `endereco_id`/`address_id`, `zona_entrega_id`/`delivery_zone_id` (`@ApiHideProperty` `checkout.dto.ts:16,21,31,36,54,68,73,85,92`) | `{ "type": "HOME_DELIVERY", "scheduledDate": "2026-09-01", "timeWindow": "09:00-12:00", "addressId": "uuid", "deliveryZoneId": "uuid" }` | `{ "tipo": "domicilio", "data_agendada": "2026-09-01", "janela_horario": "09:00-12:00", "endereco_id": "uuid" }` hidden |
+| `CreateAddressDto` / `UpdateAddressDto` (`src/modules/addresses/dto/create-address.dto.ts:20`) | `label`, `province`, `municipality`, `neighborhood`, `street`, `reference`, `latitude`, `longitude` | `etiqueta`, `provincia`, `municipio`, `bairro`, `rua`, `referencia` (`@ApiHideProperty` `create-address.dto.ts:27,41,55,69,83,96`) | `{ "label": "Home", "province": "Luanda", "municipality": "Talatona", "neighborhood": "Talatona", "street": "Street 123", "reference": "Near market" }` | `{ "etiqueta": "Home", "provincia": "Luanda" }` hidden |
+| `UpdateDeliveryDto` (`src/modules/orders/dto/update-delivery.dto.ts:8`) | `addressId`, `scheduledDate`, `timeWindow`, `instructions` | `endereco_id`/`address_id`/`enderecoId`, `data_agendada`/`scheduled_date`, `janela_horario`/`time_window`, `instrucoes` (`@ApiHideProperty` `update-delivery.dto.ts:16,21,36,41,53,60,73`) | `{ "addressId": "uuid", "scheduledDate": "2026-09-10", "timeWindow": "09:00-12:00", "instructions": "Leave at door" }` | `{ "endereco_id": "uuid", "data_agendada": "2026-09-10", "janela_horario": "09:00-12:00" }` hidden |
+| `IniciarPagamentoDto` / `InitiatePaymentDto` (`src/modules/payments/dto/iniciar-pagamento.dto.ts:8`) | `method`, `phoneNumber`, `iban`, `description`, `expiresInSeconds` | `metodo`, `telefone`, `descricao` (`@ApiHideProperty` `iniciar-pagamento.dto.ts:15,30,50`) | `{ "method": "BANK_TRANSFER", "phoneNumber": "923456789", "description": "Order #123" }` | `{ "metodo": "transferencia", "telefone": "923456789", "descricao": "Pedido #123" }` hidden |
+| `FilterProductsDto` (`src/modules/products/dto/filter-products.dto.ts:66`) | `q`, `category`, `size`, `condition`, `price_min`, `price_max`, `sort` | `categoria`, `tamanho`, `estado`, `preco_min`, `preco_max`, `ordenar` (`@ApiHideProperty` `filter-products.dto.ts:80,92,111,124,138,150`) | `?category=SUITS&size=M&condition=NEW&price_min=10000&price_max=50000&sort=price_asc` | `?categoria=SUITS&tamanho=M&estado=NOVO&preco_min=10000&ordenar=preco_asc` hidden |
+| `FilterOrdersDto` / `FilterDeliveriesDto` / `FilterAuditDto` | `status`, `from`/`to`, `entity`, `page`, `limit` | `estado`, `data_inicio`/`data_fim`, `entidade`, `pagina`/`limite` (`@ApiHideProperty`) | `?status=PAID&from=2026-01-01&to=2026-01-31&page=1&limit=20` | `?estado=pago&data_inicio=...` hidden |
+| `Receipt` (payments) | `receiptUrl` | `comprovativo_url` / `comprovativoUrl` (legacy, hidden if present) | `{ "receiptUrl": "https://cdn.myapp.com/receipts/abc.jpg" }` | `{ "comprovativo_url": "https://..." }` hidden |
+
+> **Runtime:** PT aliases still work via `Transform` (`obj.name ?? obj.nome`, `obj.method ?? obj.metodo`, `typeNormalized`, `quantityNormalized`, etc.) and `*Normalized` getters, so old clients do not break. **Swagger:** PT fields are `@ApiHideProperty` → they **do not appear** in `https://api-sadivacloset.himersus.com/api/docs` nor in `docs-json` SDK generation. Use only the English column.
+
+Examples and tables below show **English-only payloads**.
 
 ### 2.2 Response Shape — English-only
 Every endpoint returns **English keys only**:
@@ -193,6 +209,21 @@ Content-Type: application/json
 - `whitelist:true` + `forbidNonWhitelisted:true` → sending undeclared field → 400.
 - `transform:true` → query `?page=1` auto-coerced to number.
 - `rawBody` captured (`express.json verify`) for HMAC of webhooks.
+
+### 2.9 Swagger English-only (`@ApiProperty` vs `@ApiHideProperty`)
+
+**All DTOs are now Swagger English-only.** Every field that is part of the public contract is decorated with `@ApiProperty` / `@ApiPropertyOptional` (English, **visible** in Swagger). Every legacy Portuguese alias is decorated with `@ApiHideProperty` (**hidden** from Swagger, still accepted at runtime).
+
+- **Swagger UI:** `https://api-sadivacloset.himersus.com/api/docs` (local `http://localhost:3001/api/docs`) shows **only English fields**. OpenAPI JSON `https://api-sadivacloset.himersus.com/api/docs-json` likewise contains only English properties – generate the frontend SDK from this URL and you will get English-only types (`name`, `productId`, `quantity`, `type`, `scheduledDate`, `timeWindow`, `addressId`, `deliveryZoneId`, `label`, `province`, `municipality`, `neighborhood`, `street`, `reference`, `method`, `phoneNumber`, `description`, `receiptUrl`, `category`, `size`, `condition`, `price_min`, `price_max`, `sort`, `status`, `from`, `to`, etc.).
+- **Runtime:** PT aliases (`nome`, `produto_id`, `quantidade`, `tipo`, `data_agendada`, `janela_horario`, `endereco_id`, `zona_entrega_id`, `etiqueta`, `provincia`, `municipio`, `bairro`, `rua`, `referencia`, `metodo`, `telefone`, `descricao`, `categoria`, `tamanho`, `estado`, `preco_min`, `preco_max`, `ordenar`, `comprovativo_url`, etc.) are still accepted via `class-transformer` `@Transform(({ obj }) => obj.english ?? obj.pt)` and `*Normalized` getters (see table in §2.1). This is for **backward compat only – frontend MUST NOT send them**. They are hidden and will be removed in a future major.
+- **Frontend rule:** send **English only**; read **English only** (`{ data, page, total, totalPages }`, `{ error: { code, message, details: [{ field, errors }] } }`). Do not implement fallbacks for PT keys. If you inspect `docs-json` and do not see a PT field, that is intentional.
+- **Validation example (English-only) – `POST /auth/register`:**
+  ```json
+  { "name": "Maria Silva", "email": "maria@example.com", "password": "StrongPass123" }
+  ```
+  Do **not** send `{ "nome": "Maria Silva", "email": "maria@example.com", "password": "StrongPass123" }` – `nome` is `@ApiHideProperty` (hidden) and deprecated, even though the backend still maps it via `@Transform(({ obj }) => obj.name ?? obj.nome)` for compat.
+
+> Generate types: `npx openapi-generator-cli generate -i https://api-sadivacloset.himersus.com/api/docs-json -g typescript-axios -o ./frontend-sdk` – you will see only English props.
 
 ---
 
@@ -327,21 +358,21 @@ UI: forms for register (name, email, password `Min8`), login, forgot (only email
 
 ### 5.1 `GET /products` — Paginated, filterable, cached 60s
 **Auth:** `Public` — no token.
-**Query `FilterProductsDto` (all optional, English-only):**
+**Query `FilterProductsDto` (`src/modules/products/dto/filter-products.dto.ts:65`) — all optional, **English-only in Swagger** (`@ApiPropertyOptional` English visible, PT hidden via `@ApiHideProperty` `filter-products.dto.ts:80,92,111,124,138,150`):**
 
-| Query | Type | Example |
-|-------|------|---------|
-| `q` | string | `?q=Suit` searches `name` OR `description` `contains insensitive` |
-| `category` | `Category[]` CSV | `?category=SUITS,SHIRTS` |
-| `size` | `string[]` CSV | `?size=M,L` |
-| `condition` | `ProductCondition[]` CSV | `?condition=NEW` |
-| `price_min` | int | `?price_min=10000` (filters by `discountedPrice = round(price - price*discount/100)`) |
-| `price_max` | int | `?price_max=50000` |
-| `sort` | enum | `recent` (default), `oldest`, `price_asc`, `price_desc`, `name_asc`, `name_desc` |
-| `page` | int 1.. | `?page=2&limit=12` |
-| `limit` | int 1..100 | `?limit=12` |
+| Query (English – **visible** in Swagger) | Type | Example | Legacy PT alias (`@ApiHideProperty` – **hidden** from Swagger, still accepted via `Transform`/`get normalized*`) |
+|-------|------|---------|----------------------------------------------------------------------------------------------------------------|
+| `q` | string | `?q=Suit` searches `name` OR `description` `contains insensitive` | — |
+| `category` | `Category[]` CSV | `?category=SUITS,SHIRTS` | `categoria` hidden |
+| `size` | `string[]` CSV | `?size=M,L` | `tamanho` hidden |
+| `condition` | `ProductCondition[]` CSV | `?condition=NEW` | `estado` hidden |
+| `price_min` | int | `?price_min=10000` (filters by `discountedPrice = round(price - price*discount/100)`) | `preco_min` hidden |
+| `price_max` | int | `?price_max=50000` | `preco_max` hidden |
+| `sort` | enum | `recent` (default), `oldest`, `price_asc`, `price_desc`, `name_asc`, `name_desc` | `ordenar` hidden (`recentes`/`antigos` map still accepted) |
+| `page` | int 1.. | `?page=2&limit=12` | — |
+| `limit` | int 1..100 | `?limit=12` | — |
 
-> Backend still accepts legacy PT query aliases (`categoria`, `tamanho`, `estado`, `preco_min`, `ordenar`, etc.) for compat, but frontend MUST send English.
+> **Swagger shows only English** (`category`, `size`, `condition`, `price_min`, `price_max`, `sort`). Legacy PT query aliases (`categoria`, `tamanho`, `estado`, `preco_min`, `preco_max`, `ordenar`) are `@ApiHideProperty` – hidden from `https://api-sadivacloset.himersus.com/api/docs` and `docs-json` but still accepted at runtime via `mapCategoryArray` / `mapConditionArray` / `get normalized*` for compat. Frontend MUST send English.
 
 **Cache:** `Redis SET cache:products:<qs> EX 60`. Invalidated on `POST/PATCH/DELETE /admin/products`.
 
@@ -397,20 +428,22 @@ Use these two to populate filters and checkout (calculate `deliveryFee`).
 
 Deprecated PT `perfil/enderecos` hidden.
 
-**DTO `CreateAddressDto` (English-only):**
+**DTO `CreateAddressDto` (`src/modules/addresses/dto/create-address.dto.ts:19`) – English-only in Swagger (`@ApiPropertyOptional` English visible, PT hidden via `@ApiHideProperty` `create-address.dto.ts:27,41,55,69,83,96`):**
 
-| Field | Type | Required | Validation |
-|-------|------|----------|------------|
-| `label` | string | POST yes | `IsString IsNotEmpty Trim` |
-| `province` | string | POST yes |  |
-| `municipality` | string | POST yes |  |
-| `neighborhood` | string | POST yes |  |
-| `street` | string | POST yes |  |
-| `reference` | string? | no | free text |
-| `latitude` | number? | no | `IsNumber Min -90 Max 90` |
-| `longitude` | number? | no | `Min -180 Max 180` |
+| Field (English – **visible** in Swagger) | Type | Required | Validation | Legacy PT alias (`@ApiHideProperty` – **hidden** from Swagger) |
+|-------|------|----------|------------|---------------------------------------------------------------|
+| `label` | string | POST yes | `IsString IsNotEmpty Trim` | `etiqueta` hidden |
+| `province` | string | POST yes | `IsString IsNotEmpty Trim` | `provincia` hidden |
+| `municipality` | string | POST yes | `IsString IsNotEmpty Trim` | `municipio` hidden |
+| `neighborhood` | string | POST yes | `IsString IsNotEmpty Trim` | `bairro` hidden |
+| `street` | string | POST yes | `IsString IsNotEmpty Trim` | `rua` hidden |
+| `reference` | string? | no | `IsString Trim` free text | `referencia` hidden |
+| `latitude` | number? | no | `IsNumber Min -90 Max 90` | — |
+| `longitude` | number? | no | `IsNumber Min -180 Max 180` | — |
 
-`UpdateAddressDto` same but all optional; controller requires `hasAny` else 400 `No fields to update`.
+> Swagger at `https://api-sadivacloset.himersus.com/api/docs` shows only `label`/`province`/`municipality`/`neighborhood`/`street`/`reference`/`latitude`/`longitude`. PT aliases (`etiqueta`, `provincia`, `municipio`, `bairro`, `rua`, `referencia`) are `@ApiHideProperty` – hidden but still accepted via `labelNormalized`/`provinceNormalized` etc. for compat. Frontend MUST send English.
+
+`UpdateAddressDto` same fields but all optional; controller requires `hasAny` else 400 `No fields to update`.
 
 **Rules `AddressesService`:**
 - `create`: `isDefault = (count where buyerId ===0)` — first address auto-default.
@@ -451,11 +484,13 @@ UI: list addresses with badge “Default”, CRUD form, button “Make default�
 | PATCH | `/cart/items/:id` | `{quantity}` | `200 {data}` |
 | DELETE | `/cart/items/:id` | - | `200 {message:"Item removed..."}` |
 
-**DTO `AddCartItemDto` (English-only):**
+**DTO `AddCartItemDto` (`src/modules/cart/dto/add-cart-item.dto.ts:5`) – English-only in Swagger (`@ApiProperty` English visible, PT hidden via `@ApiHideProperty` `add-cart-item.dto.ts:11,16,28`):**
 ```json
-{ "productId": "uuid", "quantity": 2 }
+{ "productId": "550e8400-e29b-41d4-a716-446655440000", "quantity": 2 }
 ```
-`quantity >=1` else 400. `productId` must be UUID.
+English fields: `productId` (`@ApiProperty`), `quantity` (`@ApiPropertyOptional`). Legacy PT aliases `produto_id`/`product_id`/`quantidade` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `productIdNormalized`/`quantityNormalized` for compat. Frontend MUST send `{ "productId": "uuid", "quantity": 2 }` not `{ "produto_id": "uuid", "quantidade": 2 }`.
+
+`quantity >=1` else 400 `VALIDATION_ERROR`. `productId` must be UUID v4.
 
 **Rules `CartService`:**
 - `getCart`: `findMany where buyerId include product`, calculates `unit = round(price - price*discount/100)`, `subtotal = unit*quantity`, `total = sum`, `totalItems = count`, `totalQuantity = sum quantity`.
@@ -490,17 +525,18 @@ UI: cart icon with badge `totalQuantity`, drawer/list with qty stepper (PATCH), 
 
 **Auth:** `JWT`, `@Throttle checkout 10/min`.
 
-**Body `CheckoutDto` (English-only):**
+**Body `CheckoutDto` (`src/modules/checkout/dto/checkout.dto.ts:7`) – English-only in Swagger (`@ApiPropertyOptional` English visible, PT hidden via `@ApiHideProperty` `checkout.dto.ts:16,21,31,36,54,68,73,85,92`):**
 
 ```json
 {
-  "type": "HOME_DELIVERY|STORE_PICKUP",
+  "type": "HOME_DELIVERY",
   "scheduledDate": "2026-09-01",
   "timeWindow": "09:00-12:00",
-  "addressId": "uuid",
-  "deliveryZoneId": "uuid"
+  "addressId": "550e8400-e29b-41d4-a716-446655440000",
+  "deliveryZoneId": "550e8400-e29b-41d4-a716-446655440001"
 }
 ```
+Use `type` = `HOME_DELIVERY` or `STORE_PICKUP` (English). Legacy `tipo`, `data_agendada`/`scheduled_date`, `janela_horario`/`time_window`, `endereco_id`/`address_id`, `zona_entrega_id`/`delivery_zone_id` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `typeNormalized`/`scheduledDateNormalized`/`timeWindowNormalized`/`addressIdNormalized`/`deliveryZoneIdNormalized` for compat. Frontend MUST send English above not PT.
 
 **Controller validations:**
 - if `!type` → 400 `type is required (HOME_DELIVERY | STORE_PICKUP)`
@@ -508,7 +544,7 @@ UI: cart icon with badge `totalQuantity`, drawer/list with qty stepper (PATCH), 
 - if `!scheduledDate` → 400 `scheduledDate is required (YYYY-MM-DD)`
 - if `!timeWindow` → 400
 
-> Legacy PT fields `tipo`/`data_agendada`/`janela_horario`/`endereco_id`/`zona_entrega_id` still accepted by backend for compat (via getters), but frontend MUST send English. Do not document PT as option.
+> Do not use PT aliases (`tipo`/`data_agendada`/`janela_horario`/`endereco_id`) – they are hidden in Swagger and deprecated, though runtime still maps them via getters.
 
 **Rules `CheckoutService.checkout()`:**
 1. `cartItems where buyerId include product` → if empty → 400 `CART_EMPTY`.
@@ -586,10 +622,11 @@ Deprecated PT `/pedidos/*`, `GET /perfil/pedidos` hidden.
 - If `delivery.status==CANCELLED` → 400 `DELIVERY_ALREADY_CANCELLED`
 - Transaction restores `product.stock += quantity`, `order.status=CANCELLED`, `delivery.status=CANCELLED`.
 
-**Rules `upsertDelivery` (`UpdateDeliveryDto` English-only):**
+**Rules `upsertDelivery` (`UpdateDeliveryDto` `src/modules/orders/dto/update-delivery.dto.ts:7` – English-only in Swagger `@ApiPropertyOptional` visible, PT hidden via `@ApiHideProperty` `update-delivery.dto.ts:16,21,36,41,53,60,73`):**
 ```ts
-{ addressId?: uuid, scheduledDate?: "YYYY-MM-DD", timeWindow?: string, instructions?: string }
+{ addressId?: string, scheduledDate?: "2026-09-10", timeWindow?: "09:00-12:00", instructions?: string }
 ```
+English: `addressId`, `scheduledDate`, `timeWindow`, `instructions`. Legacy PT aliases `endereco_id`/`address_id`/`enderecoId`, `data_agendada`/`scheduled_date`, `janela_horario`/`time_window`, `instrucoes` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `addressIdNormalized`/`scheduledDateNormalized`/`timeWindowNormalized`/`instructionsNormalized`. Frontend MUST send English above.
 - If `order.status==CANCELLED` → 400 `ORDER_CANCELLED`.
 - Validate `addressId` owner → 404.
 - Validate `scheduledDate` valid and not in past.
@@ -625,10 +662,22 @@ UI: orders list with badge status (colors by `OrderStatus`), detail with timelin
 | GET | `/wallet/history` | `?page&limit` | `200 { data, page, total, totalPages }` |
 
 ### 10.1 `POST .../payment/init` — Initiate payment
-**Body `InitiatePaymentDto` (English-only):**
+**Body `InitiatePaymentDto` (`src/modules/payments/dto/iniciar-pagamento.dto.ts:7`) – English-only in Swagger (`@ApiProperty`/`@ApiPropertyOptional` English visible, PT hidden via `@ApiHideProperty` `iniciar-pagamento.dto.ts:15,30,50`):**
 ```ts
 { method: string, phoneNumber?: string, iban?: string, description?: string, expiresInSeconds?: number }
 ```
+English: `method` (`@ApiProperty`), `phoneNumber`, `iban`, `description` (`@ApiPropertyOptional`). Legacy PT aliases `metodo`, `telefone`, `descricao` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `@Transform(({ obj }) => obj.method ?? obj.metodo)` / `phoneNormalized` / `descriptionNormalized`. Frontend MUST send English:
+
+```json
+{ "method": "BANK_TRANSFER", "phoneNumber": "923456789", "description": "Order #123" }
+```
+Do **not** send `{ "metodo": "transferencia", "telefone": "923456789", "descricao": "Pedido #123" }` – PT fields are hidden.
+
+**Receipt `POST .../payment/receipt` body (English-only):**
+```json
+{ "receiptUrl": "https://cdn.myapp.com/receipts/abc.jpg" }
+```
+Only `receiptUrl` (`@ApiProperty`). Legacy `comprovativo_url` is hidden – do not use.
 **`method` accepts (via `mapMethodToEnum`):**
 - `multicaixa_express` / `gpo` / `multicaixa express` → `MULTICAIXA_EXPRESS`
 - `multicaixa_reference` / `reference` / `gpr` → `MULTICAIXA_REFERENCE`
