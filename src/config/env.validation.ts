@@ -78,6 +78,13 @@ export const envValidationSchema = Joi.object({
   EKWANZA_MERCHANT_REGISTRATION_NUMBER: Joi.string().allow('').optional().default(''),
   EKWANZA_HTTP_TIMEOUT_MS: Joi.number().positive().optional().default(10000),
 
+  // ── CORS ──
+  // Lista de origens permitidas separadas por vírgula, ex: https://app.com,https://admin.app.com
+  // Em dev pode ficar vazio (libera tudo); em produção é obrigatório e não pode ser "*"
+  CORS_ALLOWED_ORIGINS: Joi.string().allow('').optional().default(''),
+  // Alias legado — se definido e CORS_ALLOWED_ORIGINS vazio, será copiado
+  CORS_ORIGIN: Joi.string().allow('').optional().default(''),
+
   // ── UPLOAD ──
   UPLOAD_DIR: Joi.string().optional().default('./uploads'),
   UPLOAD_MAX_SIZE_MB: Joi.number().positive().optional().default(5),
@@ -89,6 +96,16 @@ export const envValidationSchema = Joi.object({
   WEBHOOK_PAYMENT_SECRET: Joi.string().allow('').optional().default(''),
   WEBHOOK_SECRET: Joi.string().allow('').optional().default(''),
   PAYMENT_QUEUE_NAME: Joi.string().optional().default('pagamento-confirmado'),
+
+  // ── E-MAIL (SMTP) ──
+  SMTP_HOST: Joi.string().allow('').optional().default(''),
+  SMTP_PORT: Joi.number().port().allow('').optional().default(''),
+  SMTP_SECURE: Joi.string().valid('true', 'false', '').allow('').optional().default('false'),
+  SMTP_USER: Joi.string().allow('').optional().default(''),
+  SMTP_PASS: Joi.string().allow('').optional().default(''),
+  SMTP_FROM: Joi.string().allow('').optional().default(''),
+  FRONTEND_URL: Joi.string().uri().allow('').optional().default(''),
+  APP_URL: Joi.string().uri().allow('').optional().default(''),
 });
 
 /**
@@ -120,6 +137,11 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   const isProd = nodeEnv === 'production';
   const isTest = nodeEnv === 'test';
 
+  // Normaliza alias CORS antes das regras de produção
+  if (!value.CORS_ALLOWED_ORIGINS && value.CORS_ORIGIN) {
+    (value as Record<string, unknown>).CORS_ALLOWED_ORIGINS = value.CORS_ORIGIN;
+  }
+
   if (isProd && !isTest) {
     const jwt = (value.JWT_SECRET as string) || '';
     const refresh = (value.JWT_REFRESH_SECRET as string) || '';
@@ -149,6 +171,17 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     if (dbUrl.includes('@postgres:') || dbUrl.includes('@localhost:5435')) {
       issues.push(
         '  ✗ DATABASE_URL — em produção não deve apontar para postgres local (@postgres/@localhost). Use URL do Neon/provedor externo',
+      );
+    }
+    // CORS em produção deve ser restrito — não pode ser vazio nem "*"
+    const cors = ((value.CORS_ALLOWED_ORIGINS as string) || '').trim();
+    if (!cors) {
+      issues.push(
+        '  ✗ CORS_ALLOWED_ORIGINS — obrigatória em produção. Defina lista separada por vírgula ex: https://sadivacloset.co.ao,https://www.sadivacloset.co.ao,https://api-sadivacloset.himersus.com',
+      );
+    } else if (cors === '*') {
+      issues.push(
+        '  ✗ CORS_ALLOWED_ORIGINS — em produção não pode ser "*". Defina origens explícitas separadas por vírgula (credentials:true não permite wildcard)',
       );
     }
   }

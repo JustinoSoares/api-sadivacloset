@@ -12,6 +12,7 @@ import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { MailService } from '../mail/mail.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -63,9 +64,18 @@ describe('AuthService', () => {
           'jwt.expiresIn': '15m',
           'jwt.refreshExpiresIn': '7d',
           port: '3001',
+          frontendUrl: 'http://localhost:3001',
+          'mail.host': '',
+          'mail.port': '',
         };
         return map[key] as any;
       }),
+    };
+
+    const mockMail = {
+      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+      sendMail: jest.fn().mockResolvedValue(undefined),
+      isEnabled: jest.fn().mockReturnValue(false),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -75,6 +85,7 @@ describe('AuthService', () => {
         { provide: RedisService, useValue: redis },
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: config },
+        { provide: MailService, useValue: mockMail },
       ],
     }).compile();
 

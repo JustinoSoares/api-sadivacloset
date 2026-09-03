@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly redis: RedisService,
+    private readonly mailService: MailService,
   ) {}
 
   private parseExpiresToSeconds(value: string): number {
@@ -199,10 +201,24 @@ export class AuthService {
 
       await this.redis.set(key, user.id, 15 * 60);
 
-      const resetLink = `http://localhost:${this.config.get('port') ?? 3001}/reset-password?token=${rawToken}`;
+      const frontendUrl = (this.config.get<string>('frontendUrl') ??
+        this.config.get<string>('FRONTEND_URL') ??
+        `http://localhost:${this.config.get('port') ?? 3001}`) as string;
+      // Normaliza sem trailing slash
+      const baseUrl = frontendUrl.replace(/\/$/, '');
+      const resetLink = `${baseUrl}/reset-password?token=${rawToken}`;
+
       this.logger.log(`[RESET PASSWORD] email=${email} link=${resetLink} hash=${hash}`);
       this.logger.log(`   Token raw (para testes): ${rawToken}`);
       console.log(`\n🔑 [RESET PASSWORD] Link para ${email}: ${resetLink}\n`);
+
+      // Envia e-mail real se SMTP configurado; senão apenas loga (fallback dev)
+      try {
+        await this.mailService.sendPasswordResetEmail(email, resetLink, user.name);
+      } catch (err) {
+        this.logger.error(`Falha ao enviar e-mail de reset para ${email}: ${(err as Error).message}`);
+        // Não quebra o fluxo — mantém resposta genérica para evitar enumeration
+      }
     } else {
       this.logger.log(`[RESET PASSWORD] pedido para email inexistente: ${email}`);
     }

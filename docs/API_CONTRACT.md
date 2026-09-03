@@ -7,7 +7,7 @@
 **OpenAPI JSON (Staging):** `https://api-sadivacloset.himersus.com/api/docs-json`
 **OpenAPI JSON (Local):** `http://localhost:3001/api/docs-json`
 **Health (no prefix, public):** `GET https://api-sadivacloset.himersus.com/health` / `GET http://localhost:3001/health`
-**Version:** 0.1.0 | **Code language:** English (tables, classes, endpoints) | **User messages:** English (`{ error: { code, message } }`) | **Pagination:** `{ data, page, total, totalPages }` | **Errors:** `{ error: { code, message, details: [{ field, errors }] } }`
+**Version:** 0.1.0 | **Code language:** English (tables, classes, endpoints) | **User messages:** English (`{ message: string }`) | **Pagination:** `{ data, page, total, totalPages }` | **Errors:** `{ message: string }` (predictable, no nesting)
 
 > **Deprecated PT aliases:** The codebase keeps Portuguese route aliases (`/produtos`, `/carrinho`, `/pedidos`, `/perfil/*`, `/admin/produtos`…) for backward compatibility but they are **hidden from documentation** (`@ApiExcludeController`/`@ApiExcludeEndpoint`) and **deprecated**. **Frontend MUST use English routes only** as the definitive contract. Swagger shows English routes only. Backend still accepts PT aliases if called, but they must not be used in new code. All responses are **English-only** — no `dados`/`pagina`/`total_paginas` or `erro`/`codigo`/`mensagem` fields.
 
@@ -169,36 +169,32 @@ const total = res.data.total;
 
 ## Errors
 
-**Single English format:**
+**Single predictable English format — always `{ message: string }`:**
 ```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
-    "details": [{ "field": "email", "errors": ["email must be a valid email"] }]
-  }
-}
+{ "message": "Validation failed: email: must be a valid email" }
+```
+```json
+{ "message": "Insufficient stock" }
 ```
 
-| Status | `code` | When |
-|--------|--------|------|
-| 400 | `VALIDATION_ERROR` / `INVALID_REQUEST` | Invalid body, extra fields (`whitelist` + `forbidNonWhitelisted`), stock errors |
-| 400 | `INSUFFICIENT_STOCK` | Not enough stock (`POST /cart/items`, `POST /checkout`) – `details` includes `available`, `requested` |
-| 400 | `CART_EMPTY` | `POST /checkout` with empty cart |
-| 400 | `INVALID_METHOD` | `POST /orders/:id/payment/init` unknown method |
-| 400 | `ADDRESS_IN_USE` | `DELETE /profile/addresses/:id` with pending orders |
-| 400 | `ORDER_ALREADY_CANCELLED` / `ORDER_NOT_CANCELLABLE` / `DELIVERY_IN_PROGRESS` | Cancel/update delivery when in transit |
-| 401 | `UNAUTHENTICATED` / `INVALID_CREDENTIALS` / `TOKEN_INVALID` / `TOKEN_EXPIRED` / `TOKEN_REVOKED` / `ACCOUNT_INACTIVE` | Missing/invalid/expired token, inactive account |
-| 403 | `FORBIDDEN` | `BUYER` tries `/admin/*` (`RolesGuard`) |
-| 404 | `NOT_FOUND` | Resource does not exist or does not belong to buyer (IDOR → 404, not 403) |
-| 409 | `CONFLICT` / `EMAIL_ALREADY_EXISTS` | Duplicate email (`POST /auth/register`, `PATCH /profile`) |
-| 409/400 | `CURRENT_PASSWORD_INCORRECT` | `PATCH /admin/account` wrong `currentPassword` |
-| 429 | `RATE_LIMIT_EXCEEDED` | Rate limit exceeded |
-| 500 | `INTERNAL_ERROR` | Unexpected error (no stack in prod) |
+| Status | Example `message` | When |
+|--------|----------|------|
+| 400 | `Validation failed: email: must be valid` | Invalid body, extra fields (`whitelist` + `forbidNonWhitelisted`), stock errors |
+| 400 | `Insufficient stock` | Not enough stock (`POST /cart/items`, `POST /checkout`) |
+| 400 | `Cart is empty` | `POST /checkout` with empty cart |
+| 400 | `Invalid payment method` | `POST /orders/:id/payment/init` unknown method |
+| 400 | `Address in use` | `DELETE /profile/addresses/:id` with pending orders |
+| 400 | `Order already cancelled` / `Delivery in progress` | Cancel/update delivery when in transit |
+| 401 | `Token not provided` / `Invalid token` / `Token expired` | Missing/invalid/expired token, inactive account |
+| 403 | `Access denied` | `BUYER` tries `/admin/*` (`RolesGuard`) |
+| 404 | `Resource not found` | Resource does not exist or does not belong to buyer (IDOR → 404, not 403) |
+| 409 | `Email already exists` | Duplicate email (`POST /auth/register`, `PATCH /profile`) |
+| 429 | `Too many requests. Please try again later.` | Rate limit exceeded |
+| 500 | `An unexpected error occurred.` | Unexpected error (no stack in prod) |
 
-**Validation:** `ValidationPipe` with `whitelist: true, forbidNonWhitelisted: true, transform: true` – extra fields → `400 VALIDATION_ERROR`.
+**Validation:** `ValidationPipe` with `whitelist: true, forbidNonWhitelisted: true, transform: true` – extra fields → `400 "Validation failed: property: ..."`.
 
-Display `error.message` directly to the user (English). Use `error.code` for logic (e.g., `INSUFFICIENT_STOCK` → show `available` in `details`).
+Display `response.data.message` directly to the user (English). Use **HTTP status** for logic (400 validation, 401 refresh/login, 403 forbidden, 404 not found, 409 conflict, 429 rate limit).
 
 ---
 
@@ -215,7 +211,7 @@ Display `error.message` directly to the user (English). Use `error.code` for log
 
 Response `429`:
 ```json
-{ "error": { "code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests. Please try again later." } }
+{ "message": "Too many requests. Please try again later." }
 ```
 Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
 
@@ -637,7 +633,7 @@ curl -X POST $BASE/cart/items \
   -H "Authorization: Bearer $buyerToken" \
   -H "Content-Type: application/json" \
   -d '{"productId":"uuid","quantity":2}'
-# insufficient stock → 400 { error: { code:"INSUFFICIENT_STOCK", message:"Insufficient stock" } }
+# insufficient stock → 400 { message: "Insufficient stock" }
 
 # 6. Checkout (HOME_DELIVERY with address) — English-only
 curl -X POST $BASE/checkout \
@@ -707,7 +703,7 @@ curl -X POST $BASE/orders/<orderId>/delivery \
 BASE=https://api-sadivacloset.himersus.com/api/v1
 # buyer2 tries to view buyer1's order → 404 (not 403, to avoid enumeration)
 curl $BASE/orders/<orderId-buyer1> -H "Authorization: Bearer $buyer2Token"
-# → 404 { error: { code:"NOT_FOUND", message:"Order not found" } }
+# → 404 { message: "Order not found" }
 ```
 
 **3. Admin guard**
@@ -720,40 +716,39 @@ curl $BASE/admin/products -H "Authorization: Bearer $adminToken" # → 200
 
 ---
 
-## Error Codes
+## Error Codes (HTTP status + message)
 
-| Code | Status | Message (EN) | Usage |
-|------|--------|--------------|-------|
-| `VALIDATION_ERROR` | 400 | Validation failed | DTO failed, `forbidNonWhitelisted` |
-| `INVALID_REQUEST` | 400 | Invalid request | Generic 400 |
-| `INSUFFICIENT_STOCK` | 400 | Insufficient stock | `POST /cart/items`, `POST /checkout` – `details` has `available`/`requested` |
-| `CART_EMPTY` | 400 | Cart is empty | `POST /checkout` |
-| `INVALID_METHOD` | 400 | Invalid payment method | `POST /orders/:id/payment/init` |
-| `ADDRESS_IN_USE` | 400 | Address in use | `DELETE /profile/addresses/:id` |
-| `MISSING_REFERENCE` | 400 | Missing externalReference | Webhook without ref |
-| `MISSING_SIGNATURE` / `INVALID_SIGNATURE` | 400 | Missing/invalid signature | Webhook HMAC |
-| `UNAUTHENTICATED` | 401 | Not authenticated | `JwtAuthGuard` – missing/invalid/expired token |
-| `INVALID_CREDENTIALS` / `TOKEN_INVALID` / `TOKEN_EXPIRED` / `TOKEN_REVOKED` / `ACCOUNT_INACTIVE` | 401 | (various) | Auth failures, inactive account |
-| `FORBIDDEN` | 403 | Forbidden | `RolesGuard` – BUYER on `/admin/*` |
-| `NOT_FOUND` | 404 | Not found | Resource missing or IDOR (ownership) |
-| `CONFLICT` / `EMAIL_ALREADY_EXISTS` | 409 | Conflict / Email already exists | `POST /auth/register`, `PATCH /profile` |
-| `CURRENT_PASSWORD_INCORRECT` | 400/409 | Current password is incorrect | `PATCH /admin/account` |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests | Throttler |
-| `INTERNAL_ERROR` | 500 | Internal server error | `HttpExceptionFilter` (no stack in prod) |
+| Status | Example `message` (EN) | Usage |
+|------|--------------|-------|
+| 400 | `Validation failed: ...` | DTO failed, `forbidNonWhitelisted` |
+| 400 | `Insufficient stock` | `POST /cart/items`, `POST /checkout` |
+| 400 | `Cart is empty` | `POST /checkout` |
+| 400 | `Invalid payment method` | `POST /orders/:id/payment/init` |
+| 400 | `Address in use` | `DELETE /profile/addresses/:id` |
+| 400 | `Missing external reference` | Webhook without ref |
+| 400 | `Missing signature` / `Invalid signature` | Webhook HMAC |
+| 401 | `Token not provided` / `Invalid token` / `Token expired` | `JwtAuthGuard` – missing/invalid/expired token |
+| 403 | `Access denied` | `RolesGuard` – BUYER on `/admin/*` |
+| 404 | `Resource not found` / `Order not found` | Resource missing or IDOR (ownership) |
+| 409 | `Email already exists` | `POST /auth/register`, `PATCH /profile` |
+| 429 | `Too many requests. Please try again later.` | Throttler |
+| 500 | `An unexpected error occurred.` | `HttpExceptionFilter` (no stack in prod) |
+
+> All errors are `{ message: string }` — frontend reads `response.data.message`. No `error.code`/`details` nesting.
 
 ---
 
 ## Frontend Notes
 
-- **Always send `Authorization: Bearer <access_token>`** after login; use `refresh_token` to renew via `POST /auth/refresh`. On `401 UNAUTHENTICATED`, try refresh, else redirect to `/login`.
+- **Always send `Authorization: Bearer <access_token>`** after login; use `refresh_token` to renew via `POST /auth/refresh`. On `401`, try refresh, else redirect to `/login`.
 - **Pagination is English-only:** read `res.data`, `res.page`, `res.total`, `res.totalPages`. There is no `dados`/`pagina` fallback.
-- **Display `error.message` directly** (English). Use `error.code` for logic (e.g., `INSUFFICIENT_STOCK` → show `available` in `details`).
+- **Display `message` directly** (English) — `response.data.message`. Use HTTP status for logic (401 refresh, 403 forbidden, 404 not found, 409 conflict, 429 rate limit).
 - **Cache:** `GET /products` has server `Cache 60s` (Redis) – frontend may cache but invalidation is server-side on admin product mutations.
 - **Receipts:** send `JSON { "receiptUrl": "https://..." }` to `POST /orders/:id/payment/receipt`. Backend does not accept file uploads. Validate `IsUrl` on frontend before sending; 5MB limit should be enforced at external storage. PT alias `comprovativo_url` hidden via `@ApiHideProperty()` — use `receiptUrl`.
 - **Aliases:** Never use PT aliases (`/produtos`, `/carrinho`, etc.) – they are deprecated and hidden from Swagger via `@ApiExcludeController`/`@ApiExcludeEndpoint`. Use English routes exclusively. DTO PT aliases (`nome`→`name`, `telefone`→`phoneNumber`, `metodo`→`method`, `tipo`→`type`, `data_agendada`→`scheduledDate`, `janela_horario`→`timeWindow`, `produto_id`→`productId`, `categoria`→`category`, `tamanho`→`size`, `estado`→`condition`, `preco_min`→`price_min`, `ordenar`→`sort`, `comprovativo_url`→`receiptUrl`) are hidden via `@ApiHideProperty()` but still accepted via `Transform` for backward compat — frontend MUST send English. Swagger shows only English.
 - **Webhooks:** are **public** (no JWT) – frontend **never** calls them; only gateways with `x-signature`.
-- **Rate limiting:** show `RATE_LIMIT_EXCEEDED` with retry after `X-RateLimit-Reset` header.
-- **CORS:** `origin: true` in dev; restricted via `env` in prod.
+- **Rate limiting:** show `Too many requests` (429) with retry after `X-RateLimit-Reset` header.
+- **CORS:** controlled by `CORS_ALLOWED_ORIGINS` env (comma-separated, alias `CORS_ORIGIN`). Dev: empty → allow all. Prod: required explicit list e.g. `https://sadivacloset.co.ao,https://www.sadivacloset.co.ao,https://api-sadivacloset.himersus.com`.
 - **Swagger is contract:** `GET https://api-sadivacloset.himersus.com/api/docs-json` (or local `http://localhost:3001/api/docs-json`) can be imported into Postman/Insomnia or used with `openapi-generator` for SDK.
 
 **Base URLs:**

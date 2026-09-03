@@ -1,19 +1,8 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 
-interface ErrorPayload {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
+interface MessagePayload {
+  message: string;
 }
 
 @Catch()
@@ -26,9 +15,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let code = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred.';
-    let details: unknown | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -36,62 +23,113 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof excResp === 'string') {
         message = excResp;
-        code = this.codeFromStatus(status);
       } else if (typeof excResp === 'object' && excResp !== null) {
         const obj = excResp as Record<string, unknown>;
-        // If already in format { error: { code, message } } pass through
-        if (obj['error'] && typeof obj['error'] === 'object') {
+        // Preferred: { message: string }
+        if (typeof obj['message'] === 'string' && obj['message']) {
+          message = obj['message'] as string;
+          // Se message vier como array (class-validator default sem filter), junta
+          // mas normalmente já tratado pelo ValidationPipe
+        } else if (Array.isArray(obj['message'])) {
+          const arr = obj['message'] as unknown[];
+          message = arr.map((v) => String(v)).join('; ');
+        } else if (obj['error'] && typeof obj['error'] === 'object') {
           const err = obj['error'] as Record<string, unknown>;
-          code = (err['code'] as string) ?? this.codeFromStatus(status);
-          message = (err['message'] as string) ?? (obj['message'] as string) ?? message;
-          details = err['details'] ?? obj['details'];
+          if (typeof err['message'] === 'string' && err['message']) {
+            message = err['message'] as string;
+            // Anexa details se houver para não perder info, mas mantém só message
+            if (err['details']) {
+              const detailsStr = this.detailsToString(err['details']);
+              if (detailsStr) message = `${message}: ${detailsStr}`;
+            }
+          } else if (typeof err['details'] === 'string') {
+            message = err['details'] as string;
+          }
         } else if (obj['erro'] && typeof obj['erro'] === 'object') {
-          // Backward compatibility: translate legacy Portuguese keys
           const erro = obj['erro'] as Record<string, unknown>;
-          code = this.translateCode((erro['codigo'] as string) ?? this.codeFromStatus(status));
-          message = this.translateMessage((erro['mensagem'] as string) ?? (obj['message'] as string) ?? message);
-          details = erro['detalhes'] ?? obj['detalhes'];
-          // Translate details field names if present
-          if (Array.isArray(details)) {
-            details = (details as Record<string, unknown>[]).map((d) => ({
-              field: (d['campo'] as string) ?? (d['field'] as string),
-              errors: (d['erros'] as unknown) ?? (d['errors'] as unknown),
-            }));
+          const raw =
+            (erro['mensagem'] as string) ?? (obj['message'] as string) ?? (obj['mensagem'] as string) ?? '';
+          if (raw) message = this.translateMessage(raw);
+          const detalhes = erro['detalhes'] ?? obj['detalhes'] ?? obj['details'];
+          if (detalhes) {
+            const dStr = this.detailsToString(detalhes);
+            if (dStr) message = `${message}: ${dStr}`;
           }
+        } else if (typeof obj['mensagem'] === 'string' && obj['mensagem']) {
+          message = this.translateMessage(obj['mensagem'] as string);
+        } else if (typeof obj['error'] === 'string' && obj['error']) {
+          message = obj['error'] as string;
+        } else if (typeof obj['msg'] === 'string' && obj['msg']) {
+          message = obj['msg'] as string;
         } else {
-          message = (obj['message'] as string) ?? (obj['mensagem'] as string) ?? message;
-          code = this.translateCode((obj['code'] as string) ?? (obj['codigo'] as string) ?? this.codeFromStatus(status));
-          // class-validator returns message as array
-          if (Array.isArray(obj['message'])) {
-            message = 'Validation failed';
-            details = obj['message'];
-            code = 'VALIDATION_ERROR';
-          } else if (obj['details'] || obj['detalhes']) {
-            details = obj['details'] ?? obj['detalhes'];
-          }
+          // Fallback: tenta extrair message ou usa stringify curto
+          const fallback = (obj['message'] as string) ?? (obj['error'] as string) ?? '';
+          if (fallback && typeof fallback === 'string') message = fallback;
+        }
+
+        // Caso ainda seja array de mensagens
+        if (Array.isArray((obj as any).message)) {
+          message = (obj as any).message.map((v: unknown) => String(v)).join('; ');
+        }
+
+        // Se mensagem ainda vazia, tenta traduzir code genérico
+        if (!message || message === 'An unexpected error occurred.') {
+          const code = (obj['code'] as string) ?? (obj['codigo'] as string) ?? '';
+          if (code) message = this.codeToMessage(code);
         }
       }
     } else if (exception instanceof Error) {
       this.logger.error(`[${request.method} ${request.url}] ${exception.message}`, exception.stack);
       message = 'An unexpected error occurred.';
+      // Em dev/test mostra mensagem real para debug, em prod mantém genérica
+      if (process.env.NODE_ENV !== 'production') {
+        message = exception.message || message;
+      }
     } else {
       this.logger.error(`[${request.method} ${request.url}] Unknown error`, String(exception));
     }
 
-    const payload: ErrorPayload = {
-      error: {
-        code,
-        message,
-        ...(details !== undefined ? { details } : {}),
-      },
-    };
+    // Garante mensagem sempre string não vazia
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      message = this.codeToMessage(this.codeFromStatus(status));
+    }
 
-    // Log 4xx as warn, 5xx as error
+    const payload: MessagePayload = { message };
+
     if (status >= 500) {
-      this.logger.error(`[${status}] ${request.method} ${request.url} -> ${code}: ${message}`);
+      this.logger.error(`[${status}] ${request.method} ${request.url} -> ${message}`);
     }
 
     response.status(status).json(payload);
+  }
+
+  private detailsToString(details: unknown): string {
+    if (!details) return '';
+    if (typeof details === 'string') return details;
+    if (Array.isArray(details)) {
+      return details
+        .map((d) => {
+          if (typeof d === 'string') return d;
+          if (d && typeof d === 'object') {
+            const o = d as Record<string, unknown>;
+            const field = (o['field'] as string) ?? (o['campo'] as string) ?? '';
+            const errors = (o['errors'] as unknown) ?? (o['erros'] as unknown) ?? o['message'] ?? '';
+            const errStr = Array.isArray(errors) ? errors.join(', ') : String(errors);
+            return field ? `${field}: ${errStr}` : errStr;
+          }
+          return String(d);
+        })
+        .filter(Boolean)
+        .join('; ');
+    }
+    if (typeof details === 'object') {
+      const o = details as Record<string, unknown>;
+      if (o['available'] !== undefined || o['requested'] !== undefined) {
+        return JSON.stringify(details);
+      }
+      return JSON.stringify(details);
+    }
+    return String(details);
   }
 
   private codeFromStatus(status: number): string {
@@ -116,41 +154,34 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
   }
 
-  private translateCode(code: string): string {
+  private codeToMessage(code: string): string {
     const map: Record<string, string> = {
-      ERRO_VALIDACAO: 'VALIDATION_ERROR',
-      PEDIDO_INVALIDO: 'BAD_REQUEST',
-      NAO_AUTENTICADO: 'UNAUTHENTICATED',
-      CREDENCIAIS_INVALIDAS: 'INVALID_CREDENTIALS',
-      TOKEN_INVALIDO: 'INVALID_TOKEN',
-      TOKEN_EXPIRADO: 'TOKEN_EXPIRED',
-      TOKEN_REVOGADO: 'REVOKED_TOKEN',
-      CONTA_INATIVA: 'ACCOUNT_INACTIVE',
-      ACESSO_NEGADO: 'FORBIDDEN',
-      NAO_ENCONTRADO: 'NOT_FOUND',
-      CONFLITO: 'CONFLICT',
-      EMAIL_JA_EXISTE: 'EMAIL_ALREADY_EXISTS',
-      LIMITE_EXCEDIDO: 'RATE_LIMIT_EXCEEDED',
-      ERRO_INTERNO: 'INTERNAL_ERROR',
-      STOCK_INSUFICIENTE: 'INSUFFICIENT_STOCK',
-      CARRINHO_VAZIO: 'CART_EMPTY',
-      ENDERECO_EM_USO: 'ADDRESS_IN_USE',
-      PEDIDO_JA_CANCELADO: 'ORDER_ALREADY_CANCELLED',
-      PEDIDO_NAO_CANCELAVEL: 'ORDER_NOT_CANCELLABLE',
-      ENTREGA_EM_CURSO: 'DELIVERY_IN_PROGRESS',
-      ENTREGA_JA_CANCELADA: 'DELIVERY_ALREADY_CANCELLED',
-      PEDIDO_CANCELADO: 'ORDER_CANCELLED',
-      PEDIDO_JA_PAGO: 'ORDER_ALREADY_PAID',
-      PAGAMENTO_JA_VALIDADO: 'PAYMENT_ALREADY_VALIDATED',
-      METODO_INVALIDO: 'INVALID_PAYMENT_METHOD',
-      FICHEIRO_OBRIGATORIO: 'FILE_REQUIRED',
-      FICHEIRO_MUITO_GRANDE: 'FILE_TOO_LARGE',
-      FORMATO_INVALIDO: 'INVALID_FORMAT',
-      ASSINATURA_EM_FALTA: 'MISSING_SIGNATURE',
-      ASSINATURA_INVALIDA: 'INVALID_SIGNATURE',
-      REFERENCIA_EM_FALTA: 'MISSING_REFERENCE',
+      BAD_REQUEST: 'Bad request',
+      VALIDATION_ERROR: 'Validation failed',
+      UNAUTHENTICATED: 'Not authenticated',
+      INVALID_CREDENTIALS: 'Invalid email or password',
+      TOKEN_INVALID: 'Invalid token',
+      TOKEN_EXPIRED: 'Token expired',
+      TOKEN_REVOKED: 'Token revoked',
+      ACCOUNT_INACTIVE: 'Account is inactive',
+      FORBIDDEN: 'Access denied',
+      NOT_FOUND: 'Resource not found',
+      CONFLICT: 'Conflict',
+      EMAIL_ALREADY_EXISTS: 'Email already exists',
+      RATE_LIMIT_EXCEEDED: 'Too many requests. Please try again later.',
+      INTERNAL_ERROR: 'An unexpected error occurred.',
+      INSUFFICIENT_STOCK: 'Insufficient stock',
+      CART_EMPTY: 'Cart is empty',
+      ADDRESS_IN_USE: 'Address in use',
+      ORDER_ALREADY_CANCELLED: 'Order already cancelled',
+      ORDER_NOT_CANCELLABLE: 'Order not cancellable',
+      DELIVERY_IN_PROGRESS: 'Delivery in progress',
+      INVALID_METHOD: 'Invalid payment method',
+      MISSING_SIGNATURE: 'Missing signature',
+      INVALID_SIGNATURE: 'Invalid signature',
+      MISSING_REFERENCE: 'Missing external reference',
     };
-    return map[code] ?? code;
+    return map[code] ?? code.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
   }
 
   private translateMessage(msg: string): string {
@@ -161,6 +192,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       'Token expirado': 'Token expired',
       'Ocorreu um erro inesperado.': 'An unexpected error occurred.',
       'Demasiadas tentativas. Tente novamente mais tarde.': 'Too many requests. Please try again later.',
+      'Não autenticado': 'Not authenticated',
+      'Acesso negado': 'Access denied',
+      'Não encontrado': 'Not found',
     };
     return map[msg] ?? msg;
   }

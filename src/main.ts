@@ -20,6 +20,7 @@ async function bootstrap() {
   app.getHttpAdapter().getInstance().disable('x-powered-by');
 
   // Validação global — DTOs com class-validator
+  // Erros sempre com formato previsível { message: string } via HttpExceptionFilter
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -27,17 +28,14 @@ async function bootstrap() {
       transform: true,
       transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
-        const details = errors.map((e) => ({
-          field: e.property,
-          errors: Object.values(e.constraints ?? {}),
-        }));
-        throw new BadRequestException({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Validation failed',
-            details,
-          },
-        });
+        const messages = errors
+          .map((e) => {
+            const constraints = Object.values(e.constraints ?? {});
+            if (constraints.length > 0) return `${e.property}: ${constraints.join(', ')}`;
+            return `${e.property}: invalid value`;
+          })
+          .join('; ');
+        throw new BadRequestException(messages || 'Validation failed');
       },
     }),
   );
@@ -61,11 +59,73 @@ async function bootstrap() {
     }),
   );
 
-  // CORS liberado em dev; restrinja em produção via env
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
+  // CORS via variável de ambiente CORS_ALLOWED_ORIGINS
+  // Dev: vazio = libera tudo (origin:true). Produção: lista explícita obrigatória (validada em env.validation.ts)
+  const configService = app.get(ConfigService);
+  const corsConfig = configService.get<{ allowedOrigins: string[]; allowAll: boolean }>('cors')!;
+  const nodeEnv = configService.get<string>('nodeEnv') ?? process.env.NODE_ENV;
+
+  if (corsConfig.allowAll) {
+    // Dev/test com CORS liberado — permite qualquer origem
+    if (nodeEnv === 'production') {
+      // Fallback de segurança: não deveria chegar aqui (validateEnv barra), mas garante
+      app.enableCors({
+        origin: false,
+        credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'x-request-id',
+          'x-correlation-id',
+          'x-signature',
+          'x-webhook-signature',
+          'signature',
+          'x-hub-signature',
+        ],
+      });
+    } else {
+      app.enableCors({
+        origin: true,
+        credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'x-request-id',
+          'x-correlation-id',
+          'x-signature',
+          'x-webhook-signature',
+          'signature',
+          'x-hub-signature',
+        ],
+      });
+    }
+  } else {
+    const allowedOrigins = corsConfig.allowedOrigins;
+    app.enableCors({
+      origin: (origin, callback) => {
+        // Requests sem Origin (curl, Postman, mobile, server-to-server) → permite
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Bloqueia origem não listada — não retorna header CORS (browser bloqueia)
+        return callback(null, false);
+      },
+      credentials: true,
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-request-id',
+        'x-correlation-id',
+        'x-signature',
+        'x-webhook-signature',
+        'signature',
+        'x-hub-signature',
+      ],
+      exposedHeaders: ['X-Request-Id'],
+    });
+  }
 
   // Serve comprovativos e uploads
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
@@ -91,7 +151,7 @@ async function bootstrap() {
 
 **Base URL:** https://api-sadivacloset.himersus.com/api/v1 (staging) | Local: http://localhost:3001/api/v1 | Docs: /api/docs | OpenAPI JSON: /api/docs-json
 
-**Language:** All code, tables, endpoints and responses are in English. Error format is { error: { code, message, details } }.
+**Language:** All code, tables, endpoints and responses are in English. Error format is { message: string } — always top-level message (predictable).
 
 ## Authentication
 - JWT Bearer (Authorization: Bearer <access_token>).
@@ -105,12 +165,17 @@ async function bootstrap() {
 
 ## Errors
 \`\`\`json
-{ "error": { "code": "VALIDATION_ERROR|UNAUTHENTICATED|FORBIDDEN|NOT_FOUND|INSUFFICIENT_STOCK|RATE_LIMIT_EXCEEDED|INTERNAL_ERROR", "message": "...", "details": [...] } }
+{ "message": "Validation failed: email: must be a valid email; password: too short" }
 \`\`\`
-- 400 VALIDATION_ERROR, 401 UNAUTHENTICATED, 403 FORBIDDEN, 404 NOT_FOUND, 409 CONFLICT/EMAIL_ALREADY_EXISTS, 429 RATE_LIMIT_EXCEEDED, 500 INTERNAL_ERROR.
+- All errors return { message: string } with appropriate HTTP status. Frontend reads response.data.message only.
+- 400 Validation, 401 Unauthenticated, 403 Forbidden, 404 Not Found, 409 Conflict, 429 Rate limit, 500 Internal.
+
+## CORS
+- Controlled by env var CORS_ALLOWED_ORIGINS (comma-separated). Dev: empty → allow all (origin:true). Prod: required explicit list, e.g. CORS_ALLOWED_ORIGINS=https://sadivacloset.co.ao,https://www.sadivacloset.co.ao,https://api-sadivacloset.himersus.com
+- Alias CORS_ORIGIN also accepted.
 
 ## Rate Limiting (Redis)
-- auth 20/min, forgot 5/15min (POST /auth/forgot-password), checkout 10/min, default 60/min. Response 429 { error: { code: RATE_LIMIT_EXCEEDED } }.
+- auth 20/min, forgot 5/15min (POST /auth/forgot-password), checkout 10/min, default 60/min. Response 429 { message: "Too many requests. Please try again later." }.
 
 ## Webhooks
 - POST /webhooks/payment/:gateway (public, HMAC x-signature = HMAC_SHA256(rawBody, PAYMENT_WEBHOOK_SECRET), idempotent by externalReference).
@@ -184,7 +249,6 @@ See tags below for critical flows: Auth -> Products -> Cart -> Checkout -> Order
     customSiteTitle: 'SadivaCloset API Docs',
   });
 
-  const configService = app.get(ConfigService);
   const port = configService.getOrThrow<number>('port');
 
   await app.listen(port, '0.0.0.0');

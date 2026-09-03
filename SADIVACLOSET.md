@@ -3,7 +3,7 @@
 > **Purpose:** this file is the single source a frontend AI needs to implement the **entire** SadivaCloset frontend. If the developer points this `SADIVACLOSET.md` to the AI (Cursor, Copilot, Claude, ChatGPT), it must be able to generate: screens, routes, `axios/fetch` services, stores, guards, forms, validations, pagination, error handling and complete flows without asking anything.
 >
 > **Target frontend stack:** any SPA (React/Next.js, Vue/Nuxt, Angular). Examples below in **TypeScript + Axios** (adaptable).
-> **Language:** code/tables/endpoints/messages all in **English** (`{ error: { code, message, details } }`, pagination `{ data, page, total, totalPages }`).
+> **Language:** code/tables/endpoints/messages all in **English** (`{ message: string }`, pagination `{ data, page, total, totalPages }`).
 
 ---
 
@@ -17,13 +17,13 @@ Implement the complete frontend consuming this API. RULES:
 - Base URL (Staging primary) = https://api-sadivacloset.himersus.com/api/v1 (health at https://api-sadivacloset.himersus.com/health without prefix). Local alternative = http://localhost:3001/api/v1.
 - Swagger UI = https://api-sadivacloset.himersus.com/api/docs (local http://localhost:3001/api/docs). OpenAPI JSON = https://api-sadivacloset.himersus.com/api/docs-json.
 - Use English-only contract (endpoints /auth/*, /products, /cart, /checkout, /orders, /profile/*, /favorites, /notifications, /admin/*). PT aliases (/produtos, /carrinho, /pedidos, /perfil/*) are hidden and deprecated — DO NOT use. Backend still accepts them for backward compat but Swagger shows EN only.
-- All responses are English-only: pagination { data, page, total, totalPages }, errors { error: { code, message, details: [{ field, errors }] } }. There is no dados/pagina/total_paginas or erro/codigo/mensagem — do not handle fallbacks.
+- All responses are English-only: pagination { data, page, total, totalPages }, errors { message: string }. There is no dados/pagina/total_paginas or erro/codigo/mensagem — do not handle fallbacks.
 - DTOs are English-only: address { label, province, municipality, neighborhood, street, reference, isDefault }, cart { items, subtotal, totalItems, totalQuantity }, payment { orderId, method, amount, status, externalReference, receiptUrl }, order { buyerId, deliveryFee, status, createdAt, items, delivery, payment }.
 - Auth JWT Bearer + refresh. Store access_token + refresh_token. Use interceptor on 401 -> POST /auth/refresh with { refresh_token }.
 - Pagination is ?page=&limit= (default 1/20, max 100) on ALL list endpoints. Read res.data.data, res.data.page, res.data.total, res.data.totalPages.
 - Respect rate limiting (/auth and /checkout) and guards (buyer vs admin).
 - Payment receipt is NOT multipart — frontend hosts the image (S3/Cloudinary) and sends only JSON { receiptUrl } to POST /orders/:id/payment/receipt.
-- Display error.message directly (English). Use error.code for logic (INSUFFICIENT_STOCK, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, RATE_LIMIT_EXCEEDED, etc.).
+- Display response.data.message directly (English) — all errors return { message: string } predictable.
 Follow ALL detailed flows in SADIVACLOSET.md and generate typed TypeScript code.
 ```
 
@@ -43,7 +43,7 @@ Follow ALL detailed flows in SADIVACLOSET.md and generate typed TypeScript code.
 | **OpenAPI JSON (Local)** | `http://localhost:3001/api/docs-json` |
 | **Version** | `0.1.0` |
 | **Code language** | English (tables, columns, enums, endpoints, DTOs) |
-| **User messages** | English (`error.code`/`error.message` in English) |
+| **User messages** | English (`{ message: string }` in English, HTTP status defines kind) |
 | **Docker host alternates** | `http://localhost:3002/api/v1` if `PORT=3002` in `.env` |
 
 **Generate SDK automatically:**
@@ -55,7 +55,7 @@ npx openapi-generator-cli generate -i http://localhost:3001/api/docs-json -g typ
 # or typescript-fetch
 ```
 
-**CORS:** `origin: true, credentials: true` in dev; restricted via env in prod.
+**CORS:** controlled by env `CORS_ALLOWED_ORIGINS` (comma-separated, alias `CORS_ORIGIN`). Dev: empty → `origin: true, credentials: true` (allow all). Prod: required explicit list e.g. `CORS_ALLOWED_ORIGINS=https://sadivacloset.co.ao,https://www.sadivacloset.co.ao,https://api-sadivacloset.himersus.com` — `origin: (origin, cb) => allowed.includes(origin)` with `credentials: true`. Requests without Origin (curl/Postman/mobile) allowed. `*` is forbidden in prod.
 **Security headers:** `helmet()` + `X-Powered-By` removed.
 
 ---
@@ -135,38 +135,37 @@ Frontend: use `?page&limit` on `/products`, `/profile/orders`, `/admin/products`
 
 Legacy `meta: {page, limit, total, totalPages}` is deprecated – use the shape above.
 
-### 2.4 Errors — Single English Format
-`ValidationPipe` (`main.ts:23`) with `whitelist:true, forbidNonWhitelisted:true` + `HttpExceptionFilter` global. **All errors** look like:
+### 2.4 Errors — Single Predictable Format { message: string }
+`ValidationPipe` (`main.ts:23`) with `whitelist:true, forbidNonWhitelisted:true` + `HttpExceptionFilter` global. **All errors** now return **only**:
 
 ```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
-    "details": [{ "field": "email", "errors": ["email must be a valid email"] }]
-  }
-}
+{ "message": "Validation failed: email: email must be a valid email; password: too short" }
 ```
+or
+```json
+{ "message": "Insufficient stock: available 3, requested 5" }
+```
+- HTTP status defines the kind (400, 401, 403, 404, 409, 429, 500). Body is **always** `{ message: string }` — no `error`, `code`, `details` nesting, no `erro`/`codigo`/`mensagem` PT keys. Predictable for frontend: `const message = err.response?.data?.message`.
+- Validation errors: `ValidationPipe` exceptionFactory concatenates constraints as `field: msg; field2: msg` into single `message`. Filter appends legacy `details` if present as `message: details` string.
+- Frontend: display `message` directly (English toast / inline). Use **HTTP status** for logic (401 → refresh/login, 403 → 403 page, 404 → not found, 409 → duplicate email, 429 → rate limit).
 
-| Status | `code` | When | Frontend action |
+| Status | Example `message` | When | Frontend action |
 |--------|----------|--------|-----------------|
-| 400 | `VALIDATION_ERROR` / `INVALID_REQUEST` | DTO failed, extra field (`forbidNonWhitelisted`), stock | show `details[].field -> errors[]` inline in form |
-| 400 | `INSUFFICIENT_STOCK` | `POST /cart/items`, `POST /checkout` (details with `available`, `requested`) | toast with available stock |
-| 400 | `CART_EMPTY` | `POST /checkout` without items | redirect to cart |
-| 400 | `INVALID_METHOD` | `POST /orders/:id/payment/init` unknown method | show valid list |
-| 400 | `ADDRESS_IN_USE` | `DELETE /profile/addresses/:id` single address with pending orders | block delete, show warning |
-| 400 | `ORDER_ALREADY_CANCELLED`, `ORDER_NOT_CANCELLABLE`, `DELIVERY_IN_PROGRESS` | cancel/delivery when `ON_THE_WAY` | disable cancel button |
-| 400 | `MISSING_REFERENCE` / `MISSING_SIGNATURE` / `INVALID_SIGNATURE` | Webhook missing fields | (frontend never calls) |
-| 401 | `UNAUTHENTICATED` / `INVALID_CREDENTIALS` / `TOKEN_INVALID` / `TOKEN_EXPIRED` / `TOKEN_REVOKED` / `ACCOUNT_INACTIVE` | `JwtAuthGuard` failed, refresh expired, logout | redirect to login, try refresh |
-| 403 | `FORBIDDEN` | `BUYER` tries `/admin/*` (`RolesGuard`) | show 403, do not retry |
-| 404 | `NOT_FOUND` | Resource not found **OR** not owned by buyer (IDOR → 404 not 403, to avoid enumeration) | generic message, do not reveal existence |
-| 409 | `CONFLICT` / `EMAIL_ALREADY_EXISTS` | `POST /auth/register` duplicate email, `PATCH /profile` or `PATCH /admin/account` email in use | error on email field |
-| 409/400 | `CURRENT_PASSWORD_INCORRECT` | `PATCH /admin/account` wrong password | error on currentPassword field |
-| 429 | `RATE_LIMIT_EXCEEDED` | Rate limit (see §2.5) | show `X-RateLimit-Reset`, retry with backoff |
-| 500 | `INTERNAL_ERROR` | Unhandled exception (no stack in prod) | generic toast |
+| 400 | `Validation failed: email: must be valid; name: should not be empty` | DTO failed, extra field (`forbidNonWhitelisted`), stock | show message inline in form |
+| 400 | `Insufficient stock` | `POST /cart/items`, `POST /checkout` | toast `message` |
+| 400 | `Cart is empty` | `POST /checkout` without items | redirect to cart |
+| 400 | `Invalid payment method` | `POST /orders/:id/payment/init` unknown method | show valid list |
+| 400 | `Address in use` | `DELETE /profile/addresses/:id` single address with pending orders | block delete, show warning |
+| 400 | `Order already cancelled` / `Delivery in progress` | cancel/delivery when `ON_THE_WAY` | disable cancel button |
+| 400 | `Missing external reference` / `Missing signature` | Webhook missing fields | (frontend never calls) |
+| 401 | `Token not provided` / `Invalid token` / `Token expired` | `JwtAuthGuard` failed, refresh expired | redirect to login, try refresh |
+| 403 | `Access denied` | `BUYER` tries `/admin/*` (`RolesGuard`) | show 403 |
+| 404 | `Resource not found` / `Order not found` / `Product not found` | Resource not found **OR** not owned by buyer (IDOR → 404) | generic message |
+| 409 | `Email already exists` | `POST /auth/register` duplicate email, `PATCH /profile` email in use | error on email field |
+| 429 | `Too many requests. Please try again later.` | Rate limit (see §2.5) | show `X-RateLimit-Reset`, retry |
+| 500 | `An unexpected error occurred.` | Unhandled exception (no stack in prod) | generic toast |
 
-**Display `message` directly to the user** (English). Use `code` for logic.
-No `erro`/`codigo`/`mensagem`/`detalhes`/`campo`/`erros` – English only.
+**All errors are `{ message: string }` English-only.** No `error`/`code`/`details`/`erro`/`codigo`/`mensagem` nesting.
 
 ### 2.5 Rate Limiting (Redis)
 `ThrottlerModule` (`app.module.ts:73`) with `RedisThrottlerStorage`. **Only affects `/auth/*` and `/checkout`** (`skipIf` `app.module.ts:86`):
@@ -180,7 +179,7 @@ No `erro`/`codigo`/`mensagem`/`detalhes`/`campo`/`erros` – English only.
 
 Response `429`:
 ```json
-{ "error": { "code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests. Please try again later." } }
+{ "message": "Too many requests. Please try again later." }
 ```
 Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
 `GET /products`, `GET /health`, `GET /profile`, `GET /cart` **are not rate-limited**.
@@ -216,7 +215,7 @@ Content-Type: application/json
 
 - **Swagger UI:** `https://api-sadivacloset.himersus.com/api/docs` (local `http://localhost:3001/api/docs`) shows **only English fields**. OpenAPI JSON `https://api-sadivacloset.himersus.com/api/docs-json` likewise contains only English properties – generate the frontend SDK from this URL and you will get English-only types (`name`, `productId`, `quantity`, `type`, `scheduledDate`, `timeWindow`, `addressId`, `deliveryZoneId`, `label`, `province`, `municipality`, `neighborhood`, `street`, `reference`, `method`, `phoneNumber`, `description`, `receiptUrl`, `category`, `size`, `condition`, `price_min`, `price_max`, `sort`, `status`, `from`, `to`, etc.).
 - **Runtime:** PT aliases (`nome`, `produto_id`, `quantidade`, `tipo`, `data_agendada`, `janela_horario`, `endereco_id`, `zona_entrega_id`, `etiqueta`, `provincia`, `municipio`, `bairro`, `rua`, `referencia`, `metodo`, `telefone`, `descricao`, `categoria`, `tamanho`, `estado`, `preco_min`, `preco_max`, `ordenar`, `comprovativo_url`, etc.) are still accepted via `class-transformer` `@Transform(({ obj }) => obj.english ?? obj.pt)` and `*Normalized` getters (see table in §2.1). This is for **backward compat only – frontend MUST NOT send them**. They are hidden and will be removed in a future major.
-- **Frontend rule:** send **English only**; read **English only** (`{ data, page, total, totalPages }`, `{ error: { code, message, details: [{ field, errors }] } }`). Do not implement fallbacks for PT keys. If you inspect `docs-json` and do not see a PT field, that is intentional.
+- **Frontend rule:** send **English only**; read **English only** (`{ data, page, total, totalPages }`, `{ message: string }`). Do not implement fallbacks for PT keys. If you inspect `docs-json` and do not see a PT field, that is intentional.
 - **Validation example (English-only) – `POST /auth/register`:**
   ```json
   { "name": "Maria Silva", "email": "maria@example.com", "password": "StrongPass123" }
@@ -337,11 +336,9 @@ api.interceptors.response.use(r => r, async err => {
     orig.headers.Authorization = `Bearer ${newToken}`;
     return api(orig);
   }
-  // normalize error – English-only
-  const code = err.response?.data?.error?.code;
-  const message = err.response?.data?.error?.message;
-  const details = err.response?.data?.error?.details;
-  return Promise.reject({ code, message, details, status: err.response?.status, raw: err });
+  // normalize error – only { message: string }
+  const message = err.response?.data?.message ?? 'An unexpected error occurred.';
+  return Promise.reject({ message, status: err.response?.status, raw: err });
 });
 
 // stores/auth.ts (pinia/zustand)
@@ -1001,7 +998,7 @@ src/
   hooks/usePagination.ts
   components/ ProductCard, CartDrawer, AddressForm, CheckoutForm, OrderTimeline
   pages/ login, register, catalog, product/[id], cart, checkout, orders, orders/[id], profile/addresses, favorites, notifications, admin/*
-  utils/error.ts         // maps error.code -> message
+  utils/error.ts         // maps status + message -> display (message is single source)
   utils/pagination.ts    // helpers
 ```
 
@@ -1039,12 +1036,9 @@ api.interceptors.response.use(r=>r, async err=>{
     orig.headers.Authorization=`Bearer ${nt}`;
     return api(orig);
   }
-  // normalize – English-only
-  const data = err.response?.data;
-  const code = data?.error?.code;
-  const message = data?.error?.message;
-  const details = data?.error?.details;
-  return Promise.reject({ code, message, details, status: err.response?.status, raw: err });
+  // normalize – predictable { message: string }
+  const message = err.response?.data?.message ?? 'An unexpected error occurred.';
+  return Promise.reject({ message, status: err.response?.status, raw: err });
 });
 
 // English-only helpers
@@ -1069,18 +1063,15 @@ const { items, page, total, totalPages } = unwrapList(data); // where data = axi
 const product = unwrapItem(await api.get('/products/'+id));
 ```
 
-### 18.3 Error & Validation Helpers (English-only)
+### 18.3 Error & Validation Helpers (English-only, predictable { message })
 ```ts
-export const handleApiError = (e:any, form?: { setErrors:(f:string,msg:string)=>void })=>{
-  if(e.code==='VALIDATION_ERROR' && e.details){
-    e.details.forEach((d:{field:string,errors:string[]})=> form?.setErrors(d.field, d.errors.join(', ')));
-    return e.message;
-  }
-  if(e.code==='INSUFFICIENT_STOCK') return e.message + (e.details ? ` (Available: ${e.details[0]?.available ?? e.details.available})` : '');
-  if(e.code==='RATE_LIMIT_EXCEEDED') return 'Too many requests. Please try again in a minute.';
-  if(e.code==='UNAUTHENTICATED') return 'Session expired. Please log in.';
-  if(e.code==='FORBIDDEN') return 'You do not have permission to access this resource.';
-  if(e.code==='NOT_FOUND') return 'Not found.';
+export const handleApiError = (e:any)=>{
+  // e = { message: string, status: number }
+  if(e.status===429) return 'Too many requests. Please try again in a minute.';
+  if(e.status===401) return e.message ?? 'Session expired. Please log in.';
+  if(e.status===403) return e.message ?? 'You do not have permission.';
+  if(e.status===404) return e.message ?? 'Not found.';
+  // 400 validation/stock/message already contains field info: "email: must be valid; ..."
   return e.message ?? 'Unexpected error';
 };
 ```
@@ -1201,16 +1192,16 @@ curl -X POST $BASE/webhooks/payment/generic -H "x-signature: $SIG" -H "Content-T
 
 ## 20. Checklist for AI — Before Marking as Done
 
-- [ ] `api/client.ts` with `baseURL https://api-sadivacloset.himersus.com/api/v1` (fallback `http://localhost:3001/api/v1`), `Authorization Bearer`, interceptor refresh `POST /auth/refresh` with `{refresh_token}`, `handleApiError` showing `error.message` and `error.code`.
+- [ ] `api/client.ts` with `baseURL https://api-sadivacloset.himersus.com/api/v1` (fallback `http://localhost:3001/api/v1`), `Authorization Bearer`, interceptor refresh `POST /auth/refresh` with `{refresh_token}`, `handleApiError` showing `message`.
 - [ ] Pages: `/login`, `/register`, `/forgot-password`, `/reset-password?token=`, `/profile` (GET/PATCH), `/` catalog with filters `q,category,size,condition,price_min,price_max,sort,page,limit`, `/products/:id`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/profile/addresses`, `/profile/favorites`, `/profile/notifications`, `/wallet`.
 - [ ] Admin: `/admin/login` (same `/auth/login` but check role), `/admin/products`, `/admin/orders`, `/admin/deliveries`, `/admin/statistics`, `/admin/members`, `/admin/store`, `/admin/account`, `/admin/preferences`, `/admin/audit`, `/admin/payments` with `role admin` guard.
 - [ ] Pagination: all lists with `?page&limit`, UI reading `res.data.data`, `res.data.page`, `res.data.total`, `res.data.totalPages`, disabling next when `page===totalPages`. English-only, no fallback.
-- [ ] Errors: toast with `error.code` + inline `details[].field` in forms; 401 → refresh or login; 403 → 403 page; 429 → retry hint with `X-RateLimit-Reset`.
+- [ ] Errors: toast with `message`; 401 → refresh or login; 403 → 403 page; 429 → retry hint with `X-RateLimit-Reset`.
 - [ ] Receipt: file input → external upload (Cloudinary/S3) → `POST /orders/:id/payment/receipt {receiptUrl}` (no FormData). Validate `IsUrl` before.
 - [ ] Checkout: validate `scheduledDate` >= today, `timeWindow` required, `type` radio `HOME_DELIVERY`/`STORE_PICKUP`, calculate `deliveryFee` via `GET /delivery-zones` or `AdminPreferences` (show 0 for pickup).
-- [ ] Address: CRUD with `label`, `province`, `municipality`, `neighborhood`, `street`, `reference`, `isDefault`; handle `ADDRESS_IN_USE` on delete.
-- [ ] Cart: use `productId`/`quantity`, handle `INSUFFICIENT_STOCK` with `available`.
-- [ ] Tests: new registration, login, add to cart > stock → 400 `INSUFFICIENT_STOCK`, checkout empty cart → 400 `CART_EMPTY`, checkout OK → order `AWAITING_PAYMENT` → init payment `BANK_TRANSFER` → receipt URL → polling until `PAID` (simulate webhook or admin validate).
+- [ ] Address: CRUD with `label`, `province`, `municipality`, `neighborhood`, `street`, `reference`, `isDefault`; handle 400 `Address in use` on delete (message).
+- [ ] Cart: use `productId`/`quantity`, handle 400 `Insufficient stock` via message.
+- [ ] Tests: new registration, login, add to cart > stock → 400 `Insufficient stock`, checkout empty cart → 400 `Cart is empty`, checkout OK → order `AWAITING_PAYMENT` → init payment `BANK_TRANSFER` → receipt URL → polling until `PAID` (simulate webhook or admin validate).
 - [ ] Seed admin: `admin@sadivacloset.local` / `Admin@123` must log in and access `/admin/*`.
 - [ ] Swagger imported: `GET https://api-sadivacloset.himersus.com/api/docs-json` (or local) used to generate types; types `Product`, `OrderDetail`, `Payment`, `Address` typed English-only.
 
@@ -1220,7 +1211,7 @@ curl -X POST $BASE/webhooks/payment/generic -H "x-signature: $SIG" -H "Content-T
 
 - **Single source of truth:** `GET https://api-sadivacloset.himersus.com/api/docs-json` (local `http://localhost:3001/api/docs-json`) — if it diverges from `SADIVACLOSET.md`, `docs-json` + `docs/API_CONTRACT.md` prevail, but this file was generated scanning **all** `src/**` and `prisma/schema.prisma` on 2026-08-31 and updated to English-only.
 - **No backend uploads:** any old mention of `POST /orders/:id/payment/receipt multipart file` or `GET /uploads/<file>` is **obsolete** — frontend sends only URL via `receiptUrl` JSON.
-- **English-only contract:** pagination is `{ data, page, total, totalPages }`, errors `{ error: { code, message, details: [{ field, errors }] } }`, DTOs use `label`/`province`/`neighborhood`/`isDefault`/`productId`/`quantity`/`type`/`scheduledDate`/`timeWindow`/`addressId`/`deliveryZoneId`/`method`/`externalReference`/`receiptUrl`/`buyerId`/`deliveryFee`/`createdAt`. No PT keys. Deprecated PT aliases are hidden and must not be used.
+- **English-only contract:** pagination is `{ data, page, total, totalPages }`, errors `{ message: string }` (HTTP status defines kind), DTOs use `label`/`province`/`neighborhood`/`isDefault`/`productId`/`quantity`/`type`/`scheduledDate`/`timeWindow`/`addressId`/`deliveryZoneId`/`method`/`externalReference`/`receiptUrl`/`buyerId`/`deliveryFee`/`createdAt`. No PT keys. Deprecated PT aliases are hidden and must not be used.
 - **Validate with:** `pnpm run build && pnpm run test` in backend; `curl https://api-sadivacloset.himersus.com/health` (or `http://localhost:3001/health`) must return `ok`.
 - **Questions:** read `src/main.ts` (Swagger description), `src/common/dto/pagination.dto.ts`, `src/modules/*/dto/*.dto.ts` and `prisma/schema.prisma` — all documented above in English.
 

@@ -26,6 +26,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { MailModule } from './modules/mail/mail.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -95,6 +96,7 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
       }),
     }),
     JwtModule.register({}),
+    MailModule,
     AuthModule,
     AdminModule,
     ProductsModule,
