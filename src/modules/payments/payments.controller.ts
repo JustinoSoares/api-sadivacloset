@@ -96,7 +96,7 @@ export class PagamentosController {
   }
 }
 
-// Aliases ingleses
+// Aliases ingleses — CANONICAL EN (use this, PT hidden below)
 
 @ApiTags('orders-payment')
 @ApiBearerAuth('bearer')
@@ -105,14 +105,38 @@ export class OrdersPaymentController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('init')
-  @ApiOperation({ summary: 'Initiate payment', description: 'Initiates payment for order' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiBody({ type: IniciarPagamentoDto })
-  @ApiResponse({ status: 201, description: 'Created' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Not Found' })
-  @ApiResponse({ status: 409, description: 'Conflict' })
+  @ApiOperation({
+    summary: 'Initiate payment — GPO (Multicaixa Express) or GPR (Referência)',
+    description:
+      'Canonical route POST /orders/:id/payment/init (alias PT: POST /pedidos/:id/pagamento/iniciar). Call AFTER POST /checkout. Creates Payment with externalReference (15 chars) via AppyPay.\n\n**GPO (Multicaixa Express)**: method=gpo | MULTICAIXA_EXPRESS | multicaixa_express — **requires phoneNumber** (923456789). AppyPay GPO charge.\n\n**GPR (Referência)**: method=gpr | MULTICAIXA_REFERENCE | multicaixa_reference | reference — no phoneNumber. Returns entity/reference/expirationDate in providerDetails for display.\n\nOther methods: BANK_TRANSFER, CASH_ON_DELIVERY, CARD, kwik (IBAN required). Poll GET /orders/:id/payment until PAID via webhook POST /webhooks/appypay or POST /webhooks/payment/generic.',
+  })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid', description: 'Order UUID from POST /checkout' })
+  @ApiBody({
+    type: IniciarPagamentoDto,
+    examples: {
+      gpo: {
+        summary: 'GPO - Multicaixa Express (requires phoneNumber)',
+        value: { method: 'gpo', phoneNumber: '923456789', description: 'Pedido abc123 - GPO' },
+      },
+      gpr: {
+        summary: 'GPR - Referência Multicaixa (no phone)',
+        value: { method: 'gpr', description: 'Pedido abc123 - GPR' },
+      },
+      gpo_full: {
+        summary: 'GPO full EN',
+        value: { method: 'MULTICAIXA_EXPRESS', phoneNumber: '923456789' },
+      },
+      gpr_full: {
+        summary: 'GPR full EN',
+        value: { method: 'MULTICAIXA_REFERENCE' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Payment created - PROCESSING (GPO/GPR) or PENDING (BANK_TRANSFER)' })
+  @ApiResponse({ status: 400, description: 'Bad Request - INVALID_METHOD, phoneNumber required for GPO, order already paid' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - missing/invalid JWT' })
+  @ApiResponse({ status: 404, description: 'Not Found - order not found or not owned' })
+  @ApiResponse({ status: 409, description: 'Conflict - payment already validated' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async iniciar(
     @CurrentUser() user: JwtPayload,

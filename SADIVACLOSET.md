@@ -658,32 +658,44 @@ UI: orders list with badge status (colors by `OrderStatus`), detail with timelin
 | GET | `/payments/history` | `?page&limit&type=credit|debit` | `200 { data, page, total, totalPages }` |
 | GET | `/wallet/history` | `?page&limit` | `200 { data, page, total, totalPages }` |
 
-### 10.1 `POST .../payment/init` — Initiate payment
-**Body `InitiatePaymentDto` (`src/modules/payments/dto/iniciar-pagamento.dto.ts:7`) – English-only in Swagger (`@ApiProperty`/`@ApiPropertyOptional` English visible, PT hidden via `@ApiHideProperty` `iniciar-pagamento.dto.ts:15,30,50`):**
-```ts
-{ method: string, phoneNumber?: string, iban?: string, description?: string, expiresInSeconds?: number }
-```
-English: `method` (`@ApiProperty`), `phoneNumber`, `iban`, `description` (`@ApiPropertyOptional`). Legacy PT aliases `metodo`, `telefone`, `descricao` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `@Transform(({ obj }) => obj.method ?? obj.metodo)` / `phoneNormalized` / `descriptionNormalized`. Frontend MUST send English:
+### 10.1 `POST .../payment/init` — Initiate payment — GPO/GPR CLARO
 
-```json
-{ "method": "BANK_TRANSFER", "phoneNumber": "923456789", "description": "Order #123" }
+> **SWAGGER AGORA MUITO CLARO:** abra `https://api-sadivacloset.himersus.com/api/docs` → tag `orders-payment` → `POST /orders/{id}/payment/init` → `Schema InitiatePaymentDto` mostra `enum` + `examples` `gpo`/`gpr` + descrições. Use `Try it out` com os exemplos abaixo.
+
+**Body `InitiatePaymentDto` (`src/modules/payments/dto/iniciar-pagamento.dto.ts:7`) – English-only in Swagger (`@ApiProperty` enum + examples visível, PT hidden via `@ApiHideProperty` `iniciar-pagamento.dto.ts:15,30,50`):**
+```ts
+{ method: "gpo"|"gpr"|"MULTICAIXA_EXPRESS"|"MULTICAIXA_REFERENCE"|"BANK_TRANSFER"|"CASH_ON_DELIVERY"|"CARD"|"kwik", phoneNumber?: string, iban?: string, description?: string, expiresInSeconds?: number }
 ```
-Do **not** send `{ "metodo": "transferencia", "telefone": "923456789", "descricao": "Pedido #123" }` – PT fields are hidden.
+
+| Goal | `method` (choose 1) | `phoneNumber` | Swagger example name | Body to send |
+|------|---------------------|---------------|----------------------|--------------|
+| **GPO – Multicaixa Express** | `gpo` (short) or `MULTICAIXA_EXPRESS` or `multicaixa_express` | **REQUIRED** `923456789` (9 digits AO) | `gpo` / `gpo_full` | `{"method":"gpo","phoneNumber":"923456789","description":"Pedido abc123 - GPO"}` |
+| **GPR – Referência** | `gpr` (short) or `MULTICAIXA_REFERENCE` or `multicaixa_reference` or `reference` | **not needed** | `gpr` / `gpr_full` | `{"method":"gpr","description":"Pedido abc123 - GPR"}` |
+
+Swagger `IniciarPagamentoDto.method` now has `enum` + `examples: gpo (requires phoneNumber) | gpr (no phone) | bank` and `phoneNumber` description `REQUIRED when method=gpo...`. Legacy PT aliases `metodo`, `telefone`, `descricao` are `@ApiHideProperty` – **hidden** from `https://api-sadivacloset.himersus.com/api/docs` but still accepted via `@Transform` for compat. Frontend MUST send English above.
+
+**Do NOT send:**
+```json
+{ "metodo": "gpo", "telefone": "923456789" }
+{ "metodo": "transferencia" }
+```
+→ use EN: `{"method":"gpo","phoneNumber":"923..."}`
 
 **Receipt `POST .../payment/receipt` body (English-only):**
 ```json
 { "receiptUrl": "https://cdn.myapp.com/receipts/abc.jpg" }
 ```
 Only `receiptUrl` (`@ApiProperty`). Legacy `comprovativo_url` is hidden – do not use.
-**`method` accepts (via `mapMethodToEnum`):**
-- `multicaixa_express` / `gpo` / `multicaixa express` → `MULTICAIXA_EXPRESS`
-- `multicaixa_reference` / `reference` / `gpr` → `MULTICAIXA_REFERENCE`
+
+**`method` accepts (via `mapMethodToEnum` `payments.service.ts:21`):**
+- `gpo` / `MULTICAIXA_EXPRESS` / `multicaixa_express` / `multicaixa express` → `MULTICAIXA_EXPRESS` (GPO – AppyPay Express)
+- `gpr` / `MULTICAIXA_REFERENCE` / `reference` / `multicaixa_reference` → `MULTICAIXA_REFERENCE` (GPR – AppyPay Referência)
 - `bank_transfer` → `BANK_TRANSFER`
 - `cash_on_delivery` → `CASH_ON_DELIVERY`
 - `card` → `CARD`
 - `kwik` → `BANK_TRANSFER` (via E-Kwanza KWiK payout)
 
-> Legacy PT values `transferencia`, `pagamento_entrega`, `cartao`, `referencia` still accepted by backend for compat, but frontend MUST send English `method` values above (or `bank_transfer`, etc.).
+> Legacy PT values `transferencia`, `pagamento_entrega`, `cartao`, `referencia` still accepted by backend for compat, but Swagger now only shows EN enum – frontend MUST send EN above.
 
 **Validations:**
 - `method` invalid → 400 `INVALID_METHOD` with valid list.

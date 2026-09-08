@@ -493,15 +493,30 @@ Rules: first address auto `isDefault=true`. Delete blocked if single address wit
 
 Deprecated PT `POST /pedidos/:id/pagamento/iniciar`, `GET /pagamentos/historico`, history aliases `/payments/entries`, `/payments/exits`, `/payments/wallet/history` hidden – use English. Fields `metodo`/`telefone` hidden via `@ApiHideProperty()` — use `method`/`phoneNumber`.
 
-`method` accepts: `multicaixa_express|gpo → MULTICAIXA_EXPRESS`, `multicaixa_reference|gpr|reference → MULTICAIXA_REFERENCE`, `bank_transfer → BANK_TRANSFER`, `cash_on_delivery → CASH_ON_DELIVERY`, `card → CARD`, `kwik → BANK_TRANSFER` (E-Kwanza). Invalid → `400 INVALID_METHOD`. GPO requires `phoneNumber`.
+> **GPO vs GPR — USE THIS TABLE (Swagger now shows examples):**
+> | Goal | Route (JWT BUYER) | `method` value (EN) | Required fields | Example body |
+> |------|-------------------|---------------------|-----------------|--------------|
+> | **GPO – Multicaixa Express** | `POST /orders/:id/payment/init` | `gpo` or `MULTICAIXA_EXPRESS` or `multicaixa_express` | `phoneNumber: "923456789"` (AO, 9 digits) + optional `description` | `{"method":"gpo","phoneNumber":"923456789"}` |
+> | **GPR – Referência** | `POST /orders/:id/payment/init` | `gpr` or `MULTICAIXA_REFERENCE` or `multicaixa_reference` or `reference` | optional `description` (no phone) | `{"method":"gpr"}` |
+> After init: GPO/GPR → `Payment.status=PROCESSING`, `externalReference=15chars`, `providerDetails={provider:"appypay", entity, reference, expirationDate}` (GPR: show entity/reference to buyer). Poll `GET /orders/:id/payment` or `GET /orders/:id` until webhook `POST /webhooks/appypay` or `POST /webhooks/payment/generic` sets `PAID`.
 
-**Payment Init – Request (English-only — do not use `metodo`/`telefone`)**
+`method` accepts: `multicaixa_express|gpo → MULTICAIXA_EXPRESS`, `multicaixa_reference|gpr|reference → MULTICAIXA_REFERENCE`, `bank_transfer → BANK_TRANSFER`, `cash_on_delivery → CASH_ON_DELIVERY`, `card → CARD`, `kwik → BANK_TRANSFER` (E-Kwanza). Invalid → `400 INVALID_METHOD`. GPO without `phoneNumber` → `400 VALIDATION_ERROR phoneNumber required for GPO`.
+
+**Payment Init – Requests (English-only — do not use `metodo`/`telefone`)**
+
+GPO:
 ```json
-{
-  "method": "BANK_TRANSFER",
-  "phoneNumber": "923456789",
-  "description": "Order payment"
-}
+{ "method": "gpo", "phoneNumber": "923456789", "description": "Pedido abc123 - GPO" }
+```
+GPR:
+```json
+{ "method": "gpr", "description": "Pedido abc123 - GPR" }
+```
+Also accepted full EN: `{"method":"MULTICAIXA_EXPRESS","phoneNumber":"923456789"}` and `{"method":"MULTICAIXA_REFERENCE"}`. Do NOT send `{"metodo":"gpo","telefone":"923..."}` (hidden).
+
+Bank transfer example:
+```json
+{ "method": "BANK_TRANSFER", "description": "Order payment" }
 ```
 
 **Payment Response (English-only)**
