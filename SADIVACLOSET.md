@@ -794,19 +794,19 @@ async function sendReceiptS3(orderId:string, s3Url:string){
 
 | Canonical EN | Alias PT hidden | Auth | HMAC Header |
 |--------------|-----------------|------|-------------|
-| `POST /webhooks/payment/:gateway` | `POST /webhooks/pagamento/:gateway` | Public | `x-signature` |
+| `POST /webhooks/payment/generic` **(canonical, Honor proxy)** + `POST /webhooks/payment/:gateway` | `POST /webhooks/pagamento/:gateway` | Public | `x-signature` |
 | `POST /webhooks/bridpay` | `POST /webhooks/pagamentos/bridpay` | Public | `x-signature` |
 | `POST /webhooks/appypay` | — | Public | `x-signature` |
 | `POST /webhooks/ekwanza` | — | Public | `x-signature` |
 
 **Gateway param:** `appypay|ekwanza|generic|bridpay|gpo|gpr|kwik`
-**Env:** `PAYMENT_WEBHOOK_SECRET` generic or `PAYMENT_WEBHOOK_SECRET_<GATEWAY>` (e.g., `PAYMENT_WEBHOOK_SECRET_APPYPAY`). If empty, HMAC is skipped (dev only, `logger.warn`).
+**Env (Sadiva):** `PAYMENT_WEBHOOK_SECRET` generic or `PAYMENT_WEBHOOK_SECRET_<GATEWAY>` (e.g., `PAYMENT_WEBHOOK_SECRET_APPYPAY`). If empty, HMAC is skipped (dev only, `logger.warn`). Validated `src/config/env.validation.ts:181` (`>=16`, `!=change-me`), exposed `src/config/configuration.ts:120` `webhook.paymentSecret`.
 
 **Generate signature (Node):**
 ```js
 const sig = crypto.createHmac('sha256', process.env.PAYMENT_WEBHOOK_SECRET).update(JSON.stringify(payload)).digest('hex');
 // header: 'x-signature: ' + sig  or 'sha256=' + sig
-// alternative: update(rawBody string exact) — both tried
+// alternative: update(rawBody string exact) — both tried via timingSafeEqual
 ```
 
 **Generic payload (English-only):**
@@ -815,11 +815,13 @@ const sig = crypto.createHmac('sha256', process.env.PAYMENT_WEBHOOK_SECRET).upda
 ```
 `status` accepts `paid|settled|success|confirmed|approved` → `Payment PAID`, `Order PAID`, `WalletTransaction settled`, buyer notified, enqueues `BullMQ payment-confirmed`. `failed|rejected|cancelled` → `FAILED`. Missing `externalReference` → 400 `MISSING_REFERENCE`. Missing `x-signature` when secret → 400 `MISSING_SIGNATURE`, invalid → 400 `INVALID_SIGNATURE`.
 
-**Idempotency:** `externalReference` is key — `Redis SET webhook:payment:${gateway}:${ref} EX 7d` + `webhookProcessedAt`. 2nd call → `200 { ok:true, idempotent:true, message:"Already processed" }`.
+**Idempotency:** `externalReference` is key — `Redis SET webhook:payment:${gateway}:${ref} EX 7d` + `webhookProcessedAt` (`prisma/schema.prisma:265`). 2nd call → `200 { ok:true, idempotent:true, message:"Already processed" }`.
 
 **E-Kwanza webhook specific:** payload `{ code, operationCode, status }`, HMAC = `HMAC_SHA256( code+operationCode+registrationNumber+token, apiKey)` via `EKWANZA_API_KEY`.
 
 **Frontend:** never call webhooks. Only poll `GET /orders/:id` or `GET /orders/:id/payment` until `PAID` after gateway confirmation.
+
+**Multi-app proxy (Honor ↔ Sadiva) – Sadiva requires no code change:** When the payment gateway can only call one URL (Honor's `POST /webhooks/payment/:gateway`), Honor multiplexes on that same route: identifies `app=honor|sadiva` per request and either handles locally or proxies to Sadiva. Order: `x-app|x-source` header → payload shape (`merchantTransactionId+operationStatus`=AppyPay/Sadiva, `code+operationCode`=E-Kwanza) → `gateway` param → DB lookup `externalReference` → HMAC trial (`HONOR_SECRET` vs `SADIVA_SECRET`). Honor uses namespaced keys `webhook:honor:${gateway}:${ref}` vs `webhook:sadiva:${gateway}:${ref}` and captures `rawBody` (`express.json verify`) for `timingSafeEqual`. Honor env (created from scratch, Honor has none today): `PAYMENT_WEBHOOK_SECRET_HONOR` (new), `PAYMENT_WEBHOOK_SECRET_SADIVA` (= Sadiva's `PAYMENT_WEBHOOK_SECRET` prod), `SADIVA_WEBHOOK_URL=https://api-sadivacloset.himersus.com/api/v1/webhooks/payment/generic` (or `/webhooks/appypay|/webhooks/ekwanza`). Honor re-signs forwarded `rawBody` with `PAYMENT_WEBHOOK_SECRET_SADIVA` (`x-signature`) or forwards original Sadiva signature; Sadiva validates as usual.
 
 ---
 

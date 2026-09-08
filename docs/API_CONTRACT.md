@@ -237,14 +237,14 @@ Backend sets `payment.receiptUrl = receiptUrl` and `status = PROCESSING` (awaiti
 
 | Route (canonical EN – PT alias hidden/deprecated) | Method | Auth | HMAC Header |
 |--------------------------------------------------|--------|------|-------------|
-| `POST /webhooks/payment/:gateway` (alias `POST /webhooks/pagamento/:gateway` hidden) | POST | `Public` | `x-signature` |
+| `POST /webhooks/payment/generic` **(canonical Honor proxy target)** + `POST /webhooks/payment/:gateway` (alias `POST /webhooks/pagamento/:gateway` hidden) | POST | `Public` | `x-signature` |
 | `POST /webhooks/bridpay` (alias `POST /webhooks/pagamentos/bridpay` hidden) | POST | `Public` | `x-signature` |
 | `POST /webhooks/appypay` | POST | `Public` | `x-signature` |
 | `POST /webhooks/ekwanza` | POST | `Public` | `x-signature` |
 
 **Gateway `param`:** `appypay|ekwanza|generic|bridpay|gpo|gpr|kwik`
 
-**Env:** `PAYMENT_WEBHOOK_SECRET` (generic) or `PAYMENT_WEBHOOK_SECRET_<GATEWAY>` (e.g., `PAYMENT_WEBHOOK_SECRET_APPYPAY`). If not set, HMAC check is skipped in dev with `logger.warn`.
+**Env (Sadiva):** `PAYMENT_WEBHOOK_SECRET` (generic) or `PAYMENT_WEBHOOK_SECRET_<GATEWAY>` (e.g., `PAYMENT_WEBHOOK_SECRET_APPYPAY`). If not set, HMAC check is skipped in dev with `logger.warn`.
 
 **Generate signature (Node):**
 ```js
@@ -268,6 +268,23 @@ const sig = crypto.createHmac('sha256', process.env.PAYMENT_WEBHOOK_SECRET).upda
 **Idempotency:** `externalReference` is the key – `Redis SET webhook:payment:${gateway}:${ref} EX 7d` + column `webhookProcessedAt`. Second call with same ref → `200 { ok: true, idempotent: true, message: "Already processed" }` without reprocessing.
 
 **Frontend:** Never call webhooks. Poll `GET /orders/:id` or `GET /orders/:id/payment` until `PAID`.
+
+**Multi-app proxy (Honor ↔ Sadiva):** When the payment gateway can only call **one** webhook URL (Honor), Honor acts as router/multiplexer on its existing `POST /webhooks/payment/:gateway` route and proxies Sadiva payments. **Sadiva requires no code change** – its routes above remain the single source of truth. Honor identifies the target app per request and either handles it locally (`app=honor`) or proxies to Sadiva (`app=sadiva`).
+
+Honor identification order: `x-app|x-source` header → `payload shape` (`merchantTransactionId+operationStatus`=AppyPay/Sadiva, `code+operationCode`=E-Kwanza/Sadiva) → `gateway` param → `DB lookup by externalReference` → `HMAC trial` (`HONOR_SECRET` vs `SADIVA_SECRET`). Honor uses namespaced idempotency keys `webhook:honor:${gateway}:${ref}` vs `webhook:sadiva:${gateway}:${ref}`.
+
+Honor env (Honor has no webhook secret today – create from scratch):
+
+```env
+PAYMENT_WEBHOOK_SECRET_HONOR="openssl-rand-hex-32-honor-32chars"
+PAYMENT_WEBHOOK_SECRET_SADIVA="copie-exatamente-o-PAYMENT_WEBHOOK_SECRET-da-Sadiva-prod"
+SADIVA_WEBHOOK_URL="https://api-sadivacloset.himersus.com/api/v1/webhooks/payment/generic"
+# optional per-gateway:
+PAYMENT_WEBHOOK_SECRET_APPYPAY="mesmo-APPYPAY_WEBHOOK_SECRET-da-Sadiva"
+PAYMENT_WEBHOOK_SECRET_EKWANZA="mesmo-EKWANZA_API_KEY-da-Sadiva"
+```
+
+`PAYMENT_WEBHOOK_SECRET_SADIVA` must be **identical** to Sadiva's `PAYMENT_WEBHOOK_SECRET`; Honor re-signs the forwarded `rawBody` with it (`x-signature: HMAC_SHA256(rawBody, PAYMENT_WEBHOOK_SECRET_SADIVA)`) or forwards the original signature if already signed with Sadiva's secret. `rawBody` capture (`express.json verify: req.rawBody=buf`) is required on Honor for `timingSafeEqual` validation.
 
 ---
 

@@ -19,7 +19,7 @@ export class WebhooksController {
   })
   @ApiParam({
     name: 'gateway',
-    enum: ['ekwanza', 'generic', 'kwik'],
+    enum: ['generic', 'ekwanza', 'kwik', 'appypay', 'bridpay', 'gpo', 'gpr'],
     description: 'Gateway name',
   })
   @ApiResponse({ status: 200, description: 'Success - webhook processed' })
@@ -35,15 +35,34 @@ export class WebhooksController {
   }
 
   @Public()
+  @Post('payment/generic')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Generic payment webhook - canonical (Honor proxy target)',
+    description:
+      'Canonical generic webhook POST /webhooks/payment/generic (also matches POST /webhooks/payment/:gateway with gateway=generic). Validates HMAC x-signature = HMAC_SHA256(rawBody, PAYMENT_WEBHOOK_SECRET) or PAYMENT_WEBHOOK_SECRET_GENERIC, idempotent by externalReference (Redis + webhookProcessedAt), updates Payment/Order to PAID.',
+  })
+  @ApiResponse({ status: 200, description: 'Success - webhook processed' })
+  @ApiResponse({ status: 400, description: 'Bad Request - invalid signature or payload' })
+  async paymentGenericWebhook(
+    @Body() body: any,
+    @Headers() headers: Record<string, string>,
+    @Req() req: any,
+  ) {
+    const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body);
+    return this.paymentsService.handlePagamentoWebhook('generic', rawBody, headers, body);
+  }
+
+  @Public()
   @Post('payment/:gateway')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Generic payment webhook (alias)',
-    description: 'Alias for generic payment webhook',
+    description: 'Alias for generic payment webhook - accepts any gateway param (generic|ekwanza|kwik|appypay|bridpay|gpo|gpr)',
   })
   @ApiParam({
     name: 'gateway',
-    enum: ['ekwanza', 'generic', 'kwik'],
+    enum: ['generic', 'ekwanza', 'kwik', 'appypay', 'bridpay', 'gpo', 'gpr'],
   })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
