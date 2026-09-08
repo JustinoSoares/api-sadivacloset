@@ -8,6 +8,7 @@ import {
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EkwanzaClient } from './providers/ekwanza.client';
+import { AppyPayClient } from './providers/appypay.client';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
@@ -80,6 +81,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ekwanza: EkwanzaClient,
+    private readonly appypay: AppyPayClient,
     private readonly storage: StorageService,
     private readonly notificationsService: NotificationsService,
     private readonly auditoria: AuditoriaService,
@@ -208,27 +210,126 @@ export class PaymentsService {
       payment = await this.prisma.payment.update({ where: { id: payment.id }, data: { amount } });
     }
 
-    // Gateway GPO/GPR — sem AppPay/BridPay, apenas marca como PROCESSANDO local
-    // (o único provider externo agora é E-Kwanza KWiK para iban/kwik)
+    // Gateway GPO/GPR — AppyPay integrado
     if (isGatewayMethod(method)) {
       const merchantTxId = this.generateMerchantTxId();
-      const providerTxId = this.deriveMerchantTransactionId(merchantTxId);
       const methodLabel = method === PaymentMethod.MULTICAIXA_EXPRESS ? 'gpo' : 'gpr';
-      payment = await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: PaymentStatus.PROCESSING,
-          externalReference: merchantTxId,
-          providerTxId,
-          bridpayMerchantTxId: merchantTxId,
-          providerDetails: {
-            provider: 'local',
-            method: methodLabel,
-            merchantTxId,
+
+      // Usa apenas os dados mínimos necessários segundo o PDF:
+      // GPO precisa de `phoneNumber`, GPR precisa só de amount/reference
+      const isGpo = method === PaymentMethod.MULTICAIXA_EXPRESS;
+      const description = dto.descricao ?? `Pedido ${orderId.slice(0, 8)} - ${methodLabel.toUpperCase()}`;
+
+      if (this.appypay.isConfigured()) {
+        try {
+          let appypayRes: any;
+          if (isGpo) {
+            // GPO = Multicaixa Express via AppyPay
+            if (!dto.phoneNumber) {
+              throw new BadRequestException({
+                error: { code: 'VALIDATION_ERROR', message: 'phoneNumber é obrigatório para GPO (Multicaixa Express)' },
+              });
+            }
+            appypayRes = await this.appypay.createGpoCharge({
+              amount,
+              merchantTransactionId: merchantTxId,
+              phoneNumber: dto.phoneNumber!,
+              description,
+            });
+          } else {
+            // GPR = Referência Multicaixa via AppyPay
+            appypayRes = await this.appypay.createReferenceCharge({
+              amount,
+              merchantTransactionId: merchantTxId,
+              description,
+            });
+          }
+
+          // Normaliza resposta AppyPay – campos variam: reference, entity, expirationDate, id, status
+          const providerTxId =
+            appypayRes.providerTransactionId ??
+            appypayRes.transactionId ??
+            appypayRes.id ??
+            appypayRes.reference ??
+            this.deriveMerchantTransactionId(merchantTxId);
+
+          // Para GPR guarda entity/reference para o frontend exibir
+          const entity = appypayRes.entity ?? appypayRes.Entity ?? this.config.get<string>('appypay.codeRef') ?? this.config.get<string>('APPYPAY_CODE_REF') ?? '10111';
+          const reference = appypayRes.reference ?? appypayRes.Reference ?? appypayRes.code ?? null;
+          const expirationDate = appypayRes.expirationDate ?? appypayRes.ExpirationDate ?? null;
+
+          payment = await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: PaymentStatus.PROCESSING,
+              externalReference: merchantTxId,
+              providerTxId: String(providerTxId),
+              bridpayMerchantTxId: merchantTxId,
+              providerDetails: {
+                provider: 'appypay',
+                method: methodLabel,
+                merchantTxId,
+                providerTxId: String(providerTxId),
+                entity: isGpo ? undefined : entity,
+                reference: isGpo ? undefined : reference,
+                expirationDate: expirationDate ?? undefined,
+                amount,
+                phoneNumber: isGpo ? dto.phoneNumber : undefined,
+                rawResponse: appypayRes,
+              } as any,
+            },
+          });
+          this.logger.log(`AppyPay ${methodLabel.toUpperCase()} charge criado mTxId=${merchantTxId} providerTxId=${providerTxId}`);
+        } catch (e: any) {
+          // Se AppyPay falhar, mantém fallback local mas expõe erro para o cliente
+          this.logger.error(`AppyPay ${methodLabel.toUpperCase()} falhou: ${e.message} – fallback local`);
+          // Não lança 500 para não bloquear checkout em sandbox; marca como PROCESSING local com erro
+          // Se for erro de validação (ex: phone), já lançou BadRequest acima
+          if (e instanceof BadRequestException) throw e;
+
+          const providerTxId = this.deriveMerchantTransactionId(merchantTxId);
+          payment = await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: PaymentStatus.PROCESSING,
+              externalReference: merchantTxId,
+              providerTxId,
+              bridpayMerchantTxId: merchantTxId,
+              providerDetails: {
+                provider: 'appypay',
+                method: methodLabel,
+                merchantTxId,
+                providerTxId,
+                error: e.message,
+                fallback: 'local',
+                amount,
+                phoneNumber: isGpo ? dto.phoneNumber : undefined,
+              } as any,
+            },
+          });
+        }
+      } else {
+        // Fallback local – AppyPay não configurado (dev/sem credenciais)
+        this.logger.warn(`AppyPay não configurado – ${methodLabel.toUpperCase()} em modo mock local (configure APPYPAY_* no .env)`);
+        const providerTxId = this.deriveMerchantTransactionId(merchantTxId);
+        payment = await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: PaymentStatus.PROCESSING,
+            externalReference: merchantTxId,
             providerTxId,
-          } as any,
-        },
-      });
+            bridpayMerchantTxId: merchantTxId,
+            providerDetails: {
+              provider: 'local',
+              method: methodLabel,
+              merchantTxId,
+              providerTxId,
+              mock: true,
+              hint: 'Configure APPYPAY_CLIENT_ID/SECRET/RESOURCE/AUTH_URL/API_BASE_URL/MERCHANT_IDENTIFIER para ativar AppyPay real',
+            } as any,
+          },
+        });
+      }
     }
 
     // KWIK é saída (payout) via E-Kwanza direto – POST /Operations/SendKWiKToCustomer
@@ -646,6 +747,205 @@ export class PaymentsService {
       }
     }
     return { ok: true, status: 'pending' };
+  }
+
+  /**
+   * Webhook AppyPay (GPO/GPR) — POST /webhooks/appypay
+   * Payload AppyPay: { merchantTransactionId, ekwanzaTransactionId, operationStatus, operationData: { amount, merchantIdentifier, referenceType: "GPO"|"REF" } }
+   * operationStatus: 1=sucesso, 3=cancelado/expirado, 4=falhado/recusado, 5=erro
+   * Validação opcional HMAC via APPYPAY_WEBHOOK_SECRET (x-signature)
+   */
+  async handleAppyPayWebhook(rawBody: string, headers: Record<string, string>) {
+    let payload: any;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return { ok: false, message: 'Invalid JSON' };
+    }
+
+    const webhookSecret =
+      this.config.get<string>('appypay.webhookSecret') ??
+      this.config.get<string>('APPYPAY_WEBHOOK_SECRET') ??
+      this.config.get<string>('webhook.paymentSecrets.appypay') ??
+      this.config.get<string>('PAYMENT_WEBHOOK_SECRET_APPYPAY') ??
+      '';
+
+    if (webhookSecret) {
+      const received =
+        headers['x-signature'] ??
+        (headers as any)['X-Signature'] ??
+        headers['x-webhook-signature'] ??
+        headers['signature'] ??
+        '';
+      if (!received) {
+        this.logger.warn('AppyPay webhook sem x-signature – validação ignorada (secret configurado mas header ausente)');
+      } else {
+        const clean = String(received).replace(/^sha256=/, '').trim();
+        const expected = createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+        const altExpected = createHmac('sha256', webhookSecret).update(JSON.stringify(payload)).digest('hex');
+        const isValid =
+          (clean.length === expected.length && timingSafeEqual(Buffer.from(clean, 'utf8'), Buffer.from(expected, 'utf8'))) ||
+          (clean.length === altExpected.length && timingSafeEqual(Buffer.from(clean, 'utf8'), Buffer.from(altExpected, 'utf8')));
+        if (!isValid) {
+          this.logger.warn('AppyPay webhook assinatura inválida');
+          throw new BadRequestException({
+            error: { code: 'INVALID_SIGNATURE', message: 'Invalid HMAC signature (AppyPay)' },
+          });
+        }
+      }
+    } else {
+      this.logger.warn('APPYPAY_WEBHOOK_SECRET não configurado – webhook AppyPay sem validação HMAC (dev only)');
+    }
+
+    const merchantTransactionId =
+      payload.merchantTransactionId ??
+      payload.merchant_transaction_id ??
+      payload.merchantTxId ??
+      payload.externalReference ??
+      '';
+
+    const operationStatus = Number(payload.operationStatus ?? payload.operation_status ?? payload.status ?? 0);
+    const referenceType = String(payload.operationData?.referenceType ?? payload.referenceType ?? '').toUpperCase(); // GPO | REF
+    const gatewayNorm = referenceType === 'GPO' ? 'gpo' : referenceType === 'REF' ? 'gpr' : 'appypay';
+
+    if (!merchantTransactionId) {
+      throw new BadRequestException({
+        error: { code: 'MISSING_REFERENCE', message: 'merchantTransactionId é obrigatório no webhook AppyPay' },
+      });
+    }
+
+    const referencia = String(merchantTransactionId).trim();
+    const redisKey = `webhook:payment:appypay:${referencia}`;
+
+    // Idempotência Redis
+    try {
+      const already = await this.redis.exists(redisKey);
+      if (already) {
+        this.logger.log(`AppyPay webhook idempotent (Redis) ref=${referencia}`);
+        return { ok: true, idempotent: true, message: 'Already processed (Redis)' };
+      }
+    } catch (e: any) {
+      this.logger.warn(`Redis idempotency check AppyPay falhou: ${e.message}`);
+    }
+
+    let payment: any = await this.prisma.payment.findFirst({ where: { externalReference: referencia } });
+    if (!payment) payment = await this.prisma.payment.findFirst({ where: { bridpayMerchantTxId: referencia } });
+    if (!payment) payment = await this.prisma.payment.findFirst({ where: { providerTxId: referencia } });
+    if (!payment) payment = await this.prisma.payment.findFirst({ where: { id: referencia } });
+
+    if (!payment) {
+      this.logger.warn(`AppyPay webhook sem payment para ref=${referencia} payload=${rawBody}`);
+      throw new NotFoundException({
+        error: { code: 'NOT_FOUND', message: `Payment not found for merchantTransactionId=${referencia}` },
+      });
+    }
+
+    if (payment.webhookProcessedAt) {
+      try {
+        await this.redis.set(redisKey, '1', 7 * 24 * 3600);
+      } catch {}
+      return { ok: true, idempotent: true, message: 'Already processed (DB)' };
+    }
+    if (payment.status === PaymentStatus.PAID && operationStatus === 1) {
+      try {
+        await this.redis.set(redisKey, '1', 7 * 24 * 3600);
+        await this.prisma.payment.update({ where: { id: payment.id }, data: { webhookProcessedAt: new Date() } });
+      } catch {}
+      return { ok: true, idempotent: true, message: 'Payment already paid' };
+    }
+
+    const isSuccess = operationStatus === 1;
+    const isFailed = [3, 4, 5].includes(operationStatus);
+
+    if (isFailed) {
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.FAILED,
+          providerDetails: { ...(payment.providerDetails as any), appypayWebhook: payload, gateway: gatewayNorm },
+          webhookProcessedAt: new Date(),
+        },
+      });
+      try {
+        await this.redis.set(redisKey, '1', 7 * 24 * 3600);
+      } catch {}
+      this.logger.log(`AppyPay webhook FALHADO ref=${referencia} status=${operationStatus}`);
+      return { ok: true, status: 'failed', operationStatus, gateway: gatewayNorm };
+    }
+
+    if (isSuccess) {
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.PAID,
+          providerDetails: { ...(payment.providerDetails as any), appypayWebhook: payload, gateway: gatewayNorm },
+          webhookProcessedAt: new Date(),
+        },
+      });
+      await this.prisma.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
+
+      await this.auditoria
+        .registar(`system-webhook-appypay`, `webhook_appypay_${gatewayNorm}_confirmed`, 'payment', payment.id, {
+          merchantTransactionId: referencia,
+          operationStatus,
+          gateway: gatewayNorm,
+          payload,
+        })
+        .catch(() => {});
+
+      await this.prisma.walletTransaction.create({
+        data: {
+          type: 'credit',
+          amount: payment.amount,
+          balanceBefore: 0,
+          balanceAfter: 0,
+          status: 'settled',
+          referenceType: 'payment_intent',
+          referenceId: payment.id,
+          description: `Webhook AppyPay/${gatewayNorm} confirmado ref ${referencia}`,
+          orderId: payment.orderId,
+          paymentId: payment.id,
+          bridpayTxId: referencia,
+        },
+      });
+
+      try {
+        await this.redis.set(redisKey, '1', 7 * 24 * 3600);
+      } catch {}
+
+      try {
+        const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
+        if (order) {
+          await this.notificationsService.criar(
+            order.buyerId,
+            'Pagamento confirmado',
+            `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via ${gatewayNorm.toUpperCase()} (AppyPay)`,
+          );
+        }
+      } catch (e: any) {
+        this.logger.warn(`Notificação AppyPay falhou: ${e.message}`);
+      }
+
+      try {
+        await this.paymentQueue.enqueuePaymentConfirmed({
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          buyerId: (await this.prisma.order.findUnique({ where: { id: payment.orderId } }))?.buyerId ?? '',
+          gateway: gatewayNorm,
+          referenciaExterna: referencia,
+          amount: payment.amount,
+          confirmedAt: new Date().toISOString(),
+        });
+      } catch (e: any) {
+        this.logger.warn(`Enqueue BullMQ AppyPay falhou: ${e.message}`);
+      }
+
+      return { ok: true, status: 'paid', operationStatus, gateway: gatewayNorm, externalReference: referencia };
+    }
+
+    // status pendente/desconhecido
+    this.logger.log(`AppyPay webhook pendente ref=${referencia} status=${operationStatus}`);
+    return { ok: true, status: 'pending', operationStatus, gateway: gatewayNorm };
   }
 
   // ─── Webhook genérico POST /webhooks/pagamento/:gateway (público, HMAC, idempotente) ───

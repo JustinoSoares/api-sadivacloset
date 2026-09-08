@@ -11,10 +11,27 @@ export interface AppConfig {
   };
   ekwanza: {
     apiBaseUrl: string;
+    urlKwik: string;
     notificationToken: string;
     apiKey: string;
     merchantRegistrationNumber: string;
     httpTimeoutMs: number;
+  };
+  appypay: {
+    environment: string;
+    authUrl: string;
+    tenant: string;
+    clientId: string;
+    clientSecret: string;
+    resource: string;
+    apiBaseUrl: string;
+    merchantIdentifier: string;
+    optionsApiKey: string;
+    paymentMethodReference: string;
+    paymentMethodGpo: string;
+    webhookSecret: string;
+    httpTimeoutMs: number;
+    codeRef: string;
   };
   cors: {
     allowedOrigins: string[];
@@ -69,10 +86,29 @@ export default (): AppConfig => ({
   },
   ekwanza: {
     apiBaseUrl: process.env.EKWANZA_API_BASE_URL!,
+    urlKwik: process.env.EKWANZA_URL_KWIK || process.env.EKWANZA_API_BASE_URL!,
     notificationToken: process.env.EKWANZA_NOTIFICATION_TOKEN!,
     apiKey: process.env.EKWANZA_API_KEY!,
     merchantRegistrationNumber: process.env.EKWANZA_MERCHANT_REGISTRATION_NUMBER!,
     httpTimeoutMs: parseInt(process.env.EKWANZA_HTTP_TIMEOUT_MS!, 10),
+  },
+  appypay: {
+    environment: process.env.APPYPAY_ENVIRONMENT || 'sandbox',
+    authUrl: process.env.APPYPAY_AUTH_URL || '',
+    tenant: process.env.APPYPAY_TENANT || '',
+    clientId: process.env.APPYPAY_CLIENT_ID || '',
+    clientSecret: process.env.APPYPAY_CLIENT_SECRET || '',
+    resource: process.env.APPYPAY_RESOURCE || '',
+    apiBaseUrl: process.env.APPYPAY_API_BASE_URL || '',
+    merchantIdentifier: process.env.APPYPAY_MERCHANT_IDENTIFIER || '',
+    optionsApiKey: process.env.APPYPAY_OPTIONS_API_KEY || '',
+    paymentMethodReference: process.env.APPYPAY_PAYMENT_METHOD_REFERENCE || '',
+    paymentMethodGpo: process.env.APPYPAY_PAYMENT_METHOD_GPO || '',
+    webhookSecret: process.env.APPYPAY_WEBHOOK_SECRET || '',
+    httpTimeoutMs: process.env.APPYPAY_HTTP_TIMEOUT_MS
+      ? parseInt(process.env.APPYPAY_HTTP_TIMEOUT_MS, 10)
+      : 60000,
+    codeRef: process.env.APPYPAY_CODE_REF || '10111',
   },
   cors: parseCorsOrigins(
     process.env.CORS_ALLOWED_ORIGINS || process.env.CORS_ORIGIN || '',

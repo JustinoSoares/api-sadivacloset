@@ -67,16 +67,33 @@ export const envValidationSchema = Joi.object({
       'string.pattern.base': '"JWT_REFRESH_EXPIRES_IN" deve ser no formato 15m, 1h, 7d',
     }),
 
-  // ── E-KWANZA (único gateway) ──
+  // ── E-KWANZA (único gateway legado) ──
   EKWANZA_API_BASE_URL: Joi.string()
     .uri()
     .optional()
     .default('https://api.e-kwanza.co.ao')
     .allow(''),
+  EKWANZA_URL_KWIK: Joi.string().uri().optional().allow('').default(''),
   EKWANZA_NOTIFICATION_TOKEN: Joi.string().allow('').optional().default(''),
   EKWANZA_API_KEY: Joi.string().allow('').optional().default(''),
   EKWANZA_MERCHANT_REGISTRATION_NUMBER: Joi.string().allow('').optional().default(''),
   EKWANZA_HTTP_TIMEOUT_MS: Joi.number().positive().optional().default(10000),
+
+  // ── APPYPAY (GPO – Multicaixa Express / GPR – Referência) ──
+  APPYPAY_ENVIRONMENT: Joi.string().valid('sandbox', 'production', 'sandbox', 'prod').allow('').optional().default('sandbox'),
+  APPYPAY_AUTH_URL: Joi.string().uri().allow('').optional().default(''),
+  APPYPAY_TENANT: Joi.string().allow('').optional().default(''),
+  APPYPAY_CLIENT_ID: Joi.string().allow('').optional().default(''),
+  APPYPAY_CLIENT_SECRET: Joi.string().allow('').optional().default(''),
+  APPYPAY_RESOURCE: Joi.string().allow('').optional().default(''),
+  APPYPAY_API_BASE_URL: Joi.string().uri().allow('').optional().default(''),
+  APPYPAY_MERCHANT_IDENTIFIER: Joi.string().allow('').optional().default(''),
+  APPYPAY_OPTIONS_API_KEY: Joi.string().allow('').optional().default(''),
+  APPYPAY_PAYMENT_METHOD_REFERENCE: Joi.string().allow('').optional().default(''),
+  APPYPAY_PAYMENT_METHOD_GPO: Joi.string().allow('').optional().default(''),
+  APPYPAY_WEBHOOK_SECRET: Joi.string().allow('').optional().default(''),
+  APPYPAY_HTTP_TIMEOUT_MS: Joi.number().positive().optional().default(60000),
+  APPYPAY_CODE_REF: Joi.string().allow('').optional().default('10111'),
 
   // ── CORS ──
   // Lista de origens permitidas separadas por vírgula, ex: https://app.com,https://admin.app.com

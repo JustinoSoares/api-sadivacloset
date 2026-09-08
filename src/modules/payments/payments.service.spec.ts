@@ -4,6 +4,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EkwanzaClient } from './providers/ekwanza.client';
+import { AppyPayClient } from './providers/appypay.client';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentStatus, OrderStatus } from '@prisma/client';
@@ -75,6 +76,13 @@ describe('PaymentsService', () => {
       }),
       createTicket: jest.fn().mockResolvedValue({ Code: 'code123', Status: 0 }),
     };
+    const appypay = {
+      isConfigured: jest.fn().mockReturnValue(false),
+      createGpoCharge: jest.fn().mockResolvedValue({ id: 'appypay-id', reference: '123456789' }),
+      createReferenceCharge: jest.fn().mockResolvedValue({ id: 'appypay-ref', reference: '987654321', entity: '10111' }),
+      createCharge: jest.fn().mockResolvedValue({ id: 'appypay-id' }),
+      getAccessToken: jest.fn().mockResolvedValue('token-test'),
+    };
     storage = { saveComprovativo: jest.fn().mockResolvedValue('/uploads/test.jpg') };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -89,6 +97,7 @@ describe('PaymentsService', () => {
         PaymentsService,
         { provide: PrismaService, useValue: prisma },
         { provide: EkwanzaClient, useValue: ekwanza },
+        { provide: AppyPayClient, useValue: appypay },
         { provide: StorageService, useValue: storage },
         {
           provide: NotificationsService,

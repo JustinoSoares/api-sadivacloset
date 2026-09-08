@@ -78,4 +78,30 @@ export class WebhooksController {
         : JSON.stringify(body);
     return this.paymentsService.handleEkwanzaWebhook(rawBody, headers);
   }
+
+  @Public()
+  @Post('appypay')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'AppyPay webhook (GPO - Multicaixa Express / GPR - Referência)',
+    description:
+      'Recebe callback da AppyPay. Payload: { merchantTransactionId, ekwanzaTransactionId, operationStatus: 1|3|4|5, operationData: { amount, merchantIdentifier, referenceType: GPO|REF } }. operationStatus 1=sucesso → marca Payment/Order como PAID.',
+  })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async appypayWebhook(@Headers() headers: Record<string, string>, @Req() req: any, @Body() body: any) {
+    const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body);
+    return this.paymentsService.handleAppyPayWebhook(rawBody, headers);
+  }
+
+  // Alias para gateway genérico também aceitar appypay via /webhooks/payment/:gateway
+  @Public()
+  @Post('payment/appypay')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'AppyPay webhook alias (payment/appypay)', description: 'Alias para POST /webhooks/appypay' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async appypayAlias(@Headers() headers: Record<string, string>, @Req() req: any, @Body() body: any) {
+    const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body);
+    return this.paymentsService.handleAppyPayWebhook(rawBody, headers);
+  }
 }
