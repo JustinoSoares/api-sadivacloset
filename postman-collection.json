@@ -13,8 +13,12 @@
         "header": [],
         "url": {
           "raw": "{{host}}/health",
-          "host": ["{{host}}"],
-          "path": ["health"]
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "health"
+          ]
         },
         "description": "Health check publico sem /api/v1. Deve retornar {status:\"ok\", database:\"up\"}"
       }
@@ -23,8 +27,22 @@
       "name": "01 Auth - Register Buyer",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"name\": \"Maria Silva\",\n  \"email\": \"maria.teste.{{$timestamp}}@teste.com\",\n  \"password\": \"StrongPass123\"\n}"
@@ -51,8 +69,22 @@
       "name": "01b Auth - Register Buyer FIXO (para login repetido)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"name\": \"Comprador Teste\",\n  \"email\": \"comprador@teste.com\",\n  \"password\": \"StrongPass123\"\n}"
@@ -64,8 +96,22 @@
       "name": "02 Auth - Login Buyer",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"email\": \"comprador@teste.com\",\n  \"password\": \"StrongPass123\"\n}"
@@ -93,8 +139,22 @@
       "name": "03 Auth - Login Admin (seed)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"email\": \"admin@sadivacloset.local\",\n  \"password\": \"Admin@123\"\n}"
@@ -121,17 +181,47 @@
       "name": "04 Auth - Get Profile (JWT)",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/profile",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile"
+          ]
+        }
       }
     },
     {
       "name": "04b Auth - Refresh Token",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth","refresh"] },
-        "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}" }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+        }
       },
       "event": [
         {
@@ -156,9 +246,22 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/products?page=1&limit=12",
-          "host": ["{{baseUrl}}"],
-          "path": ["products"],
-          "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "12" }]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "12"
+            }
+          ]
         },
         "description": "Paginado, filtrável. Query adicionais: q=Suit&category=SUITS,SHIRTS&size=M&condition=NEW&price_min=10000&price_max=50000&sort=price_asc"
       },
@@ -186,7 +289,16 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}"
+          ]
+        }
       }
     },
     {
@@ -194,7 +306,15 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] }
+        "url": {
+          "raw": "{{baseUrl}}/categories",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "categories"
+          ]
+        }
       }
     },
     {
@@ -202,7 +322,15 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": { "raw": "{{baseUrl}}/delivery-zones", "host": ["{{baseUrl}}"], "path": ["delivery-zones"] }
+        "url": {
+          "raw": "{{baseUrl}}/delivery-zones",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "delivery-zones"
+          ]
+        }
       },
       "event": [
         {
@@ -227,10 +355,25 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/profile/addresses", "host": ["{{baseUrl}}"], "path": ["profile","addresses"] },
+        "url": {
+          "raw": "{{baseUrl}}/profile/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile",
+            "addresses"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"label\": \"Home\",\n  \"province\": \"Luanda\",\n  \"municipality\": \"Talatona\",\n  \"neighborhood\": \"Talatona\",\n  \"street\": \"Rua da Samba 123\",\n  \"reference\": \"Perto do Kero Talatona\",\n  \"latitude\": -8.8368,\n  \"longitude\": 13.2344\n}"
@@ -256,16 +399,46 @@
       "name": "10 Address - List",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/profile/addresses", "host": ["{{baseUrl}}"], "path": ["profile","addresses"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/profile/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile",
+            "addresses"
+          ]
+        }
       }
     },
     {
       "name": "11 Address - Set Default",
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/profile/addresses/{{addressId}}/default", "host": ["{{baseUrl}}"], "path": ["profile","addresses","{{addressId}}","default"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/profile/addresses/{{addressId}}/default",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile",
+            "addresses",
+            "{{addressId}}",
+            "default"
+          ]
+        }
       }
     },
     {
@@ -273,11 +446,29 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart","items"] },
-        "body": { "mode": "raw", "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}" }
+        "url": {
+          "raw": "{{baseUrl}}/cart/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "items"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+        }
       },
       "event": [
         {
@@ -298,19 +489,50 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart","items"] },
-        "body": { "mode": "raw", "raw": "{\n  \"productId\": \"{{productId2}}\",\n  \"quantity\": 2\n}" }
+        "url": {
+          "raw": "{{baseUrl}}/cart/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "items"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{productId2}}\",\n  \"quantity\": 2\n}"
+        }
       }
     },
     {
       "name": "13 Cart - Get (com subtotal)",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        }
       }
     },
     {
@@ -318,11 +540,30 @@
       "request": {
         "method": "PATCH",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/cart/items/{{cartItemId}}", "host": ["{{baseUrl}}"], "path": ["cart","items","{{cartItemId}}"] },
-        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" }
+        "url": {
+          "raw": "{{baseUrl}}/cart/items/{{cartItemId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "items",
+            "{{cartItemId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 2\n}"
+        }
       }
     },
     {
@@ -330,10 +571,24 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/checkout", "host": ["{{baseUrl}}"], "path": ["checkout"] },
+        "url": {
+          "raw": "{{baseUrl}}/checkout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "checkout"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"type\": \"HOME_DELIVERY\",\n  \"scheduledDate\": \"2026-09-15\",\n  \"timeWindow\": \"09:00-12:00\",\n  \"addressId\": \"{{addressId}}\",\n  \"deliveryZoneId\": \"{{deliveryZoneId}}\"\n}"
@@ -361,10 +616,24 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/checkout", "host": ["{{baseUrl}}"], "path": ["checkout"] },
+        "url": {
+          "raw": "{{baseUrl}}/checkout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "checkout"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"type\": \"STORE_PICKUP\",\n  \"scheduledDate\": \"2026-09-16\",\n  \"timeWindow\": \"14:00-17:00\"\n}"
@@ -386,20 +655,53 @@
       "name": "16 Order - Get Detail",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}"
+          ]
+        }
       }
     },
     {
       "name": "17 Order - List My Orders",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/profile/orders?page=1&limit=10",
-          "host": ["{{baseUrl}}"],
-          "path": ["profile","orders"],
-          "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile",
+            "orders"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
         }
       }
     },
@@ -408,11 +710,31 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","payment","init"] },
-        "body": { "mode": "raw", "raw": "{\n  \"method\": \"gpo\",\n  \"phoneNumber\": \"923456789\",\n  \"description\": \"Pedido {{orderId}} - GPO\"\n}" },
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "payment",
+            "init"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"gpo\",\n  \"phoneNumber\": \"923456789\",\n  \"description\": \"Pedido {{orderId}} - GPO\"\n}"
+        },
         "description": "Aliases: gpo|MULTICAIXA_EXPRESS|multicaixa_express. Retorna externalReference 15 chars em PROCESSING."
       },
       "event": [
@@ -437,11 +759,31 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","payment","init"] },
-        "body": { "mode": "raw", "raw": "{\n  \"method\": \"gpr\",\n  \"description\": \"Pedido {{orderId}} - GPR\"\n}" },
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "payment",
+            "init"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"gpr\",\n  \"description\": \"Pedido {{orderId}} - GPR\"\n}"
+        },
         "description": "Aliases: gpr|MULTICAIXA_REFERENCE|reference. providerDetails tem entity/reference/expirationDate para exibir."
       },
       "event": [
@@ -465,11 +807,31 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","payment","init"] },
-        "body": { "mode": "raw", "raw": "{\n  \"method\": \"BANK_TRANSFER\",\n  \"description\": \"Transferencia pedido {{orderId}}\"\n}" }
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/payment/init",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "payment",
+            "init"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"BANK_TRANSFER\",\n  \"description\": \"Transferencia pedido {{orderId}}\"\n}"
+        }
       },
       "event": [
         {
@@ -490,19 +852,56 @@
       "name": "21 Payment - Get Status",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/payment", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","payment"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/payment",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "payment"
+          ]
+        }
       }
     },
     {
       "name": "22 Payment - Upload Receipt (BANK_TRANSFER)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/payment/receipt", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","payment","receipt"] },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/payment/receipt",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "payment",
+            "receipt"
+          ]
+        },
         "body": {
           "mode": "formdata",
-          "formdata": [{ "key": "file", "type": "file", "src": [] }]
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
         },
         "description": "Para BANK_TRANSFER. Envia comprovativo (max 5MB). Se API estiver com storage local, arquivo salvo em /uploads. Alternativa JSON: {\"receiptUrl\":\"https://...\"} depende da config."
       }
@@ -512,10 +911,25 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "x-signature", "value": "" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-signature",
+            "value": ""
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/webhooks/appypay", "host": ["{{baseUrl}}"], "path": ["webhooks","appypay"] },
+        "url": {
+          "raw": "{{baseUrl}}/webhooks/appypay",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "webhooks",
+            "appypay"
+          ]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"merchantTransactionId\": \"{{externalReference}}\",\n  \"operationStatus\": 1,\n  \"operationData\": {\n    \"referenceType\": \"GPO\",\n    \"amount\": 83500\n  }\n}"
@@ -528,11 +942,30 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "x-signature", "value": "" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-signature",
+            "value": ""
+          }
         ],
-        "url": { "raw": "{{baseUrl}}/webhooks/payment/generic", "host": ["{{baseUrl}}"], "path": ["webhooks","payment","generic"] },
-        "body": { "mode": "raw", "raw": "{\n  \"externalReference\": \"{{externalReference}}\",\n  \"status\": \"paid\"\n}" },
+        "url": {
+          "raw": "{{baseUrl}}/webhooks/payment/generic",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "webhooks",
+            "payment",
+            "generic"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"externalReference\": \"{{externalReference}}\",\n  \"status\": \"paid\"\n}"
+        },
         "description": "Webhook generico idempotente. Se PAYMENT_WEBHOOK_SECRET configurado, gere HMAC: echo -n '{\"externalReference\":\"{{externalReference}}\",\"status\":\"paid\"}' | openssl dgst -sha256 -hmac $PAYMENT_WEBHOOK_SECRET . Sem secret aceita sem x-signature em dev."
       }
     },
@@ -540,8 +973,24 @@
       "name": "25 Admin - Validar Pagamento Manual",
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/validar", "host": ["{{baseUrl}}"], "path": ["admin","payments","{{paymentId}}","validar"] },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/validar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "payments",
+            "{{paymentId}}",
+            "validar"
+          ]
+        },
         "description": "Alternativa ao webhook: admin valida e pedido vira PAID. Precisa admin_access_token."
       }
     },
@@ -549,20 +998,53 @@
       "name": "26 Verificar - Order virou PAID",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}"
+          ]
+        }
       }
     },
     {
       "name": "27 Wallet - Historico",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/wallet/history?page=1&limit=20",
-          "host": ["{{baseUrl}}"],
-          "path": ["wallet","history"],
-          "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "wallet",
+            "history"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
         }
       }
     },
@@ -570,16 +1052,46 @@
       "name": "28 Cart - Remove Item",
       "request": {
         "method": "DELETE",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/cart/items/{{cartItemId}}", "host": ["{{baseUrl}}"], "path": ["cart","items","{{cartItemId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/items/{{cartItemId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "items",
+            "{{cartItemId}}"
+          ]
+        }
       }
     },
     {
       "name": "29 Order - Cancel (se nao estiver ON_THE_WAY)",
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/cancel", "host": ["{{baseUrl}}"], "path": ["orders","{{orderId}}","cancel"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/cancel",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "cancel"
+          ]
+        }
       }
     },
     {
@@ -590,30 +1102,117 @@
           "name": "ADMIN 01 - Products - List (paginado)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/products?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["admin","products"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
             "description": "Lista admin com filtros: ?q=&category=SUITS&size=M&condition=NEW&price_min=&price_max=&sort= . Cache invalidado no create/update/delete."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminProductId', j.data[0].id); console.log('adminProductId', j.data[0].id); } }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminProductId', j.data[0].id); console.log('adminProductId', j.data[0].id); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 02 - Products - Create (adiciona stock)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/products", "host": ["{{baseUrl}}"], "path": ["admin","products"] },
-            "body": { "mode": "raw", "raw": "{\n  \"image\": \"https://picsum.photos/seed/admin-teste/600/800\",\n  \"name\": \"Admin Teste Suit {{$timestamp}}\",\n  \"description\": \"Terno criado pelo admin para teste de stock\",\n  \"category\": \"SUITS\",\n  \"size\": \"M\",\n  \"condition\": \"NEW\",\n  \"stock\": 50,\n  \"price\": 35000,\n  \"discount\": 5\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"https://picsum.photos/seed/admin-teste/600/800\",\n  \"name\": \"Admin Teste Suit {{$timestamp}}\",\n  \"description\": \"Terno criado pelo admin para teste de stock\",\n  \"category\": \"SUITS\",\n  \"size\": \"M\",\n  \"condition\": \"NEW\",\n  \"stock\": 50,\n  \"price\": 35000,\n  \"discount\": 5\n}"
+            },
             "description": "Dto: src/modules/admin/products/dto/create-product.dto.ts:36 . category: SUITS|SHIRTS|DRESSES|OTHERS, condition: NEW|PRE_OWNED, stock>=0, price>=0, discount 0-100. price é inteiro em Kz (ex 35000)."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===201){ const j=pm.response.json(); pm.environment.set('adminProductId', j.data.id); pm.environment.set('productId', j.data.id); console.log('criado adminProductId', j.data.id); }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===201){ const j=pm.response.json(); pm.environment.set('adminProductId', j.data.id); pm.environment.set('productId', j.data.id); console.log('criado adminProductId', j.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 03 - Products - Update (edita stock/preco)",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/products/{{adminProductId}}", "host": ["{{baseUrl}}"], "path": ["admin","products","{{adminProductId}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"stock\": 100,\n  \"price\": 30000,\n  \"discount\": 10,\n  \"name\": \"Admin Teste Suit ATUALIZADO\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/{{adminProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products",
+                "{{adminProductId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 100,\n  \"price\": 30000,\n  \"discount\": 10,\n  \"name\": \"Admin Teste Suit ATUALIZADO\"\n}"
+            },
             "description": "PartialType de CreateProductDto - envie só o que quer alterar. Use para repor stock após testes."
           }
         },
@@ -621,27 +1220,103 @@
           "name": "ADMIN 04 - Products - Delete",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/products/{{adminProductId}}", "host": ["{{baseUrl}}"], "path": ["admin","products","{{adminProductId}}"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/{{adminProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products",
+                "{{adminProductId}}"
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 05 - Orders - List (filtros)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/orders?page=1&limit=20&status=paid", "host": ["{{baseUrl}}"], "path": ["admin","orders"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "status", "value": "" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders?page=1&limit=20&status=paid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            },
             "description": "Filtros: status=awaiting_payment|paid|preparing|shipping|completed|cancelled, from=2026-01-01&to=2026-12-31. Sem query lista todos. Salva adminOrderId."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminOrderId', j.data[0].id); console.log('adminOrderId', j.data[0].id, j.data[0].status); } }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminOrderId', j.data[0].id); console.log('adminOrderId', j.data[0].id, j.data[0].status); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 06 - Orders - Update Status",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/orders/{{adminOrderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin","orders","{{adminOrderId}}","status"] },
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"preparing\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/{{adminOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                "{{adminOrderId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"preparing\"\n}"
+            },
             "description": "src/modules/admin/orders/dto/update-order-status.dto.ts:34 . Valores: awaiting_payment|paid|preparing|shipping|completed|cancelled (alias PT: aguardando_pagamento|pago|em_preparacao|em_entrega|concluido|cancelado). Gera audit log e notifica buyer."
           }
         },
@@ -649,19 +1324,76 @@
           "name": "ADMIN 07 - Deliveries - List",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/deliveries?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["admin","deliveries"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/deliveries?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "deliveries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
             "description": "Lista entregas paginadas. Filtros: status=scheduled|on_the_way|delivered|failed|cancelled"
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminDeliveryId', j.data[0].id); console.log('adminDeliveryId', j.data[0].id); } }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminDeliveryId', j.data[0].id); console.log('adminDeliveryId', j.data[0].id); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 08 - Deliveries - Update Status",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/deliveries/{{adminDeliveryId}}/status", "host": ["{{baseUrl}}"], "path": ["admin","deliveries","{{adminDeliveryId}}","status"] },
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"on_the_way\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/deliveries/{{adminDeliveryId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "deliveries",
+                "{{adminDeliveryId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"on_the_way\"\n}"
+            },
             "description": "src/modules/admin/deliveries/dto/update-delivery-status.dto.ts:32 . Valores: scheduled|on_the_way|delivered|failed|cancelled (PT: agendada|a_caminho|entregue|falhada|cancelada)"
           }
         },
@@ -669,42 +1401,177 @@
           "name": "ADMIN 09 - Payments - Historico Global",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/payments/historico?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["admin","payments","historico"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments/historico?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "historico"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 10 - Payments - Carteira Global (credits/debits)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/payments/carteira/historico?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["admin","payments","carteira","historico"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments/carteira/historico?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "carteira",
+                "historico"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 11 - Members - List Buyers",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/members?page=1&limit=20&q=comprador", "host": ["{{baseUrl}}"], "path": ["admin","members"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "q", "value": "" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/members?page=1&limit=20&q=comprador",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            },
             "description": "Busca por q/search/pesquisa em name/email. Retorna orderCount e totalSpent."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('memberId', j.data[0].id); console.log('memberId', j.data[0].id, j.data[0].email); } }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('memberId', j.data[0].id); console.log('memberId', j.data[0].id, j.data[0].email); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 12 - Members - Orders do Membro",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/members/{{memberId}}/orders?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["admin","members","{{memberId}}","orders"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/members/{{memberId}}/orders?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "members",
+                "{{memberId}}",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 13 - Statistics - Dashboard",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/statistics?days=30", "host": ["{{baseUrl}}"], "path": ["admin","statistics"], "query": [{ "key": "days", "value": "30" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/statistics?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "statistics"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
             "description": "Retorna totalRevenue (paid/completed), productCount, memberCount, orderCount + variação vs período anterior. Query alternativa: ?from=2026-01-01&to=2026-12-31&page=1&limit=10"
           }
         },
@@ -712,17 +1579,52 @@
           "name": "ADMIN 14 - Store - Get Config",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/store", "host": ["{{baseUrl}}"], "path": ["admin","store"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "store"
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 15 - Store - Update Config",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/store", "host": ["{{baseUrl}}"], "path": ["admin","store"] },
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"SadivaCloset\",\n  \"email\": \"contacto@sadivacloset.co.ao\",\n  \"phone\": \"+244 900 000 000\",\n  \"address\": \"Luanda, Talatona, Rua da Samba 123\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "store"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SadivaCloset\",\n  \"email\": \"contacto@sadivacloset.co.ao\",\n  \"phone\": \"+244 900 000 000\",\n  \"address\": \"Luanda, Talatona, Rua da Samba 123\"\n}"
+            },
             "description": "src/modules/admin/store/dto/update-store.dto.ts:7 . Todos opcionais: name (2-100), email, phone (8-20), address (5-500)"
           }
         },
@@ -730,17 +1632,52 @@
           "name": "ADMIN 16 - Preferences - Get",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/preferences", "host": ["{{baseUrl}}"], "path": ["admin","preferences"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "preferences"
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 17 - Preferences - Update",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/preferences", "host": ["{{baseUrl}}"], "path": ["admin","preferences"] },
-            "body": { "mode": "raw", "raw": "{\n  \"notifyNewOrders\": true,\n  \"notifyLowStock\": true,\n  \"notifyNewMessages\": true,\n  \"defaultDeliveryFee\": 2500,\n  \"activePaymentMethods\": [\"MULTICAIXA_EXPRESS\",\"MULTICAIXA_REFERENCE\",\"BANK_TRANSFER\",\"CASH_ON_DELIVERY\"]\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "preferences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notifyNewOrders\": true,\n  \"notifyLowStock\": true,\n  \"notifyNewMessages\": true,\n  \"defaultDeliveryFee\": 2500,\n  \"activePaymentMethods\": [\"MULTICAIXA_EXPRESS\",\"MULTICAIXA_REFERENCE\",\"BANK_TRANSFER\",\"CASH_ON_DELIVERY\"]\n}"
+            },
             "description": "src/modules/admin/preferences/dto/update-preferences.dto.ts:30 . activePaymentMethods: MULTICAIXA_EXPRESS|MULTICAIXA_REFERENCE|BANK_TRANSFER|CASH_ON_DELIVERY|CARD (alias gpo/gpr/transferencia)"
           }
         },
@@ -748,17 +1685,52 @@
           "name": "ADMIN 18 - Account - Get",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/account", "host": ["{{baseUrl}}"], "path": ["admin","account"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "account"
+              ]
+            }
           }
         },
         {
           "name": "ADMIN 19 - Account - Update (e troca senha)",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/account", "host": ["{{baseUrl}}"], "path": ["admin","account"] },
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Admin SadivaCloset\",\n  \"email\": \"admin@sadivacloset.local\",\n  \"currentPassword\": \"Admin@123\",\n  \"newPassword\": \"Admin@123\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "account"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin SadivaCloset\",\n  \"email\": \"admin@sadivacloset.local\",\n  \"currentPassword\": \"Admin@123\",\n  \"newPassword\": \"Admin@123\"\n}"
+            },
             "description": "src/modules/admin/account/dto/update-account.dto.ts:7 . Para trocar senha precisa currentPassword + newPassword (min 8). Se não quiser trocar, omita os dois."
           }
         },
@@ -766,8 +1738,32 @@
           "name": "ADMIN 20 - Audit - Logs",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/audit?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["admin","audit"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
             "description": "Filtros: ?entity=product&from=2026-01-01&to=2026-12-31 . Registra validate_payment, update_status etc."
           }
         },
@@ -775,30 +1771,107 @@
           "name": "ADMIN 21 - Delivery Zones - List Admin",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/delivery-zones", "host": ["{{baseUrl}}"], "path": ["admin","delivery-zones"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/delivery-zones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "delivery-zones"
+              ]
+            },
             "description": "NOVO: Lista todas zonas para admin (sem cache). Use para pegar id antes de update/delete."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminDeliveryZoneId', j.data[0].id); console.log('adminDeliveryZoneId', j.data[0].id, j.data[0].neighborhood); } }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===200){ const j=pm.response.json(); if(j.data && j.data.length>0){ pm.environment.set('adminDeliveryZoneId', j.data[0].id); console.log('adminDeliveryZoneId', j.data[0].id, j.data[0].neighborhood); } }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 22 - Delivery Zones - Create (NOVO)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/delivery-zones", "host": ["{{baseUrl}}"], "path": ["admin","delivery-zones"] },
-            "body": { "mode": "raw", "raw": "{\n  \"neighborhood\": \"Nova Zona {{$timestamp}}\",\n  \"price\": 3500\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/delivery-zones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "delivery-zones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"neighborhood\": \"Nova Zona {{$timestamp}}\",\n  \"price\": 3500\n}"
+            },
             "description": "NOVO: src/modules/admin/delivery-zones/dto/create-delivery-zone.dto.ts . neighborhood único, price >=0. Invalida cache delivery-zones. Tente duplicar nome para testar 400 CONFLICT."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["if(pm.response.code===201){ const j=pm.response.json(); pm.environment.set('adminDeliveryZoneId', j.data.id); console.log('criado', j.data.id, j.data.neighborhood); }"], "type": "text/javascript" } }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===201){ const j=pm.response.json(); pm.environment.set('adminDeliveryZoneId', j.data.id); console.log('criado', j.data.id, j.data.neighborhood); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "ADMIN 23 - Delivery Zones - Update (NOVO)",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}", "host": ["{{baseUrl}}"], "path": ["admin","delivery-zones","{{adminDeliveryZoneId}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"price\": 4000,\n  \"neighborhood\": \"Nova Zona Atualizada\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "delivery-zones",
+                "{{adminDeliveryZoneId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 4000,\n  \"neighborhood\": \"Nova Zona Atualizada\"\n}"
+            },
             "description": "NOVO: Atualiza neighborhood e/ou price. Envia só o que quer alterar."
           }
         },
@@ -806,8 +1879,23 @@
           "name": "ADMIN 24 - Delivery Zones - Delete (NOVO)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}", "host": ["{{baseUrl}}"], "path": ["admin","delivery-zones","{{adminDeliveryZoneId}}"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "delivery-zones",
+                "{{adminDeliveryZoneId}}"
+              ]
+            },
             "description": "NOVO: Remove zona. Verifique com GET public /delivery-zones que sumiu e cache foi invalidado."
           }
         },
@@ -815,8 +1903,120 @@
           "name": "ADMIN 25 - Delivery Zones - Get By Id (NOVO)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_access_token}}" }],
-            "url": { "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}", "host": ["{{baseUrl}}"], "path": ["admin","delivery-zones","{{adminDeliveryZoneId}}"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/delivery-zones/{{adminDeliveryZoneId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "delivery-zones",
+                "{{adminDeliveryZoneId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "DEBUG & WEBSOCKET (novo)",
+      "description": "Debug pagamento + WebSocket realtime. Use após criar pagamento. Buyer debug precisa JWT buyer, admin debug precisa admin token. WebSocket: conecte socket.io em {{host}}/realtime com token.",
+      "item": [
+        {
+          "name": "DEBUG 01 - Buyer - Debug Pagamento por OrderId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/payment/debug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "payment",
+                "debug"
+              ]
+            },
+            "description": "Retorna payment, order, walletTransactions, auditLogs, redis idempotency, config e hints. Use quando webhook não virou PAID para entender falha."
+          }
+        },
+        {
+          "name": "DEBUG 02 - Buyer Alias - Debug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{orderId}}/debug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{orderId}}",
+                "debug"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DEBUG 03 - Admin - Debug por PaymentId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/debug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "{{paymentId}}",
+                "debug"
+              ]
+            },
+            "description": "Admin vê tudo: providerDetails.error, webhookProcessedAt, redis keys, config PAYMENT_WEBHOOK_SECRET, honorProxyUrl, websocket info e hints."
+          }
+        },
+        {
+          "name": "WEBSOCKET - Info Conexão",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/docs",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "docs"
+              ]
+            },
+            "description": "WebSocket não é HTTP. Conecte com socket.io: \nURL: {{host}}/realtime (ou wss://api-sadivacloset.himersus.com/realtime)\nAuth: socket = io('{{host}}/realtime', {auth:{token:'Bearer {{access_token}}'}}) ou socket.emit('auth:join',{token})\nEventos: socket.on('connected'), socket.on('payment:confirmed', console.log), socket.on('payment:failed')\nRooms: buyer:{{user.sub}} auto join após auth\nExemplo Node:\nconst {io}=require('socket.io-client');\nconst s=io('http://localhost:3002/realtime',{auth:{token:'Bearer {{access_token}}'}});\ns.on('payment:confirmed', d=>console.log('PAGO',d));\n\nQuando webhook vira PAID, server emite para buyer:${buyerId} e admins."
           }
         }
       ]

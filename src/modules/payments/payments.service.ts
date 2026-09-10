@@ -17,6 +17,8 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, createHmac, timingSafeEqual, randomUUID } from 'crypto';
 import { RedisService } from '../redis/redis.service';
 import { PaymentQueueService } from '../queue/payment-queue.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { MailService } from '../mail/mail.service';
 
 function mapMetodoToEnum(metodo: string): PaymentMethod {
   const n = metodo.toLowerCase().trim();
@@ -88,6 +90,8 @@ export class PaymentsService {
     private readonly config: ConfigService,
     private readonly redis: RedisService,
     private readonly paymentQueue: PaymentQueueService,
+    private readonly realtime: RealtimeGateway,
+    private readonly mail: MailService,
   ) {}
 
   private generateMerchantTxId(): string {
@@ -104,6 +108,33 @@ export class PaymentsService {
     let bigint = 0n;
     for (const b of hash) bigint = (bigint << 8n) | BigInt(b);
     return bigint.toString(36).slice(0, 15);
+  }
+
+  private async notifyWebhookEmail(params: {
+    gateway: string;
+    rawBody: string;
+    headers: Record<string, string>;
+    payload: any;
+    payment?: any;
+    order?: any;
+    result?: any;
+    error?: string;
+  }) {
+    try {
+      await this.mail.sendWebhookNotification({
+        to: 'justinocsoares123@gmail.com',
+        gateway: params.gateway,
+        rawBody: params.rawBody,
+        headers: params.headers,
+        payload: params.payload,
+        payment: params.payment,
+        order: params.order,
+        result: params.result,
+        error: params.error,
+      });
+    } catch (e) {
+      this.logger.warn(`Webhook email falhou: ${(e as Error).message}`);
+    }
   }
 
   async iniciar(
@@ -589,6 +620,20 @@ export class PaymentsService {
       this.logger.warn(`Falha ao notificar buyer ${payment.order.buyerId}: ${e}`);
     }
 
+    // WebSocket realtime
+    try {
+      this.realtime.emitPaymentConfirmed(order.buyerId, {
+        orderId: order.id,
+        paymentId: updatedPayment.id,
+        amount: updatedPayment.amount,
+        gateway: 'admin_validate',
+        externalReference: updatedPayment.externalReference ?? undefined,
+        orderStatus: order.status,
+      });
+    } catch (e) {
+      this.logger.warn(`Realtime emit falhou: ${e}`);
+    }
+
     return {
       payment: toPaymentResponse(updatedPayment),
       order: {
@@ -613,7 +658,9 @@ export class PaymentsService {
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      return { ok: false, message: 'Invalid JSON' };
+      const res = { ok: false, message: 'Invalid JSON' };
+      this.notifyWebhookEmail({ gateway: 'ekwanza', rawBody, headers, payload: rawBody, result: res, error: 'Invalid JSON' }).catch(() => {});
+      return res;
     }
     // Valida assinatura se configurado
     if (apiKey && registrationNumber && token && received) {
@@ -659,7 +706,9 @@ export class PaymentsService {
     }
     if (!payment && !payout) {
       this.logger.warn(`E-Kwanza webhook sem payment/payout: ${rawBody}`);
-      return { ok: false, message: 'Payment/Payout not found' };
+      const res = { ok: false, message: 'Payment/Payout not found' };
+      this.notifyWebhookEmail({ gateway: 'ekwanza', rawBody, headers, payload, result: res, error: 'Payment/Payout not found' }).catch(() => {});
+      return res;
     }
 
     if (payment) {
@@ -698,22 +747,37 @@ export class PaymentsService {
           });
           try {
             const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
-            if (order)
+            if (order) {
               await this.notificationsService.criar(
                 order.buyerId,
                 'Pagamento confirmado',
                 `O pagamento do pedido #${payment.orderId.slice(0, 8)} foi confirmado via E-Kwanza`,
               );
+              try {
+                this.realtime.emitPaymentConfirmed(order.buyerId, {
+                  orderId: payment.orderId,
+                  paymentId: payment.id,
+                  amount: payment.amount,
+                  gateway: 'ekwanza',
+                  externalReference: String(operationCode ?? code),
+                  orderStatus: 'PAID',
+                });
+              } catch {}
+            }
           } catch {}
         }
-        return { ok: true, status: 'settled' };
+        const ekRes = { ok: true, status: 'settled' };
+        this.notifyWebhookEmail({ gateway: 'ekwanza', rawBody, headers, payload, payment, result: ekRes }).catch(() => {});
+        return ekRes;
       }
       if (isFailed) {
         await this.prisma.payment.update({
           where: { id: payment.id },
           data: { status: PaymentStatus.FAILED, providerDetails: payload },
         });
-        return { ok: true, status: 'failed' };
+        const ekRes2 = { ok: true, status: 'failed' };
+        this.notifyWebhookEmail({ gateway: 'ekwanza', rawBody, headers, payload, payment, result: ekRes2 }).catch(() => {});
+        return ekRes2;
       }
     }
     if (payout) {
@@ -760,7 +824,9 @@ export class PaymentsService {
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      return { ok: false, message: 'Invalid JSON' };
+      const res = { ok: false, message: 'Invalid JSON' };
+      this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload: rawBody, result: res, error: 'Invalid JSON' }).catch(() => {});
+      return res;
     }
 
     const webhookSecret =
@@ -822,7 +888,9 @@ export class PaymentsService {
       const already = await this.redis.exists(redisKey);
       if (already) {
         this.logger.log(`AppyPay webhook idempotent (Redis) ref=${referencia}`);
-        return { ok: true, idempotent: true, message: 'Already processed (Redis)' };
+      const idRes = { ok: true, idempotent: true, message: 'Already processed (Redis)' };
+      this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload, result: idRes }).catch(() => {});
+      return idRes;
       }
     } catch (e: any) {
       this.logger.warn(`Redis idempotency check AppyPay falhou: ${e.message}`);
@@ -835,6 +903,8 @@ export class PaymentsService {
 
     if (!payment) {
       this.logger.warn(`AppyPay webhook sem payment para ref=${referencia} payload=${rawBody}`);
+      const errRes = { ok: false, message: `Payment not found for merchantTransactionId=${referencia}` };
+      this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload, result: errRes, error: `Payment not found ${referencia}` }).catch(() => {});
       throw new NotFoundException({
         error: { code: 'NOT_FOUND', message: `Payment not found for merchantTransactionId=${referencia}` },
       });
@@ -870,7 +940,9 @@ export class PaymentsService {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
       this.logger.log(`AppyPay webhook FALHADO ref=${referencia} status=${operationStatus}`);
-      return { ok: true, status: 'failed', operationStatus, gateway: gatewayNorm };
+      const failRes = { ok: true, status: 'failed', operationStatus, gateway: gatewayNorm };
+      this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload, payment, result: failRes }).catch(() => {});
+      return failRes;
     }
 
     if (isSuccess) {
@@ -940,12 +1012,32 @@ export class PaymentsService {
         this.logger.warn(`Enqueue BullMQ AppyPay falhou: ${e.message}`);
       }
 
-      return { ok: true, status: 'paid', operationStatus, gateway: gatewayNorm, externalReference: referencia };
+      try {
+        const orderForWs = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
+        if (orderForWs) {
+          this.realtime.emitPaymentConfirmed(orderForWs.buyerId, {
+            orderId: payment.orderId,
+            paymentId: payment.id,
+            amount: payment.amount,
+            gateway: `appypay_${gatewayNorm}`,
+            externalReference: referencia,
+            orderStatus: 'PAID',
+          });
+        }
+      } catch (e: any) {
+        this.logger.warn(`Realtime AppyPay falhou: ${e.message}`);
+      }
+
+      const appRes = { ok: true, status: 'paid', operationStatus, gateway: gatewayNorm, externalReference: referencia };
+      this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload, payment, result: appRes }).catch(() => {});
+      return appRes;
     }
 
     // status pendente/desconhecido
     this.logger.log(`AppyPay webhook pendente ref=${referencia} status=${operationStatus}`);
-    return { ok: true, status: 'pending', operationStatus, gateway: gatewayNorm };
+    const pendRes = { ok: true, status: 'pending', operationStatus, gateway: gatewayNorm };
+    this.notifyWebhookEmail({ gateway: 'appypay', rawBody, headers, payload, payment, result: pendRes }).catch(() => {});
+    return pendRes;
   }
 
   // ─── Webhook genérico POST /webhooks/pagamento/:gateway (público, HMAC, idempotente) ───
@@ -980,6 +1072,8 @@ export class PaymentsService {
         headers['x-hub-signature'] ??
         (headers as any)['X-Signature'];
       if (!signatureHeader) {
+        const err = { ok: false, error: 'MISSING_SIGNATURE', message: 'Missing HMAC signature (x-signature)' };
+        this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, result: err, error: 'Missing HMAC signature' }).catch(() => {});
         throw new BadRequestException({
           error: {
             code: 'MISSING_SIGNATURE',
@@ -1001,6 +1095,8 @@ export class PaymentsService {
         (received.length === altExpected.length &&
           timingSafeEqual(Buffer.from(received, 'utf8'), Buffer.from(altExpected, 'utf8')));
       if (!isValid) {
+        const err2 = { ok: false, error: 'INVALID_SIGNATURE', message: 'Invalid HMAC signature' };
+        this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, result: err2, error: 'Invalid HMAC signature' }).catch(() => {});
         throw new BadRequestException({
           error: { code: 'INVALID_SIGNATURE', message: 'Invalid HMAC signature' },
         });
@@ -1026,6 +1122,8 @@ export class PaymentsService {
       payload.id;
 
     if (!referenciaExterna) {
+      const err3 = { ok: false, error: 'MISSING_REFERENCE', message: 'externalReference is required' };
+      this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, result: err3, error: 'Missing externalReference' }).catch(() => {});
       throw new BadRequestException({
         error: {
           code: 'MISSING_REFERENCE',
@@ -1043,7 +1141,9 @@ export class PaymentsService {
         this.logger.log(
           `Webhook idempotent already processed (Redis) gateway=${gatewayNorm} ref=${referencia}`,
         );
-        return { ok: true, idempotent: true, message: 'Already processed (Redis)' };
+        const idRes = { ok: true, idempotent: true, message: 'Already processed (Redis)' };
+        this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, result: idRes }).catch(() => {});
+        return idRes;
       }
     } catch (e: any) {
       this.logger.warn(`Redis idempotency check failed: ${e.message}`);
@@ -1066,6 +1166,8 @@ export class PaymentsService {
       }
     }
     if (!payment) {
+      const err5 = { ok: false, error: 'NOT_FOUND', message: `Payment not found for externalReference=${referencia}` };
+      this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, result: err5, error: `Payment not found ${referencia}` }).catch(() => {});
       throw new NotFoundException({
         error: {
           code: 'NOT_FOUND',
@@ -1081,7 +1183,9 @@ export class PaymentsService {
       this.logger.log(
         `Webhook idempotent already processed (DB) payment=${payment.id} ref=${referencia}`,
       );
-      return { ok: true, idempotent: true, message: 'Already processed (DB)' };
+      const idRes2 = { ok: true, idempotent: true, message: 'Already processed (DB)' };
+      this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, payment, result: idRes2 }).catch(() => {});
+      return idRes2;
     }
     if (payment.status === PaymentStatus.PAID) {
       try {
@@ -1091,7 +1195,9 @@ export class PaymentsService {
           data: { webhookProcessedAt: new Date() },
         });
       } catch {}
-      return { ok: true, idempotent: true, message: 'Payment already paid' };
+      const alreadyPaidRes = { ok: true, idempotent: true, message: 'Payment already paid' };
+      this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, payment, result: alreadyPaidRes }).catch(() => {});
+      return alreadyPaidRes;
     }
 
     // 4. Confirma pagamento: atualiza Pagamento e Pedido, dispara notificação, enfileira BullMQ
@@ -1126,7 +1232,9 @@ export class PaymentsService {
       try {
         await this.redis.set(redisKey, '1', 7 * 24 * 3600);
       } catch {}
-      return { ok: true, status: 'failed', externalReference: referencia };
+      const failRes = { ok: true, status: 'failed', externalReference: referencia };
+      this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, payment, result: failRes }).catch(() => {});
+      return failRes;
     }
 
     // sucesso (default)
@@ -1196,7 +1304,25 @@ export class PaymentsService {
       this.logger.warn(`Enqueue BullMQ falhou: ${e.message}`);
     }
 
-    return { ok: true, status: 'paid', externalReference: referencia, gateway: gatewayNorm };
+    try {
+      const orderForWs = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
+      if (orderForWs) {
+        this.realtime.emitPaymentConfirmed(orderForWs.buyerId, {
+          orderId: payment.orderId,
+          paymentId: payment.id,
+          amount: payment.amount,
+          gateway: gatewayNorm,
+          externalReference: referencia,
+          orderStatus: 'PAID',
+        });
+      }
+    } catch (e: any) {
+      this.logger.warn(`Realtime generic falhou: ${e.message}`);
+    }
+
+    const okRes = { ok: true, status: 'paid', externalReference: referencia, gateway: gatewayNorm };
+    this.notifyWebhookEmail({ gateway: gatewayNorm, rawBody, headers, payload, payment, result: okRes }).catch(() => {});
+    return okRes;
   }
 
   async historico(buyerId: string, dto: PaginationDto) {

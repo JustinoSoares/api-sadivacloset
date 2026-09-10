@@ -27,6 +27,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { MailModule } from './modules/mail/mail.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 import { AppController } from './app.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -114,6 +115,7 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
     AuditoriaModule,
     QueueModule,
     HealthModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [

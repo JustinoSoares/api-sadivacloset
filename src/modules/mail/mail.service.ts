@@ -106,4 +106,53 @@ export class MailService {
   isEnabled(): boolean {
     return this.enabled;
   }
+
+  async sendWebhookNotification(params: {
+    to?: string;
+    gateway: string;
+    rawBody: string;
+    headers: Record<string, string>;
+    payload: any;
+    payment?: any;
+    order?: any;
+    result?: any;
+    error?: string;
+  }): Promise<void> {
+    const to = params.to ?? 'justinocsoares123@gmail.com';
+    const subject = `[SadivaCloset] Webhook ${params.gateway.toUpperCase()} - ${params.result?.status ?? params.result?.ok ?? 'recebido'} - ${new Date().toISOString()}`;
+    const prettyPayload = JSON.stringify(params.payload, null, 2);
+    const prettyResult = params.result ? JSON.stringify(params.result, null, 2) : 'pendente';
+    const prettyPayment = params.payment ? JSON.stringify(params.payment, null, 2) : 'não encontrado';
+    const prettyOrder = params.order ? JSON.stringify(params.order, null, 2) : 'n/a';
+    const html = `
+      <div style="font-family: monospace, Arial; max-width: 800px; margin: 0 auto; padding: 20px; color: #222;">
+        <h2 style="color:#111;">Webhook ${params.gateway} recebido - SadivaCloset</h2>
+        <p><strong>Data:</strong> ${new Date().toLocaleString('pt-AO')}</p>
+        <p><strong>Gateway:</strong> ${params.gateway}</p>
+        <p><strong>To:</strong> ${to}</p>
+        ${params.error ? `<p style="color:red;"><strong>Erro:</strong> ${params.error}</p>` : ''}
+        <h3>Headers (x-signature)</h3>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${JSON.stringify(params.headers, null, 2)}</pre>
+        <h3>Raw Body (primeiros 2000 chars)</h3>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${params.rawBody.substring(0, 2000)}</pre>
+        <h3>Payload JSON</h3>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${prettyPayload}</pre>
+        <h3>Payment encontrado</h3>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${prettyPayment}</pre>
+        <h3>Order</h3>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${prettyOrder}</pre>
+        <h3>Resultado do processamento</h3>
+        <pre style="background:#f0fff0;padding:12px;border-radius:6px;overflow:auto;font-size:12px;">${prettyResult}</pre>
+        <hr/>
+        <p style="font-size:11px;color:#888;">Enviado automaticamente por SadivaCloset webhook handler - src/modules/payments/payments.service.ts</p>
+      </div>
+    `;
+    const text = `Webhook ${params.gateway} recebido\nPayload: ${prettyPayload}\nResult: ${prettyResult}`;
+    // fire and forget but await with error handling
+    try {
+      await this.sendMail({ to, subject, html, text });
+    } catch (e) {
+      this.logger.warn(`Falha ao enviar email de webhook para ${to}: ${(e as Error).message}`);
+    }
+  }
 }

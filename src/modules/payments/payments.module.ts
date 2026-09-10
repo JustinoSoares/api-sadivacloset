@@ -13,9 +13,11 @@ import {
 } from './payments.controller';
 import { AdminPagamentosController, AdminPaymentsController } from './admin-payments.controller';
 import { WebhooksController } from './webhooks.controller';
+import { DebugPaymentsController } from './debug-payments.controller';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
-  imports: [StorageModule, NotificationsModule, QueueModule],
+  imports: [StorageModule, NotificationsModule, QueueModule, RealtimeModule],
   controllers: [
     PagamentosController,
     OrdersPaymentController,
@@ -24,6 +26,7 @@ import { WebhooksController } from './webhooks.controller';
     AdminPagamentosController,
     AdminPaymentsController,
     WebhooksController,
+    DebugPaymentsController,
   ],
   providers: [PaymentsService, EkwanzaClient, AppyPayClient],
   exports: [PaymentsService, EkwanzaClient, AppyPayClient],
