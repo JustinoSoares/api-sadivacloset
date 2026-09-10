@@ -28,6 +28,8 @@ import {
 import { AdminPreferencesService } from './preferences/admin-preferences.service';
 import { AdminMembersController, AdminMembrosController } from './members/admin-members.controller';
 import { AdminMembersService } from './members/admin-members.service';
+import { AdminDeliveryZonesController, AdminZonasEntregaController } from './delivery-zones/admin-delivery-zones.controller';
+import { AdminDeliveryZonesService } from './delivery-zones/admin-delivery-zones.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
@@ -52,6 +54,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     AdminPreferencesController,
     AdminMembrosController,
     AdminMembersController,
+    AdminDeliveryZonesController,
+    AdminZonasEntregaController,
   ],
   providers: [
     ProductsAdminService,
@@ -62,6 +66,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     AdminAccountService,
     AdminPreferencesService,
     AdminMembersService,
+    AdminDeliveryZonesService,
   ],
   exports: [
     ProductsAdminService,
@@ -72,6 +77,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     AdminAccountService,
     AdminPreferencesService,
     AdminMembersService,
+    AdminDeliveryZonesService,
   ],
 })
 export class AdminModule {}

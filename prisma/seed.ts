@@ -26,24 +26,44 @@ async function main() {
   });
   console.log(`✅ Admin: ${admin.email} (${admin.id}) role=${admin.role}`);
 
-  // ── 2) Delivery zones — 16 Luanda neighborhoods ─────────
+  // ── 2) Delivery zones — 32 pontos mais conhecidos de Luanda ─────────
+  // Centro (1200-1800) < Intermediário (2000-2500) < Periférico (2800-3500) — preços em Kz
   const zones: { neighborhood: string; price: number }[] = [
-    { neighborhood: 'Talatona', price: 2500 },
-    { neighborhood: 'Kilamba', price: 3000 },
-    { neighborhood: 'Viana', price: 2500 },
-    { neighborhood: 'Cazenga', price: 2000 },
-    { neighborhood: 'Maianga', price: 1500 },
-    { neighborhood: 'Sambizanga', price: 1500 },
+    // Centro / Baixa — mais barato (próximo ao centro logístico Talatona/Ingombota)
     { neighborhood: 'Ingombota', price: 1200 },
+    { neighborhood: 'Miramar', price: 1200 },
+    { neighborhood: 'Ilha de Luanda', price: 1500 },
+    { neighborhood: 'Maianga', price: 1500 },
+    { neighborhood: 'Alvalade', price: 1500 },
+    { neighborhood: 'Sambizanga', price: 1500 },
     { neighborhood: 'Rangel', price: 1500 },
     { neighborhood: 'Samba', price: 1800 },
+    { neighborhood: 'Mutamba', price: 1200 },
+    { neighborhood: 'Kinaxixe', price: 1300 },
+    // Intermediário — anel urbano
+    { neighborhood: 'Talatona', price: 2200 },
+    { neighborhood: 'Morro Bento', price: 2200 },
     { neighborhood: 'Benfica', price: 2200 },
-    { neighborhood: 'Cacuaco', price: 2800 },
-    { neighborhood: 'Zango', price: 3200 },
-    { neighborhood: 'Morro Bento', price: 2500 },
-    { neighborhood: 'Alvalade', price: 1500 },
-    { neighborhood: 'Miramar', price: 1200 },
     { neighborhood: 'Golf 2', price: 2000 },
+    { neighborhood: 'Golf 1', price: 2000 },
+    { neighborhood: 'Kilamba Kiaxi', price: 2000 },
+    { neighborhood: 'Cazenga', price: 2000 },
+    { neighborhood: 'Hoji-ya-Henda', price: 2000 },
+    { neighborhood: 'Palanca', price: 2200 },
+    { neighborhood: 'Prenda', price: 1800 },
+    { neighborhood: 'Cassenda', price: 1800 },
+    { neighborhood: 'Futungo', price: 2500 },
+    { neighborhood: 'Camama', price: 2300 },
+    // Periférico / Expansão — mais caro
+    { neighborhood: 'Kilamba', price: 3000 },
+    { neighborhood: 'Viana', price: 2800 },
+    { neighborhood: 'Zango', price: 3200 },
+    { neighborhood: 'Sequele', price: 3000 },
+    { neighborhood: 'Cacuaco', price: 3000 },
+    { neighborhood: 'Calemba 2', price: 2500 },
+    { neighborhood: 'Sapú', price: 2800 },
+    { neighborhood: 'Belas', price: 3200 },
+    { neighborhood: 'Barra do Kwanza', price: 3500 },
   ];
 
   for (const z of zones) {

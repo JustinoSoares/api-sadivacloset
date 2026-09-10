@@ -1,0 +1,27 @@
+{
+  "id": "sadivacloset-env",
+  "name": "SadivaCloset Local",
+  "values": [
+    { "key": "host", "value": "http://localhost:3001", "enabled": true },
+    { "key": "baseUrl", "value": "http://localhost:3001/api/v1", "enabled": true },
+    { "key": "access_token", "value": "", "enabled": true },
+    { "key": "refresh_token", "value": "", "enabled": true },
+    { "key": "admin_access_token", "value": "", "enabled": true },
+    { "key": "admin_refresh_token", "value": "", "enabled": true },
+    { "key": "buyer_email", "value": "comprador@teste.com", "enabled": true },
+    { "key": "productId", "value": "", "enabled": true },
+    { "key": "productId2", "value": "", "enabled": true },
+    { "key": "deliveryZoneId", "value": "", "enabled": true },
+    { "key": "addressId", "value": "", "enabled": true },
+    { "key": "cartItemId", "value": "", "enabled": true },
+    { "key": "orderId", "value": "", "enabled": true },
+    { "key": "paymentId", "value": "", "enabled": true },
+    { "key": "externalReference", "value": "", "enabled": true },
+    { "key": "adminProductId", "value": "", "enabled": true },
+    { "key": "adminOrderId", "value": "", "enabled": true },
+    { "key": "adminDeliveryId", "value": "", "enabled": true },
+    { "key": "memberId", "value": "", "enabled": true },
+    { "key": "adminDeliveryZoneId", "value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}
