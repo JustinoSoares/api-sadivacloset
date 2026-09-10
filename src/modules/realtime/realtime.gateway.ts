@@ -103,4 +103,40 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(`buyer:${buyerId}`).emit('payment:failed', event);
     this.server.to('admins').emit('payment:failed', event);
   }
+
+  emitNotification(buyerId: string, notification: { id: string; title: string; description: string; isRead: boolean; createdAt: string | Date }) {
+    const event = {
+      type: 'notification:new',
+      notification: {
+        id: notification.id,
+        buyerId,
+        title: notification.title,
+        description: notification.description,
+        isRead: notification.isRead,
+        createdAt: notification.createdAt instanceof Date ? notification.createdAt.toISOString() : notification.createdAt,
+      },
+    };
+    this.logger.log(`Emit notification:new buyer:${buyerId} ${notification.title}`);
+    this.server.to(`buyer:${buyerId}`).emit('notification:new', event);
+  }
+
+  emitOrderStatusUpdated(buyerId: string, payload: { orderId: string; status: string; previousStatus?: string; updatedBy?: string }) {
+    const event = { type: 'order:statusUpdated', ...payload, updatedAt: new Date().toISOString() };
+    this.logger.log(`Emit order:statusUpdated buyer:${buyerId} order:${payload.orderId} ${payload.status}`);
+    this.server.to(`buyer:${buyerId}`).emit('order:statusUpdated', event);
+    this.server.to('admins').emit('order:statusUpdated', event);
+  }
+
+  emitDeliveryStatusUpdated(buyerId: string, payload: { deliveryId: string; orderId: string; status: string; previousStatus?: string }) {
+    const event = { type: 'delivery:statusUpdated', ...payload, updatedAt: new Date().toISOString() };
+    this.logger.log(`Emit delivery:statusUpdated buyer:${buyerId} delivery:${payload.deliveryId} ${payload.status}`);
+    this.server.to(`buyer:${buyerId}`).emit('delivery:statusUpdated', event);
+    this.server.to('admins').emit('delivery:statusUpdated', event);
+  }
+
+  emitNewOrder(payload: { orderId: string; buyerId: string; total: number; createdAt?: string }) {
+    const event = { type: 'admin:newOrder', ...payload, createdAt: payload.createdAt ?? new Date().toISOString() };
+    this.logger.log(`Emit admin:newOrder order:${payload.orderId} buyer:${payload.buyerId}`);
+    this.server.to('admins').emit('admin:newOrder', event);
+  }
 }

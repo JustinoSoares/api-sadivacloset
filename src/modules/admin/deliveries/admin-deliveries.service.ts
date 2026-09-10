@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { DeliveryStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { AuditService } from '../../audit/audit.service';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { PaginationDto, buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { FilterDeliveriesDto } from './dto/filter-deliveries.dto';
 import { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto';
@@ -36,6 +37,7 @@ export class AdminDeliveriesService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly audit: AuditService,
+    @Optional() @Inject(forwardRef(() => RealtimeGateway)) private readonly realtime?: RealtimeGateway,
   ) {}
 
   async findAll(dto: FilterDeliveriesDto) {
@@ -132,6 +134,10 @@ export class AdminDeliveriesService {
           `Delivery for order #${delivery.orderId.slice(0, 8)} status updated to ${normalized} (${newStatus})`,
         );
       }
+    } catch {}
+
+    try {
+      this.realtime?.emitDeliveryStatusUpdated(delivery.order.buyerId, { deliveryId, orderId: delivery.orderId, status: newStatus, previousStatus: delivery.status });
     } catch {}
 
     return toDeliveryResponse(updated);

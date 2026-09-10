@@ -29,6 +29,12 @@ Follow ALL detailed flows in SADIVACLOSET.md and generate typed TypeScript code.
 
 ---
 
+## 0.1 Realtime — Leia `docs/WEBSOCKET.md` (obrigatório para frontend)
+
+O backend agora tem WebSocket `wss://api-sadivacloset.himersus.com/realtime` `src/modules/realtime/realtime.gateway.ts:15` (Socket.IO, namespace `/realtime`, auth JWT). **Use o documento `docs/WEBSOCKET.md` como única fonte para integrar realtime** — ele documenta de uma só vez `payment:confirmed`/`payment:failed` + `notification:new` + `order:statusUpdated` + `delivery:statusUpdated` + `admin:newOrder` com payloads, rooms `buyer:${id}`/`admins`, re-hook React `useRealtime`, Vue, vanilla e fallback polling. Resumo: `io(url,{auth:{token:"Bearer "+accessToken}})` → `socket.on("payment:confirmed", ...)` + `socket.on("notification:new", ...)` + `socket.emit("auth:join")` após `POST /auth/refresh`.
+
+---
+
 ## 1. Overview & URLs
 
 | Item | Value |

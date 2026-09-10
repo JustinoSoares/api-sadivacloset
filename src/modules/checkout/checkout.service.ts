@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { DeliveryType, OrderStatus, DeliveryStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 function discountedPrice(price: number, discount: number): number {
   return Math.round(price - (price * discount) / 100);
@@ -16,7 +17,10 @@ export interface CheckoutInput {
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(forwardRef(() => RealtimeGateway)) private readonly realtime?: RealtimeGateway,
+  ) {}
 
   async checkout(buyerId: string, input: CheckoutInput) {
     const cartItems = await this.prisma.cartItem.findMany({
@@ -282,6 +286,11 @@ export class CheckoutService {
             }
           : null,
       };
+    }).then((result) => {
+      try {
+        this.realtime?.emitNewOrder({ orderId: result.id, buyerId: result.buyerId, total: result.total, createdAt: result.createdAt instanceof Date ? result.createdAt.toISOString() : String(result.createdAt) });
+      } catch {}
+      return result;
     });
   }
 }

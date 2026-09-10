@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { AuditService } from '../../audit/audit.service';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { PaginationDto, buildPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { FilterOrdersDto } from './dto/filter-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -53,6 +54,7 @@ export class AdminOrdersService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly audit: AuditService,
+    @Optional() @Inject(forwardRef(() => RealtimeGateway)) private readonly realtime?: RealtimeGateway,
   ) {}
 
   async findAll(dto: FilterOrdersDto) {
@@ -153,6 +155,10 @@ export class AdminOrdersService {
           `Your order #${orderId.slice(0, 8)} status was updated to ${normalized} (${newStatus})`,
         );
       }
+    } catch {}
+
+    try {
+      this.realtime?.emitOrderStatusUpdated(order.buyerId, { orderId, status: newStatus, previousStatus: order.status, updatedBy: adminId });
     } catch {}
 
     return toOrderResponse(updated);

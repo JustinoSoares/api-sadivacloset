@@ -288,6 +288,41 @@ PAYMENT_WEBHOOK_SECRET_EKWANZA="mesmo-EKWANZA_API_KEY-da-Sadiva"
 
 ---
 
+## Realtime — WebSocket (Socket.IO)
+
+**Namespace:** `/realtime` | **Transports:** `websocket, polling` | **Auth:** JWT `Bearer` | **Ver contrato completo em [`docs/WEBSOCKET.md`](./WEBSOCKET.md)** (única fonte para integrar).
+
+**URLs:** `wss://api-sadivacloset.himersus.com/realtime` (staging) | `ws://localhost:3001/realtime` (Docker) | `ws://localhost:3002/realtime` (host).
+
+**Conexão:**
+```ts
+import { io } from "socket.io-client";
+const socket = io("https://api-sadivacloset.himersus.com/realtime", {
+  transports: ["websocket","polling"],
+  auth: { token: `Bearer ${accessToken}` } // ou extraHeaders Authorization ou query token
+});
+socket.on("connected", console.log); // { userId } ou anon
+socket.on("joined", console.log);    // { rooms:["buyer:uuid"] }
+socket.emit("auth:join", { token:`Bearer ${accessToken}` }); // se conectou anon
+```
+
+**Rooms:** `buyer:${userId}` (auto join) + `admins` (se `role=ADMIN`).
+
+**Eventos servidor → cliente:**
+| Evento | Quando | Payload |
+|--------|--------|---------|
+| `payment:confirmed` + `payment:paid` (alias) | `POST /webhooks/*` `paid`, `PATCH /admin/payments/:id/validar` | `{ orderId, paymentId, amount, gateway, externalReference, confirmedAt }` |
+| `payment:failed` | `operationStatus 3/4/5` | `{ orderId, paymentId, gateway, failedAt }` |
+| `notification:new` | `NotificationsService.criar` (qualquer notificação) | `{ notification: { id, buyerId, title, description, isRead, createdAt } }` |
+| `order:statusUpdated` | `PATCH /admin/orders/:id/status` | `{ orderId, status, previousStatus, updatedBy }` |
+| `delivery:statusUpdated` | `PATCH /admin/deliveries/:id/status` | `{ deliveryId, orderId, status, previousStatus }` |
+| `admin:newOrder` | `POST /checkout` | `{ orderId, buyerId, total }` — só `admins` |
+| `connected`/`joined`/`error` | handshake | `{ userId, message }` |
+
+Use `socket.on("payment:confirmed", ...)` + fallback polling `GET /orders/:id/payment` a cada 3s por 2min. Ver `docs/WEBSOCKET.md` para hook React `useRealtime`, Vue, vanilla + notificações + admin.
+
+---
+
 ## Endpoints
 
 ### auth

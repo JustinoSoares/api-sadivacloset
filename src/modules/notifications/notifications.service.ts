@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { Notification } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 export interface NotificationResponse {
   id: string;
@@ -24,7 +25,10 @@ function toResponse(n: Notification): NotificationResponse {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(forwardRef(() => RealtimeGateway)) private readonly realtime?: RealtimeGateway,
+  ) {}
 
   async criar(
     buyerId: string,
@@ -34,7 +38,11 @@ export class NotificationsService {
     const notification = await this.prisma.notification.create({
       data: { buyerId, title, description },
     });
-    return toResponse(notification);
+    const res = toResponse(notification);
+    try {
+      this.realtime?.emitNotification(buyerId, res);
+    } catch {}
+    return res;
   }
 
   // alias inglês
