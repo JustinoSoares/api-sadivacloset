@@ -33,9 +33,10 @@ import { AdminDeliveryZonesService } from './delivery-zones/admin-delivery-zones
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
-  imports: [NotificationsModule, AuditModule, AuditoriaModule],
+  imports: [NotificationsModule, AuditModule, AuditoriaModule, RedisModule],
   controllers: [
     AdminController,
     ProductsAdminController,

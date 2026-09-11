@@ -286,7 +286,26 @@ export class CheckoutService {
             }
           : null,
       };
-    }).then((result) => {
+    }).then(async (result: any) => {
+      // Enriquecer delivery.address + deliveryZone e items.product
+      try {
+        if (result.delivery?.addressId) {
+          const addr = await this.prisma.address.findUnique({ where: { id: result.delivery.addressId } });
+          if (addr) {
+            const zone = await this.prisma.deliveryZone.findUnique({ where: { neighborhood: addr.neighborhood } });
+            const deliveryZone = zone ? { id: zone.id, neighborhood: zone.neighborhood, price: zone.price } : null;
+            result.delivery.address = { ...addr, deliveryZone };
+            result.delivery.deliveryZone = deliveryZone;
+          }
+        }
+        // Enriquecer items com product
+        if (result.items?.length) {
+          result.items = await Promise.all(result.items.map(async (it: any) => {
+            const prod = await this.prisma.product.findUnique({ where: { id: it.productId } });
+            return { ...it, product: prod ? { id: prod.id, name: prod.name, description: prod.description, image: prod.image, category: prod.category, size: prod.size, condition: prod.condition, stock: prod.stock, price: prod.price, discount: prod.discount } : null };
+          }));
+        }
+      } catch {}
       try {
         this.realtime?.emitNewOrder({ orderId: result.id, buyerId: result.buyerId, total: result.total, createdAt: result.createdAt instanceof Date ? result.createdAt.toISOString() : String(result.createdAt) });
       } catch {}

@@ -32,7 +32,7 @@ export class RolesGuard implements CanActivate {
 
     if (!user) {
       throw new ForbiddenException({
-        error: { code: 'FORBIDDEN', message: 'User not authenticated' },
+        error: { code: 'FORBIDDEN', message: 'Você precisa estar autenticado para acessar este recurso.' },
       });
     }
 
@@ -43,7 +43,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException({
         error: {
           code: 'FORBIDDEN',
-          message: 'Forbidden: insufficient permissions',
+          message: 'Você não tem permissão para acessar este recurso. Esta área é restrita a administradores.',
         },
       });
     }

@@ -15,7 +15,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'An unexpected error occurred.';
+    let message = 'Ops! Algo deu errado. Tente novamente em instantes.';
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -73,14 +73,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
 
         // Se mensagem ainda vazia, tenta traduzir code genérico
-        if (!message || message === 'An unexpected error occurred.') {
+        if (!message || message === 'Ops! Algo deu errado. Tente novamente em instantes.' || message === 'An unexpected error occurred.') {
           const code = (obj['code'] as string) ?? (obj['codigo'] as string) ?? '';
           if (code) message = this.codeToMessage(code);
         }
       }
     } else if (exception instanceof Error) {
       this.logger.error(`[${request.method} ${request.url}] ${exception.message}`, exception.stack);
-      message = 'An unexpected error occurred.';
+      message = 'Ops! Algo deu errado. Tente novamente em instantes.';
       // Em dev/test mostra mensagem real para debug, em prod mantém genérica
       if (process.env.NODE_ENV !== 'production') {
         message = exception.message || message;
@@ -156,46 +156,60 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private codeToMessage(code: string): string {
     const map: Record<string, string> = {
-      BAD_REQUEST: 'Bad request',
-      VALIDATION_ERROR: 'Validation failed',
-      UNAUTHENTICATED: 'Not authenticated',
-      INVALID_CREDENTIALS: 'Invalid email or password',
-      TOKEN_INVALID: 'Invalid token',
-      TOKEN_EXPIRED: 'Token expired',
-      TOKEN_REVOKED: 'Token revoked',
-      ACCOUNT_INACTIVE: 'Account is inactive',
-      FORBIDDEN: 'Access denied',
-      NOT_FOUND: 'Resource not found',
-      CONFLICT: 'Conflict',
-      EMAIL_ALREADY_EXISTS: 'Email already exists',
-      RATE_LIMIT_EXCEEDED: 'Too many requests. Please try again later.',
-      INTERNAL_ERROR: 'An unexpected error occurred.',
-      INSUFFICIENT_STOCK: 'Insufficient stock',
-      CART_EMPTY: 'Cart is empty',
-      ADDRESS_IN_USE: 'Address in use',
-      ORDER_ALREADY_CANCELLED: 'Order already cancelled',
-      ORDER_NOT_CANCELLABLE: 'Order not cancellable',
-      DELIVERY_IN_PROGRESS: 'Delivery in progress',
-      INVALID_METHOD: 'Invalid payment method',
-      MISSING_SIGNATURE: 'Missing signature',
-      INVALID_SIGNATURE: 'Invalid signature',
-      MISSING_REFERENCE: 'Missing external reference',
+      BAD_REQUEST: 'Pedido inválido. Verifique os dados enviados.',
+      VALIDATION_ERROR: 'Dados inválidos. Verifique os campos e tente novamente.',
+      UNAUTHENTICATED: 'Você precisa estar autenticado. Faça login para continuar.',
+      INVALID_CREDENTIALS: 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.',
+      TOKEN_INVALID: 'Sessão inválida. Por favor, faça login novamente.',
+      TOKEN_EXPIRED: 'Sua sessão expirou. Por favor, faça login novamente.',
+      TOKEN_REVOKED: 'Sessão encerrada. Por favor, faça login novamente.',
+      ACCOUNT_INACTIVE: 'Sua conta está desativada. Entre em contato com o suporte.',
+      FORBIDDEN: 'Você não tem permissão para acessar este recurso.',
+      NOT_FOUND: 'Registro não encontrado.',
+      CONFLICT: 'Conflito: este dado já está em uso.',
+      EMAIL_ALREADY_EXISTS: 'Este e-mail já está cadastrado. Use outro e-mail ou faça login.',
+      RATE_LIMIT_EXCEEDED: 'Muitas tentativas. Aguarde um momento e tente novamente.',
+      INTERNAL_ERROR: 'Ops! Algo deu errado. Tente novamente em instantes.',
+      INSUFFICIENT_STOCK: 'Estoque insuficiente para este produto.',
+      CART_EMPTY: 'Seu carrinho está vazio.',
+      ADDRESS_IN_USE: 'Este endereço não pode ser removido pois está vinculado a pedidos pendentes.',
+      ORDER_ALREADY_CANCELLED: 'Este pedido já foi cancelado.',
+      ORDER_NOT_CANCELLABLE: 'Este pedido não pode mais ser cancelado.',
+      DELIVERY_IN_PROGRESS: 'A entrega já está em andamento e não pode ser alterada.',
+      INVALID_METHOD: 'Método de pagamento inválido.',
+      MISSING_SIGNATURE: 'Assinatura não informada.',
+      INVALID_SIGNATURE: 'Assinatura inválida.',
+      MISSING_REFERENCE: 'Referência não informada.',
     };
-    return map[code] ?? code.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    return map[code] ?? 'Ops! Algo deu errado. Tente novamente.';
   }
 
   private translateMessage(msg: string): string {
     const map: Record<string, string> = {
-      'Erro de validação': 'Validation failed',
-      'Token não fornecido': 'Token not provided',
-      'Token inválido': 'Invalid token',
-      'Token expirado': 'Token expired',
-      'Ocorreu um erro inesperado.': 'An unexpected error occurred.',
-      'Demasiadas tentativas. Tente novamente mais tarde.': 'Too many requests. Please try again later.',
-      'Não autenticado': 'Not authenticated',
-      'Acesso negado': 'Access denied',
-      'Não encontrado': 'Not found',
+      'Validation failed': 'Dados inválidos. Verifique os campos e tente novamente.',
+      'Token not provided': 'Você precisa estar autenticado. Faça login para continuar.',
+      'Token expired': 'Sua sessão expirou. Por favor, faça login novamente.',
+      'Invalid token': 'Sessão inválida. Por favor, faça login novamente.',
+      'An unexpected error occurred.': 'Ops! Algo deu errado. Tente novamente em instantes.',
+      'Too many requests. Please try again later.': 'Muitas tentativas. Aguarde um momento e tente novamente.',
+      'Not authenticated': 'Você precisa estar autenticado. Faça login para continuar.',
+      'Access denied': 'Você não tem permissão para acessar este recurso.',
+      'Not found': 'Registro não encontrado.',
+      'Invalid email or password': 'E-mail ou senha incorretos.',
+      'Insufficient stock': 'Estoque insuficiente.',
+      'Cart is empty': 'Seu carrinho está vazio.',
+      'Product not found': 'Produto não encontrado.',
+      'Cart item not found': 'Item do carrinho não encontrado.',
+      'Order not found': 'Pedido não encontrado.',
+      'Address not found': 'Endereço não encontrado.',
+      'User not found': 'Usuário não encontrado.',
+      'Resource not found': 'Registro não encontrado.',
+      'Delivery zone not found': 'Zona de entrega não encontrada.',
+      'Payment not found': 'Pagamento não encontrado.',
     };
+    // Se mensagem contém prefixo técnico "Validation failed: ..." mantém mas traduz prefixo
+    if (msg.startsWith('Validation failed')) return msg.replace('Validation failed', 'Dados inválidos');
+    if (msg.startsWith('Insufficient stock')) return 'Estoque insuficiente para este produto.';
     return map[msg] ?? msg;
   }
 }

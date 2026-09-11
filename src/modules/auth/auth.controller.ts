@@ -18,6 +18,7 @@ import { RefreshDto } from './dto/refresh.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 
 @ApiTags('auth')
 @Throttle({ auth: { limit: 20, ttl: 60_000 }, default: { limit: 60, ttl: 60_000 } })
@@ -80,6 +81,26 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
+  }
+
+  // ── POST /api/v1/auth/google (token based) ─────────────────
+  @SkipThrottle({ esqueci: true, checkout: true })
+  @Public()
+  @Post('auth/google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Login com Google (token based)',
+    description:
+      'Frontend obtém id_token via Google Identity Services (GIS) `google.accounts.id.initialize` e envia `credential` (id_token) ou `access_token`. Backend valida via https://oauth2.googleapis.com/tokeninfo e cria/busca usuário, retornando access_token/refresh_token próprios. Env vars: GOOGLE_CLIENT_ID (aud), GOOGLE_CLIENT_IDS (lista separados por vírgula, opcional), GOOGLE_CLIENT_SECRET/REDIRECT opcional. Se GOOGLE_CLIENT_ID vazio, aud não é verificado (dev only).',
+  })
+  @ApiBody({ type: GoogleLoginDto })
+  @ApiResponse({ status: 200, description: 'Success - { access_token, refresh_token, user, isNew }' })
+  @ApiResponse({ status: 400, description: 'Bad Request - token ausente' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - token Google inválido/expirado' })
+  async googleLogin(@Body() dto: GoogleLoginDto) {
+    const idToken = dto.idTokenNormalized;
+    const accessToken = dto.accessTokenNormalized;
+    return this.authService.googleLogin(idToken, accessToken);
   }
 
   // ── POST /api/v1/auth/refresh ──────────────────────────────

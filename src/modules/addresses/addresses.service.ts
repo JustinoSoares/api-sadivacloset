@@ -14,9 +14,10 @@ export interface AddressResponse {
   latitude: number | null;
   longitude: number | null;
   isDefault: boolean;
+  deliveryZone?: { id: string; neighborhood: string; price: number } | null;
 }
 
-function toResponse(a: Address): AddressResponse {
+function toResponse(a: Address, deliveryZone?: { id: string; neighborhood: string; price: number } | null): AddressResponse {
   return {
     id: a.id,
     buyerId: a.buyerId,
@@ -29,7 +30,16 @@ function toResponse(a: Address): AddressResponse {
     latitude: a.latitude ?? null,
     longitude: a.longitude ?? null,
     isDefault: a.isDefault,
+    deliveryZone: deliveryZone ?? null,
   };
+}
+
+async function enrichWithZone(prisma: any, address: Address): Promise<AddressResponse> {
+  const zone = await prisma.deliveryZone.findUnique({ where: { neighborhood: address.neighborhood } });
+  if (zone) return toResponse(address, { id: zone.id, neighborhood: zone.neighborhood, price: zone.price });
+  const prefs = await prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+  if (prefs) return toResponse(address, { id: 'default', neighborhood: address.neighborhood, price: prefs.defaultDeliveryFee });
+  return toResponse(address, null);
 }
 
 @Injectable()
@@ -41,7 +51,16 @@ export class AddressesService {
       where: { buyerId },
       orderBy: [{ isDefault: 'desc' }, { id: 'asc' }],
     });
-    return addresses.map(toResponse);
+    const neighborhoods = [...new Set(addresses.map((a) => a.neighborhood))];
+    const zones = await this.prisma.deliveryZone.findMany({ where: { neighborhood: { in: neighborhoods } } });
+    const zoneMap = new Map(zones.map((z: any) => [z.neighborhood, z]));
+    const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+    return addresses.map((a) => {
+      const zone = zoneMap.get(a.neighborhood);
+      if (zone) return toResponse(a, { id: zone.id, neighborhood: zone.neighborhood, price: zone.price });
+      if (prefs) return toResponse(a, { id: 'default', neighborhood: a.neighborhood, price: prefs.defaultDeliveryFee });
+      return toResponse(a, null);
+    });
   }
 
   async create(
@@ -74,7 +93,7 @@ export class AddressesService {
         isDefault,
       },
     });
-    return toResponse(created);
+    return enrichWithZone(this.prisma, created);
   }
 
   async update(
@@ -111,7 +130,7 @@ export class AddressesService {
         ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
       },
     });
-    return toResponse(updated);
+    return enrichWithZone(this.prisma, updated);
   }
 
   async remove(buyerId: string, id: string): Promise<void> {
@@ -188,7 +207,7 @@ export class AddressesService {
       }),
     ]);
 
-    return toResponse(updated);
+    return enrichWithZone(this.prisma, updated);
   }
 }
 

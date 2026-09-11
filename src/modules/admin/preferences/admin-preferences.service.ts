@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
+import { RedisService } from '../../redis/redis.service';
 import { PaymentMethod } from '@prisma/client';
 
 function toResponse(pref: any) {
@@ -14,14 +15,25 @@ function toResponse(pref: any) {
   };
 }
 
+const CACHE_KEY_PREFS = 'cache:admin:preferences';
+const CACHE_TTL_PREFS = 300; // 5min
+
 @Injectable()
 export class AdminPreferencesService {
+  private readonly logger = new Logger(AdminPreferencesService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly redis: RedisService,
   ) {}
 
   async getPreferences() {
+    try {
+      const cached = await this.redis.get(CACHE_KEY_PREFS);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {
+      this.logger.warn(`Redis get ${CACHE_KEY_PREFS} falhou: ${(e as Error).message}`);
+    }
     let pref = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
     if (!pref) {
       pref = await this.prisma.adminPreferences.create({
@@ -39,7 +51,13 @@ export class AdminPreferencesService {
         },
       });
     }
-    return toResponse(pref);
+    const res = toResponse(pref);
+    try {
+      await this.redis.set(CACHE_KEY_PREFS, JSON.stringify(res), CACHE_TTL_PREFS);
+    } catch (e) {
+      this.logger.warn(`Redis set ${CACHE_KEY_PREFS} falhou: ${(e as Error).message}`);
+    }
+    return res;
   }
 
   // legacy alias
@@ -82,6 +100,10 @@ export class AdminPreferencesService {
         ],
       },
     });
+    try {
+      await this.redis.del(CACHE_KEY_PREFS);
+      this.logger.log(`Cache invalidado ${CACHE_KEY_PREFS}`);
+    } catch {}
     if (adminId) {
       await this.audit
         .register(adminId, 'update_preferences', 'preferences', 'singleton', {

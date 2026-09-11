@@ -35,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractToken(request.headers);
     if (!token) {
       throw new UnauthorizedException({
-        error: { code: 'UNAUTHENTICATED', message: 'Token not provided' },
+        error: { code: 'UNAUTHENTICATED', message: 'Você precisa estar autenticado. Por favor, faça login para continuar.' },
       });
     }
 
@@ -47,10 +47,10 @@ export class JwtAuthGuard implements CanActivate {
       (request as Record<string, unknown>).user = payload;
       return true;
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error && err.name === 'TokenExpiredError'
-          ? 'Token expired'
-          : 'Invalid token';
+      const isExpired = err instanceof Error && err.name === 'TokenExpiredError';
+      const msg = isExpired
+        ? 'Sua sessão expirou. Por favor, faça login novamente.'
+        : 'Sessão inválida. Por favor, faça login novamente.';
       throw new UnauthorizedException({
         error: { code: 'UNAUTHENTICATED', message: msg },
       });

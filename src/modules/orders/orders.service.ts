@@ -3,7 +3,112 @@ import { DeliveryStatus, OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto, buildPaginatedResponse } from '../../common/dto/pagination.dto';
 
+async function enrichOrder(prisma: any, order: any) {
+  // Enriquecer delivery.address + deliveryZone e items.product
+  let deliveryEnriched: any = null;
+  if (order.delivery) {
+    const d = order.delivery;
+    let address: any = null;
+    let deliveryZone: any = null;
+    if (d.addressId) {
+      address = await prisma.address.findUnique({ where: { id: d.addressId } });
+      if (address) {
+        const zone = await prisma.deliveryZone.findUnique({ where: { neighborhood: address.neighborhood } });
+        if (zone) deliveryZone = { id: zone.id, neighborhood: zone.neighborhood, price: zone.price };
+        else {
+          const prefs = await prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+          if (prefs) deliveryZone = { id: 'default', neighborhood: address.neighborhood, price: prefs.defaultDeliveryFee };
+        }
+      }
+    } else if (d.deliveryFee !== undefined) {
+      // tenta deduzir zona pelo preço? deixa null
+    }
+    deliveryEnriched = {
+      id: d.id,
+      orderId: d.orderId,
+      type: d.type,
+      addressId: d.addressId,
+      address: address ? { ...address, deliveryZone } : null,
+      deliveryZone,
+      scheduledDate: d.scheduledDate,
+      timeWindow: d.timeWindow,
+      status: d.status,
+      deliveryFee: d.deliveryFee,
+      instructions: d.instructions ?? null,
+    };
+  }
+
+  const itemsEnriched = await Promise.all(
+    (order.items ?? []).map(async (it: any) => {
+      let product: any = null;
+      try {
+        product = await prisma.product.findUnique({ where: { id: it.productId } });
+      } catch {}
+      return {
+        id: it.id,
+        orderId: it.orderId,
+        productId: it.productId,
+        productName: it.productName,
+        unitPrice: it.unitPrice,
+        discount: it.discount,
+        quantity: it.quantity,
+        product: product
+          ? {
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              image: product.image,
+              category: product.category,
+              size: product.size,
+              condition: product.condition,
+              stock: product.stock,
+              price: product.price,
+              discount: product.discount,
+            }
+          : null,
+      };
+    }),
+  );
+
+  return {
+    id: order.id,
+    buyerId: order.buyerId,
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee,
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt,
+    items: itemsEnriched,
+    delivery: deliveryEnriched,
+    payment: order.payment
+      ? {
+          id: order.payment.id,
+          orderId: order.payment.orderId,
+          method: order.payment.method,
+          amount: order.payment.amount,
+          status: order.payment.status,
+          externalReference: order.payment.externalReference ?? null,
+          receiptUrl: order.payment.receiptUrl ?? null,
+          providerTxId: order.payment.providerTxId ?? null,
+          bridpayIntentId: order.payment.bridpayIntentId ?? null,
+          bridpayMerchantTxId: order.payment.bridpayMerchantTxId ?? null,
+          providerDetails: order.payment.providerDetails ?? null,
+          phoneNumber: order.payment.phoneNumber ?? null,
+          iban: order.payment.iban ?? null,
+        }
+      : null,
+    buyer: order.buyer
+      ? {
+          id: order.buyer.id,
+          name: order.buyer.name,
+          email: order.buyer.email,
+        }
+      : undefined,
+  };
+}
+
 function toOrderResponse(order: any) {
+  // fallback sync (sem enriquecimento) - usado apenas internamente se necessário
   return {
     id: order.id,
     buyerId: order.buyerId,
@@ -20,6 +125,7 @@ function toOrderResponse(order: any) {
       unitPrice: it.unitPrice,
       discount: it.discount,
       quantity: it.quantity,
+      product: it.product ?? null,
     })),
     delivery: order.delivery
       ? {
@@ -27,6 +133,8 @@ function toOrderResponse(order: any) {
           orderId: order.delivery.orderId,
           type: order.delivery.type,
           addressId: order.delivery.addressId,
+          address: order.delivery.address ?? null,
+          deliveryZone: order.delivery.deliveryZone ?? null,
           scheduledDate: order.delivery.scheduledDate,
           timeWindow: order.delivery.timeWindow,
           status: order.delivery.status,
@@ -51,6 +159,9 @@ function toOrderResponse(order: any) {
           iban: order.payment.iban ?? null,
         }
       : null,
+    buyer: order.buyer
+      ? { id: order.buyer.id, name: order.buyer.name, email: order.buyer.email }
+      : undefined,
   };
 }
 
@@ -61,14 +172,14 @@ export class OrdersService {
   async findOne(buyerId: string, orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true, delivery: true, payment: true },
+      include: { items: true, delivery: true, payment: true, buyer: true },
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        error: { code: 'NOT_FOUND', message: 'Order not found' },
+        error: { code: 'NOT_FOUND', message: 'Pedido não encontrado.' },
       });
     }
-    return toOrderResponse(order);
+    return enrichOrder(this.prisma, order);
   }
 
   async findAllPaginated(buyerId: string, dto: PaginationDto) {
@@ -77,13 +188,13 @@ export class OrdersService {
       this.prisma.order.count({ where }),
       this.prisma.order.findMany({
         where,
-        include: { items: true, delivery: true, payment: true },
+        include: { items: true, delivery: true, payment: true, buyer: true },
         orderBy: { createdAt: 'desc' },
         skip: dto.skip,
         take: dto.take,
       }),
     ]);
-    const mapped = orders.map(toOrderResponse);
+    const mapped = await Promise.all(orders.map((o) => enrichOrder(this.prisma, o)));
     return buildPaginatedResponse(mapped, total, dto);
   }
 
@@ -94,20 +205,20 @@ export class OrdersService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        error: { code: 'NOT_FOUND', message: 'Order not found' },
+        error: { code: 'NOT_FOUND', message: 'Pedido não encontrado.' },
       });
     }
 
     if (order.status === OrderStatus.CANCELLED) {
       throw new BadRequestException({
-        error: { code: 'ORDER_ALREADY_CANCELLED', message: 'Order already cancelled' },
+        error: { code: 'ORDER_ALREADY_CANCELLED', message: 'Este pedido já foi cancelado.' },
       });
     }
     if (order.status === OrderStatus.COMPLETED) {
       throw new BadRequestException({
         error: {
           code: 'ORDER_NOT_CANCELLABLE',
-          message: 'Completed order cannot be cancelled',
+          message: 'Este pedido já foi concluído e não pode ser cancelado.',
         },
       });
     }
@@ -121,13 +232,13 @@ export class OrdersService {
       throw new BadRequestException({
         error: {
           code: 'DELIVERY_IN_PROGRESS',
-          message: 'Cannot cancel order with delivery in progress',
+          message: 'Não é possível cancelar. A entrega já está em andamento.',
         },
       });
     }
     if (deliveryStatus === DeliveryStatus.CANCELLED) {
       throw new BadRequestException({
-        error: { code: 'DELIVERY_ALREADY_CANCELLED', message: 'Delivery already cancelled' },
+        error: { code: 'DELIVERY_ALREADY_CANCELLED', message: 'Entrega já cancelada.' },
       });
     }
 
@@ -159,11 +270,11 @@ export class OrdersService {
 
       const refreshed = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: true, delivery: true, payment: true },
+        include: { items: true, delivery: true, payment: true, buyer: true },
       });
 
-      return toOrderResponse(refreshed);
-    });
+      return refreshed;
+    }).then((order) => enrichOrder(this.prisma, order));
   }
 
   async upsertDelivery(
@@ -182,7 +293,7 @@ export class OrdersService {
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
-        error: { code: 'NOT_FOUND', message: 'Order not found' },
+        error: { code: 'NOT_FOUND', message: 'Pedido não encontrado.' },
       });
     }
 
@@ -190,7 +301,7 @@ export class OrdersService {
       throw new BadRequestException({
         error: {
           code: 'ORDER_CANCELLED',
-          message: 'Cannot update delivery of cancelled order',
+          message: 'Não é possível alterar entrega de pedido cancelado.',
         },
       });
     }
@@ -203,7 +314,7 @@ export class OrdersService {
         const address = await this.prisma.address.findUnique({ where: { id: data.enderecoId } });
         if (!address || address.buyerId !== buyerId) {
           throw new NotFoundException({
-            error: { code: 'NOT_FOUND', message: 'Address not found' },
+            error: { code: 'NOT_FOUND', message: 'Endereço não encontrado.' },
           });
         }
         addressId = address.id;
@@ -217,8 +328,8 @@ export class OrdersService {
         throw new BadRequestException({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Validation error',
-            details: [{ field: 'scheduledDate', errors: ['scheduledDate is invalid'] }],
+            message: 'Dados inválidos. Verifique os campos.',
+            details: [{ field: 'scheduledDate', errors: ['Data agendada inválida.'] }],
           },
         });
       }
@@ -230,9 +341,9 @@ export class OrdersService {
         throw new BadRequestException({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Validation error',
+            message: 'Dados inválidos. Verifique os campos.',
             details: [
-              { field: 'scheduledDate', errors: ['scheduledDate cannot be in the past'] },
+              { field: 'scheduledDate', errors: ['A data agendada não pode ser no passado.'] },
             ],
           },
         });
@@ -247,8 +358,8 @@ export class OrdersService {
         throw new BadRequestException({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Validation error',
-            details: [{ field: 'timeWindow', errors: ['timeWindow cannot be empty'] }],
+            message: 'Dados inválidos. Verifique os campos.',
+            details: [{ field: 'timeWindow', errors: ['Janela de horário é obrigatória.'] }],
           },
         });
       }
@@ -265,13 +376,13 @@ export class OrdersService {
         throw new BadRequestException({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Validation error',
+            message: 'Dados inválidos. Verifique os campos.',
             details: [
               ...(!scheduledDate
-                ? [{ field: 'scheduledDate', errors: ['scheduledDate is required'] }]
+                ? [{ field: 'scheduledDate', errors: ['Data agendada é obrigatória.'] }]
                 : []),
               ...(!timeWindow
-                ? [{ field: 'timeWindow', errors: ['timeWindow is required'] }]
+                ? [{ field: 'timeWindow', errors: ['Janela de horário é obrigatória.'] }]
                 : []),
             ],
           },
@@ -291,9 +402,9 @@ export class OrdersService {
       });
       const refreshed = await this.prisma.order.findUnique({
         where: { id: orderId },
-        include: { items: true, delivery: true, payment: true },
+        include: { items: true, delivery: true, payment: true, buyer: true },
       });
-      return toOrderResponse(refreshed);
+      return enrichOrder(this.prisma, refreshed);
     }
 
     if (
@@ -301,7 +412,7 @@ export class OrdersService {
       order.delivery.status === DeliveryStatus.DELIVERED
     ) {
       throw new BadRequestException({
-        error: { code: 'DELIVERY_IN_PROGRESS', message: 'Cannot update delivery in progress' },
+        error: { code: 'DELIVERY_IN_PROGRESS', message: 'Não é possível alterar entrega em andamento.' },
       });
     }
 
@@ -317,8 +428,8 @@ export class OrdersService {
 
     const refreshed = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true, delivery: true, payment: true },
+      include: { items: true, delivery: true, payment: true, buyer: true },
     });
-    return toOrderResponse(refreshed);
+    return enrichOrder(this.prisma, refreshed);
   }
 }

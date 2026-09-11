@@ -82,8 +82,8 @@ import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storag
           { name: 'checkout', ttl: 60_000, limit: 10 },
         ],
         storage: new RedisThrottlerStorage(redis as unknown as import('ioredis').default),
-        // Default message goes through HttpExceptionFilter -> { error: { code: 'RATE_LIMIT_EXCEEDED' } }
-        errorMessage: 'Too many requests. Please try again later.',
+        // Default message goes through HttpExceptionFilter -> { error: { code: 'RATE_LIMIT_EXCEEDED' } } -> PT via codeToMessage
+        errorMessage: 'Muitas tentativas. Aguarde um momento e tente novamente.',
         // Só aplica throttling a /auth/* e /checkout — outras rotas (perfil, produtos, health, docs) ficam sem limite
         skipIf: (ctx) => {
           try {

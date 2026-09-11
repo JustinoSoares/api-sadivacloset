@@ -169,20 +169,23 @@ const total = res.data.total;
 
 ## Errors
 
-**Single predictable English format — always `{ message: string }`:**
+**Formato único em Português (amigável) — sempre `{ message: string }` `src/common/filters/http-exception.filter.ts:157` `src/common/guards/jwt-auth.guard.ts:30`:**
 ```json
-{ "message": "Validation failed: email: must be a valid email" }
+{ "message": "Dados inválidos. Verifique os campos e tente novamente: email: e-mail deve ser válido" }
 ```
 ```json
-{ "message": "Insufficient stock" }
+{ "message": "Estoque insuficiente para este produto." }
+```
+```json
+{ "message": "Sua sessão expirou. Por favor, faça login novamente." }
 ```
 
 | Status | Example `message` | When |
 |--------|----------|------|
-| 400 | `Validation failed: email: must be valid` | Invalid body, extra fields (`whitelist` + `forbidNonWhitelisted`), stock errors |
-| 400 | `Insufficient stock` | Not enough stock (`POST /cart/items`, `POST /checkout`) |
-| 400 | `Cart is empty` | `POST /checkout` with empty cart |
-| 400 | `Invalid payment method` | `POST /orders/:id/payment/init` unknown method |
+| 400 | `Dados inválidos. Verifique os campos: email: deve ser válido` | Corpo inválido, campos extras (`whitelist`), erros de estoque |
+| 400 | `Estoque insuficiente. Disponível: 3, solicitado: 5` | Sem estoque (`POST /cart/items`, `POST /checkout`) |
+| 400 | `Seu carrinho está vazio.` | `POST /checkout` sem itens |
+| 400 | `Método de pagamento inválido.` | `POST /orders/:id/payment/init` |
 | 400 | `Address in use` | `DELETE /profile/addresses/:id` with pending orders |
 | 400 | `Order already cancelled` / `Delivery in progress` | Cancel/update delivery when in transit |
 | 401 | `Token not provided` / `Invalid token` / `Token expired` | Missing/invalid/expired token, inactive account |
@@ -339,6 +342,8 @@ Use `socket.on("payment:confirmed", ...)` + fallback polling `GET /orders/:id/pa
 
 Deprecated PT aliases (`POST /auth/registar`, `POST /auth/esqueci-password`, `POST /auth/redefinir-password`, `GET /perfil`, `PATCH /perfil`) are hidden – do not use. Field `nome` hidden via `@ApiHideProperty()` — use `name`.
 
+**Enriquecido `GET /profile` `src/modules/auth/auth.service.ts:277`:** além de `{id,name,email,role,createdAt,isActive}` retorna `defaultAddress: {id,label,province,municipality,neighborhood,street,reference,latitude,longitude,isDefault, deliveryZone:{id,neighborhood,price}}` + `defaultDeliveryZone` (igual, para facilitar) — evita `GET /profile/addresses` extra. `POST /auth/register` também cria notificação de boas-vindas `Bem-vindo à SadivaCloset!` `src/modules/auth/auth.service.ts:94` visível em `GET /profile/notifications` + WS `notification:new`.
+
 ### products
 | Method | Route | Auth | Query/Body | Response |
 |--------|------|------|------------|----------|
@@ -389,7 +394,8 @@ Deprecated PT `GET /categorias`, `GET /zonas-entrega` hidden.
 | GET | `/cart` | JWT (BUYER) | - | `200 { data: { items, subtotal, totalItems, totalQuantity } }` |
 | POST | `/cart/items` | JWT | `{productId, quantity}` | `201 {data: CartItem}` |
 | PATCH | `/cart/items/:id` | JWT | `{quantity}` | `200 {data}` |
-| DELETE | `/cart/items/:id` | JWT | - | `200 {message}` |
+| DELETE | `/cart/items/:id` | JWT | - | `200 { message: "Item removido do carrinho com sucesso." }` |
+| DELETE | `/cart` | JWT (BUYER) | - | `200 { message: "Carrinho limpo com sucesso." }` — **NOVO** limpa tudo de uma vez (alias `DELETE /carrinho`) |
 
 English-only DTOs. `productId` must be UUID, `quantity >=1`. Validates stock → `400 INSUFFICIENT_STOCK` with `details` `{ available, requested }`. `:id` is `CartItem.id` (not `productId`). Add is upsert (existing quantity summed). `GET /cart` enriches each item with `product`, `discountedPrice`, `subtotal`.
 
@@ -452,21 +458,23 @@ Ownership: `order.buyerId !== user.sub` → `404 NOT_FOUND` (not 403, to avoid e
 
 Deprecated PT `GET /pedidos/:id`, `PATCH /pedidos/:id/cancelar`, `POST /pedidos/:id/entrega`, `GET /perfil/pedidos` hidden.
 
-**OrderDetail (English-only)**
+**OrderDetail (enriquecido `src/modules/orders/orders.service.ts:17` — sem FK solta)**
 ```json
 {
-  "id": "uuid",
-  "buyerId": "uuid",
-  "subtotal": 90000,
-  "deliveryFee": 2500,
-  "total": 92500,
-  "status": "AWAITING_PAYMENT",
-  "createdAt": "2026-01-03T00:00:00.000Z",
-  "items": [{ "productId": "uuid", "productName": "...", "unitPrice": 45000, "discount": 10, "quantity": 2 }],
-  "delivery": { "type": "HOME_DELIVERY", "addressId": "uuid", "scheduledDate": "2026-09-01", "timeWindow": "09:00-12:00", "status": "SCHEDULED", "deliveryFee": 2500 },
-  "payment": { "method": "BANK_TRANSFER", "amount": 92500, "status": "PENDING", "externalReference": "15chars", "receiptUrl": null }
+  "id": "uuid","buyerId":"uuid","subtotal":90000,"deliveryFee":2500,"total":92500,"status":"AWAITING_PAYMENT","createdAt":"2026-01-03T00:00:00.000Z",
+  "items":[{ "productId":"uuid","productName":"...","unitPrice":45000,"discount":10,"quantity":2,
+             "product": {"id":"uuid","name":"Black Suit","image":"https://...","category":"SUITS","size":"M","condition":"NEW","price":45000,"discount":10} }],
+  "delivery": {
+    "type":"HOME_DELIVERY","addressId":"uuid",
+    "address": {"id":"uuid","label":"Home","neighborhood":"Talatona","street":"Rua 123","deliveryZone":{"id":"...","price":2200}},
+    "deliveryZone":{"id":"...","price":2200},
+    "scheduledDate":"2026-09-01","timeWindow":"09:00-12:00","status":"SCHEDULED","deliveryFee":2500
+  },
+  "payment":{ "method":"BANK_TRANSFER","amount":92500,"status":"PENDING","externalReference":"15chars","receiptUrl":null },
+  "buyer":{"id":"uuid","name":"Maria","email":"maria@example.com"}
 }
 ```
+Enriquecido: `items[].product` completo + `delivery.address` + `delivery.deliveryZone` + `buyer`. Mesma estrutura em `POST /checkout` `src/modules/checkout/checkout.service.ts:258`, `GET /profile/orders`, `GET /admin/members/:id/orders`.
 Enums: `OrderStatus: AWAITING_PAYMENT|PAID|PREPARING|SHIPPING|COMPLETED|CANCELLED`, `DeliveryStatus: SCHEDULED|ON_THE_WAY|DELIVERED|FAILED|CANCELLED`.
 
 **Cancel rules:** already `CANCELLED` → `400 ORDER_ALREADY_CANCELLED`; `COMPLETED` → `ORDER_NOT_CANCELLABLE`; `delivery ON_THE_WAY/DELIVERED` or `order SHIPPING` → `DELIVERY_IN_PROGRESS`.
@@ -487,6 +495,8 @@ Requires `scheduledDate && timeWindow` if no existing delivery. Blocks if `ON_TH
 | PATCH | `/profile/addresses/:id/default` | JWT (owner) | - | `200 {data}` |
 
 Deprecated PT `perfil/enderecos` hidden.
+
+**Enriquecido `src/modules/addresses/addresses.service.ts:19`:** todo `Address` retorna `deliveryZone:{id,neighborhood,price}` resolvido por `address.neighborhood` → `deliveryZone.price` ou fallback `adminPreferences.defaultDeliveryFee`. `GET /profile/addresses` já traz `deliveryZone` por endereço, não precisa `GET /delivery-zones` extra para calcular frete no checkout.
 
 **Create Address – Request (English-only)**
 ```json
@@ -617,15 +627,20 @@ All require `Authorization: Bearer <adminToken>` + `role=admin` (via `@Roles('ad
 | PATCH | `/admin/orders/:id/status` | Update order `status` (`AWAITING_PAYMENT|PAID|...`) |
 | GET | `/admin/deliveries` | List deliveries `?status&from&to&page&limit` |
 | PATCH | `/admin/deliveries/:id/status` | Update delivery status |
+| GET | `/admin/delivery-zones` | List zones admin (sem cache) |
+| POST | `/admin/delivery-zones` | Create zone `{neighborhood,price}` — `neighborhood` único, `price>=0` — invalida `cache:delivery-zones` |
+| GET | `/admin/delivery-zones/:id` | Get zone by id |
+| PATCH | `/admin/delivery-zones/:id` | Update `neighborhood`/`price` |
+| DELETE | `/admin/delivery-zones/:id` | Remove zone |
 | GET | `/admin/statistics` | Dashboard: `totalRevenue` (sum `total` where `PAID|COMPLETED`), `totalProducts`, `totalMembers`, `totalOrders` + `variation` % vs previous period (`?days=30` or `?from&to`) + `recentOrders` paginated |
-| GET | `/admin/store` | `StoreConfig` |
-| PATCH | `/admin/store` | Update `name,contactEmail,phone,address` |
+| GET | `/admin/store` | `StoreConfig` — **Redis `cache:store:config` TTL 300s**, invalida no `PATCH` |
+| PATCH | `/admin/store` | Update `name,contactEmail,phone,address` — invalida cache |
 | GET | `/admin/account` | Authenticated admin account |
 | PATCH | `/admin/account` | Update `name,email` + change `currentPassword/newPassword` |
-| GET | `/admin/preferences` | `AdminPreferences` |
-| PATCH | `/admin/preferences` | `notifyNewOrders,notifyLowStock,notifyNewMessages,defaultDeliveryFee,activePaymentMethods[]` |
-| GET | `/admin/members` | List `BUYER` paginated `?q` (name/email) with `totalOrders` and `totalSpent` via `groupBy buyerId` |
-| GET | `/admin/members/:id/orders` | Member order history |
+| GET | `/admin/preferences` | `AdminPreferences` — **Redis `cache:admin:preferences` TTL 300s** |
+| PATCH | `/admin/preferences` | `notifyNewOrders,notifyLowStock,notifyNewMessages,defaultDeliveryFee,activePaymentMethods[]` — invalida cache |
+| GET | `/admin/members` | List `BUYER` paginated `?q` + **enriquecido** `defaultAddress{...,deliveryZone}` + `defaultDeliveryZone` + `totalOrders`/`totalSpent` |
+| GET | `/admin/members/:id/orders` | Member order history — **enriquecido** `delivery.address.deliveryZone` + `items.product` |
 | GET | `/admin/audit` | Logs `?entity&from&to&page&limit` |
 | PATCH | `/admin/payments/:id/validate` | Manual validate payment → `Payment PAID` + `Order PAID` |
 | GET | `/admin/payments/history` | Filtered payments `?method&status&page&limit` |

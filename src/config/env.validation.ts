@@ -67,6 +67,12 @@ export const envValidationSchema = Joi.object({
       'string.pattern.base': '"JWT_REFRESH_EXPIRES_IN" deve ser no formato 15m, 1h, 7d',
     }),
 
+  // ── GOOGLE OAUTH (token based) ──
+  GOOGLE_CLIENT_ID: Joi.string().allow('').optional().default(''),
+  GOOGLE_CLIENT_SECRET: Joi.string().allow('').optional().default(''),
+  GOOGLE_REDIRECT_URI: Joi.string().uri().allow('').optional().default(''),
+  GOOGLE_CLIENT_IDS: Joi.string().allow('').optional().default(''), // lista separada por vírgula para múltiplos clients (web, android, ios)
+
   // ── E-KWANZA (único gateway legado) ──
   EKWANZA_API_BASE_URL: Joi.string()
     .uri()

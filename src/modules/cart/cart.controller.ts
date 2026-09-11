@@ -64,8 +64,8 @@ export class CarrinhoController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'productId', errors: ['productId must be a valid UUID'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'productId', errors: ['Informe um ID de produto válido (UUID)'] }],
         },
       });
     }
@@ -73,8 +73,8 @@ export class CarrinhoController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'quantity', errors: ['quantity must be at least 1'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'quantity', errors: ['A quantidade deve ser pelo menos 1'] }],
         },
       });
     }
@@ -103,8 +103,8 @@ export class CarrinhoController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'quantity', errors: ['quantity must be at least 1'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'quantity', errors: ['A quantidade deve ser pelo menos 1'] }],
         },
       });
     }
@@ -121,7 +121,17 @@ export class CarrinhoController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   async removeItem(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.cartService.removeItem(user.sub, id);
-    return { message: 'Cart item removed', data: null };
+    return { message: 'Item removido do carrinho com sucesso.', data: null };
+  }
+
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear cart (remove all items)', description: 'Remove todos os itens do carrinho' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async clearCart(@CurrentUser() user: JwtPayload) {
+    await this.cartService.clearCart(user.sub);
+    return { message: 'Carrinho limpo com sucesso.', data: null };
   }
 }
 
@@ -164,8 +174,8 @@ export class CartController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'productId', errors: ['productId must be a valid UUID'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'productId', errors: ['Informe um ID de produto válido (UUID)'] }],
         },
       });
     }
@@ -173,8 +183,8 @@ export class CartController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'quantity', errors: ['quantity must be at least 1'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'quantity', errors: ['A quantidade deve ser pelo menos 1'] }],
         },
       });
     }
@@ -208,8 +218,8 @@ export class CartController {
       throw new BadRequestException({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          details: [{ field: 'quantity', errors: ['quantity must be at least 1'] }],
+          message: 'Dados inválidos. Verifique os campos e tente novamente.',
+          details: [{ field: 'quantity', errors: ['A quantidade deve ser pelo menos 1'] }],
         },
       });
     }
@@ -227,8 +237,18 @@ export class CartController {
   async removeItem(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     await this.cartService.removeItem(user.sub, id);
     return {
-      message: 'Cart item removed',
+      message: 'Item removido do carrinho com sucesso.',
       data: null,
     };
+  }
+
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear cart (remove all items)', description: 'Remove todos os itens do carrinho de uma só vez' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async clearCart(@CurrentUser() user: JwtPayload) {
+    await this.cartService.clearCart(user.sub);
+    return { message: 'Carrinho limpo com sucesso.', data: null };
   }
 }

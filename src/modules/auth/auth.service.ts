@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly redis: RedisService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private parseExpiresToSeconds(value: string): number {
@@ -73,7 +75,7 @@ export class AuthService {
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) {
       throw new ConflictException({
-        error: { code: 'EMAIL_ALREADY_EXISTS', message: 'This email is already registered' },
+        error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Este e-mail já está cadastrado. Use outro e-mail ou faça login.' },
       });
     }
 
@@ -89,6 +91,17 @@ export class AuthService {
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
 
+    // Notificação de boas-vindas (também emite via WebSocket /realtime)
+    try {
+      await this.notificationsService.create(
+        user.id,
+        'Bem-vindo à SadivaCloset! 🎉',
+        `Olá ${user.name}, sua conta foi criada com sucesso. Explore nosso catálogo e encontre peças incríveis para você. Boas compras!`,
+      );
+    } catch (e) {
+      this.logger.warn(`Falha ao criar notificação de boas-vindas para ${user.id}: ${(e as Error).message}`);
+    }
+
     return user;
   }
 
@@ -103,25 +116,174 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException({
-        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+        error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.' },
       });
     }
 
     if (!user.isActive) {
       throw new UnauthorizedException({
-        error: { code: 'ACCOUNT_INACTIVE', message: 'Account is deactivated' },
+        error: { code: 'ACCOUNT_INACTIVE', message: 'Sua conta está desativada. Entre em contato com o suporte.' },
       });
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedException({
-        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+        error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.' },
       });
     }
 
     const tokens = await this.signTokens(user);
     return tokens;
+  }
+
+  // ── Google Login (token based) ──────────────────────────────
+  async googleLogin(idToken?: string, accessToken?: string) {
+    if (!idToken && !accessToken) {
+      throw new BadRequestException({
+        error: { code: 'GOOGLE_TOKEN_MISSING', message: 'Informe o id_token (credential) do Google ou access_token.' },
+      });
+    }
+
+    let googleUser: { email: string; name: string; sub: string; picture?: string; email_verified?: boolean } | null = null;
+
+    // 1) id_token via tokeninfo (recomendado - GIS retorna credential)
+    if (idToken) {
+      try {
+        const url = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`tokeninfo ${res.status}: ${txt}`);
+        }
+        const data: any = await res.json();
+        // data: {iss, azp, aud, sub, email, email_verified, name, picture, given_name, family_name, exp, iat}
+        const allowedIds = (this.config.get<string>('google.clientIds') as unknown as string[]) ?? [];
+        // fallback para config google.clientId / env
+        const singleId = this.config.get<string>('google.clientId') ?? process.env.GOOGLE_CLIENT_ID ?? '';
+        const allAllowed = [...allowedIds, singleId].filter(Boolean);
+        if (allAllowed.length > 0 && data.aud && !allAllowed.includes(data.aud)) {
+          // também aceita azp
+          if (!allAllowed.includes(data.azp)) {
+            throw new UnauthorizedException({
+              error: { code: 'GOOGLE_AUD_MISMATCH', message: 'Token Google não foi emitido para este app. Verifique GOOGLE_CLIENT_ID.' },
+            });
+          }
+        }
+        const issOk = data.iss === 'https://accounts.google.com' || data.iss === 'accounts.google.com';
+        if (!issOk) {
+          throw new UnauthorizedException({
+            error: { code: 'GOOGLE_ISS_INVALID', message: 'Token Google com emissor inválido.' },
+          });
+        }
+        if (data.email_verified !== 'true' && data.email_verified !== true) {
+          // alguns tokens retornam string "true"
+          this.logger.warn(`Google email_verified != true para ${data.email}`);
+        }
+        if (!data.email) {
+          throw new UnauthorizedException({
+            error: { code: 'GOOGLE_EMAIL_MISSING', message: 'Token Google sem e-mail.' },
+          });
+        }
+        googleUser = {
+          email: String(data.email).toLowerCase().trim(),
+          name: String(data.name ?? data.given_name ?? data.email.split('@')[0]),
+          sub: String(data.sub),
+          picture: data.picture ? String(data.picture) : undefined,
+          email_verified: data.email_verified === true || data.email_verified === 'true',
+        };
+      } catch (e: any) {
+        if (e instanceof UnauthorizedException) throw e;
+        this.logger.warn(`Falha ao verificar Google id_token: ${e.message}`);
+        throw new UnauthorizedException({
+          error: { code: 'GOOGLE_TOKEN_INVALID', message: 'Token Google inválido ou expirado. Tente fazer login novamente.' },
+        });
+      }
+    } else if (accessToken) {
+      // 2) access_token via userinfo
+      try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`userinfo ${res.status}: ${txt}`);
+        }
+        const data: any = await res.json(); // {sub, email, email_verified, name, picture}
+        if (!data.email) {
+          throw new UnauthorizedException({
+            error: { code: 'GOOGLE_EMAIL_MISSING', message: 'Token Google sem e-mail.' },
+          });
+        }
+        googleUser = {
+          email: String(data.email).toLowerCase().trim(),
+          name: String(data.name ?? data.email.split('@')[0]),
+          sub: String(data.sub),
+          picture: data.picture ? String(data.picture) : undefined,
+          email_verified: data.email_verified === true,
+        };
+      } catch (e: any) {
+        if (e instanceof UnauthorizedException) throw e;
+        this.logger.warn(`Falha ao verificar Google access_token: ${e.message}`);
+        throw new UnauthorizedException({
+          error: { code: 'GOOGLE_TOKEN_INVALID', message: 'Token Google inválido ou expirado.' },
+        });
+      }
+    }
+
+    if (!googleUser) {
+      throw new UnauthorizedException({
+        error: { code: 'GOOGLE_TOKEN_INVALID', message: 'Não foi possível validar o token Google.' },
+      });
+    }
+
+    // 3) Busca ou cria usuário local
+    let user = await this.prisma.user.findUnique({ where: { email: googleUser.email } });
+    let isNew = false;
+    if (!user) {
+      const randomPass = crypto.randomBytes(32).toString('hex');
+      const passwordHash = await this.hashPassword(randomPass);
+      user = await this.prisma.user.create({
+        data: {
+          name: googleUser.name,
+          email: googleUser.email,
+          passwordHash,
+          role: 'BUYER' as any,
+          isActive: true,
+        },
+      });
+      isNew = true;
+      this.logger.log(`Usuário criado via Google: ${user.email} (${user.id})`);
+      try {
+        await this.notificationsService.create(
+          user.id,
+          'Bem-vindo à SadivaCloset! 🎉',
+          `Olá ${user.name}, sua conta foi criada via Google com sucesso. Bem-vindo!`,
+        );
+      } catch (e) {
+        this.logger.warn(`Falha notificação boas-vindas Google ${user.id}: ${(e as Error).message}`);
+      }
+    } else {
+      if (!user.isActive) {
+        throw new UnauthorizedException({
+          error: { code: 'ACCOUNT_INACTIVE', message: 'Sua conta está desativada. Entre em contato com o suporte.' },
+        });
+      }
+      // Opcional: atualiza nome se mudou no Google
+      if (googleUser.name && googleUser.name !== user.name) {
+        try {
+          user = await this.prisma.user.update({ where: { id: user.id }, data: { name: googleUser.name } });
+        } catch {}
+      }
+    }
+
+    const tokens = await this.signTokens(user);
+    return {
+      ...tokens,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      isNew,
+      google: { sub: googleUser.sub, picture: googleUser.picture },
+    };
   }
 
   // ── Refresh ─────────────────────────────────────────────────
@@ -134,7 +296,7 @@ export class AuthService {
     const blacklisted = await this.redis.exists(blKey);
     if (blacklisted) {
       throw new UnauthorizedException({
-        error: { code: 'REVOKED_TOKEN', message: 'Refresh token revoked (logout)' },
+        error: { code: 'REVOKED_TOKEN', message: 'Sessão encerrada. Faça login novamente.' },
       });
     }
 
@@ -143,7 +305,7 @@ export class AuthService {
       payload = await this.jwt.verifyAsync(refreshToken, { secret: refreshSecret });
     } catch {
       throw new UnauthorizedException({
-        error: { code: 'INVALID_TOKEN', message: 'Invalid or expired refresh token' },
+        error: { code: 'INVALID_TOKEN', message: 'Sessão inválida ou expirada. Faça login novamente.' },
       });
     }
 
@@ -152,7 +314,7 @@ export class AuthService {
     });
     if (!user || !user.isActive) {
       throw new UnauthorizedException({
-        error: { code: 'UNAUTHENTICATED', message: 'User not found or inactive' },
+        error: { code: 'UNAUTHENTICATED', message: 'Usuário não encontrado ou inativo. Faça login novamente.' },
       });
     }
 
@@ -168,7 +330,7 @@ export class AuthService {
   async logout(refreshToken: string) {
     if (!refreshToken) {
       throw new BadRequestException({
-        error: { code: 'BAD_REQUEST', message: 'refresh_token is required' },
+        error: { code: 'BAD_REQUEST', message: 'O campo refresh_token é obrigatório.' },
       });
     }
 
@@ -177,7 +339,7 @@ export class AuthService {
       await this.jwt.verifyAsync(refreshToken, { secret: refreshSecret });
     } catch {
       throw new UnauthorizedException({
-        error: { code: 'INVALID_TOKEN', message: 'Invalid or expired refresh token' },
+        error: { code: 'INVALID_TOKEN', message: 'Sessão inválida ou expirada. Faça login novamente.' },
       });
     }
 
@@ -186,7 +348,7 @@ export class AuthService {
     const blKey = this.refreshKey(refreshToken);
     await this.redis.set(blKey, '1', ttl);
 
-    return { message: 'Session terminated successfully' };
+    return { message: 'Sessão encerrada com sucesso.' };
   }
 
   // ── Forgot password ────────────────────────────────────────
@@ -224,7 +386,7 @@ export class AuthService {
     }
 
     return {
-      message: 'If the email exists, a reset link has been sent',
+      message: 'Se o e-mail estiver cadastrado, você receberá um link de recuperação em instantes.',
     };
   }
 
@@ -243,7 +405,7 @@ export class AuthService {
       throw new BadRequestException({
         error: {
           code: 'TOKEN_EXPIRED',
-          message: 'Invalid or expired token (15min)',
+          message: 'Link inválido ou expirado (15 minutos). Solicite um novo link de recuperação.',
         },
       });
     }
@@ -253,7 +415,7 @@ export class AuthService {
     });
     if (!user) {
       throw new NotFoundException({
-        error: { code: 'NOT_FOUND', message: 'User not found' },
+        error: { code: 'NOT_FOUND', message: 'Usuário não encontrado.' },
       });
     }
 
@@ -265,7 +427,7 @@ export class AuthService {
 
     await this.redis.del(key);
 
-    return { message: 'Password reset successfully' };
+    return { message: 'Senha redefinida com sucesso. Faça login com sua nova senha.' };
   }
 
   async redefinirPassword(token: string, novaPassword: string) {
@@ -288,10 +450,38 @@ export class AuthService {
     });
     if (!user) {
       throw new NotFoundException({
-        error: { code: 'NOT_FOUND', message: 'User not found' },
+        error: { code: 'NOT_FOUND', message: 'Usuário não encontrado.' },
       });
     }
-    return user;
+
+    // Enriquecimento: endereço padrão + zona de entrega (evita requisição extra no frontend)
+    const defaultAddress = await this.prisma.address.findFirst({
+      where: { buyerId: userId, isDefault: true },
+    });
+    let defaultDeliveryZone: { id: string; neighborhood: string; price: number } | null = null;
+    let defaultAddressEnriched: any = defaultAddress ? { ...defaultAddress } : null;
+    if (defaultAddress) {
+      const zone = await this.prisma.deliveryZone.findUnique({
+        where: { neighborhood: defaultAddress.neighborhood },
+      });
+      if (zone) {
+        defaultDeliveryZone = { id: zone.id, neighborhood: zone.neighborhood, price: zone.price };
+        defaultAddressEnriched.deliveryZone = defaultDeliveryZone;
+      } else {
+        // fallback para taxa padrão do admin
+        const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+        if (prefs) {
+          defaultDeliveryZone = { id: 'default', neighborhood: defaultAddress.neighborhood, price: prefs.defaultDeliveryFee };
+          defaultAddressEnriched.deliveryZone = defaultDeliveryZone;
+        }
+      }
+    }
+
+    return {
+      ...user,
+      defaultAddress: defaultAddressEnriched,
+      defaultDeliveryZone,
+    };
   }
 
   async getPerfil(compradorId: string) {
@@ -305,7 +495,7 @@ export class AuthService {
       });
       if (other && other.id !== userId) {
         throw new ConflictException({
-          error: { code: 'EMAIL_ALREADY_EXISTS', message: 'This email is already registered' },
+          error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Este e-mail já está cadastrado. Use outro e-mail ou faça login.' },
         });
       }
     }

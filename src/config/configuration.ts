@@ -37,6 +37,12 @@ export interface AppConfig {
     allowedOrigins: string[];
     allowAll: boolean;
   };
+  google: {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+    clientIds: string[];
+  };
   upload: { dir: string; maxSizeMb: number };
   webhook: {
     paymentSecret: string;
@@ -113,6 +119,15 @@ export default (): AppConfig => ({
   cors: parseCorsOrigins(
     process.env.CORS_ALLOWED_ORIGINS || process.env.CORS_ORIGIN || '',
   ),
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
+    clientIds: (process.env.GOOGLE_CLIENT_IDS || process.env.GOOGLE_CLIENT_ID || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  },
   upload: {
     dir: process.env.UPLOAD_DIR!,
     maxSizeMb: parseInt(process.env.UPLOAD_MAX_SIZE_MB!, 10),

@@ -136,6 +136,44 @@
       ]
     },
     {
+      "name": "02b Auth - Login com Google (token based)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/google",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "google"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIxMjMifQ.SIGNATURE\",\n  \"credential\": \"mesmo_valor_id_token_opcional\",\n  \"access_token\": \"opcional_ya29...\"\n}"
+        },
+        "description": "Token based: frontend pega id_token via GIS google.accounts.id.initialize -> callback credential, envia para backend que valida via https://oauth2.googleapis.com/tokeninfo e cria/busca usuário, retorna {access_token, refresh_token, user, isNew}. Env vars necessárias: GOOGLE_CLIENT_ID (ex: 123-abc.apps.googleusercontent.com), GOOGLE_CLIENT_IDS (lista opcional), GOOGLE_CLIENT_SECRET/REDIRECT vazios ok. Deixe vazio em dev para pular aud check. Throttle 20/min."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if(pm.response.code===200){ const j=pm.response.json(); pm.environment.set('access_token', j.access_token); pm.environment.set('refresh_token', j.refresh_token); console.log('google login ok', j.user); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "03 Auth - Login Admin (seed)",
       "request": {
         "method": "POST",
@@ -563,6 +601,49 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"quantity\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "14b Cart - Clear Cart (NOVO - limpa tudo)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        },
+        "description": "NOVO: Remove TODOS os itens do carrinho de uma vez. Retorna {message:'Carrinho limpo com sucesso.'} . Alternativa PT: DELETE {{baseUrl}}/carrinho"
+      }
+    },
+    {
+      "name": "14c Carrinho - Limpar (PT alias)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/carrinho",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "carrinho"
+          ]
         }
       }
     },

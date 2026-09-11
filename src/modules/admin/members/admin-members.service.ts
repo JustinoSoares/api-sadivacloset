@@ -77,14 +77,32 @@ export class AdminMembersService {
       mapPaid.set(g.buyerId, { count: g._count._all ?? 0, sum: g._sum.total ?? 0 });
     }
 
+    // Enriquecer com endereço padrão + zona
+    const defaultAddresses = await this.prisma.address.findMany({ where: { buyerId: { in: ids }, isDefault: true } });
+    const addrMap = new Map(defaultAddresses.map((a: any) => [a.buyerId, a]));
+    const neighborhoods = [...new Set(defaultAddresses.map((a: any) => a.neighborhood))];
+    const zones = neighborhoods.length ? await this.prisma.deliveryZone.findMany({ where: { neighborhood: { in: neighborhoods } } }) : [];
+    const zoneMap = new Map(zones.map((z: any) => [z.neighborhood, z]));
+    const prefs = await this.prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+
     const mapped = users.map((u) => {
       const all = mapAll.get(u.id) ?? { count: 0, sum: 0 };
       const paid = mapPaid.get(u.id) ?? { count: 0, sum: 0 };
-      return toMemberResponse(u, {
+      const base = toMemberResponse(u, {
         totalOrders: all.count,
         totalSpentGross: all.sum,
         totalSpentPaid: paid.sum,
       });
+      const addr = addrMap.get(u.id);
+      let defaultAddress: any = null;
+      let defaultDeliveryZone: any = null;
+      if (addr) {
+        const zone = zoneMap.get(addr.neighborhood);
+        if (zone) defaultDeliveryZone = { id: zone.id, neighborhood: zone.neighborhood, price: zone.price };
+        else if (prefs) defaultDeliveryZone = { id: 'default', neighborhood: addr.neighborhood, price: prefs.defaultDeliveryFee };
+        defaultAddress = { ...addr, deliveryZone: defaultDeliveryZone };
+      }
+      return { ...base, defaultAddress, defaultDeliveryZone };
     });
 
     return buildPaginatedResponse(mapped, total, dto);
@@ -122,20 +140,24 @@ export class AdminMembersService {
       }),
     ]);
 
-    const mapped = orders.map((order: any) => ({
-      id: order.id,
-      buyerId: order.buyerId,
-      subtotal: order.subtotal,
-      deliveryFee: order.deliveryFee,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      items: order.items,
-      delivery: order.delivery,
-      payment: order.payment,
+    const enriched = await Promise.all(orders.map(async (order: any) => {
+      let deliveryEnriched: any = order.delivery;
+      if (order.delivery?.addressId) {
+        const addr = await this.prisma.address.findUnique({ where: { id: order.delivery.addressId } });
+        if (addr) {
+          const zone = await this.prisma.deliveryZone.findUnique({ where: { neighborhood: addr.neighborhood } });
+          const deliveryZone = zone ? { id: zone.id, neighborhood: zone.neighborhood, price: zone.price } : null;
+          deliveryEnriched = { ...order.delivery, address: { ...addr, deliveryZone }, deliveryZone };
+        }
+      }
+      const itemsEnriched = await Promise.all((order.items ?? []).map(async (it: any) => {
+        const prod = await this.prisma.product.findUnique({ where: { id: it.productId } });
+        return { ...it, product: prod ? { id: prod.id, name: prod.name, image: prod.image, category: prod.category, size: prod.size, condition: prod.condition, price: prod.price, discount: prod.discount } : null };
+      }));
+      return { id: order.id, buyerId: order.buyerId, subtotal: order.subtotal, deliveryFee: order.deliveryFee, total: order.total, status: order.status, createdAt: order.createdAt, items: itemsEnriched, delivery: deliveryEnriched, payment: order.payment };
     }));
 
-    return buildPaginatedResponse(mapped, total, dto);
+    return buildPaginatedResponse(enriched, total, dto);
   }
 
   // legacy alias

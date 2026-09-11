@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
+import { RedisService } from '../../redis/redis.service';
 
 function toResponse(config: any) {
   return {
@@ -12,14 +13,27 @@ function toResponse(config: any) {
   };
 }
 
+const CACHE_KEY = 'cache:store:config';
+const CACHE_TTL = 300; // 5min — dados raramente alteram, TTL curto economiza memória e evita stale
+
 @Injectable()
 export class AdminStoreService {
+  private readonly logger = new Logger(AdminStoreService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly redis: RedisService,
   ) {}
 
   async getStore() {
+    // Redis primeiro — evita DB em 99% dos GET
+    try {
+      const cached = await this.redis.get(CACHE_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {
+      this.logger.warn(`Redis get ${CACHE_KEY} falhou: ${(e as Error).message}`);
+    }
+
     let config = await this.prisma.storeConfig.findUnique({ where: { id: 'singleton' } });
     if (!config) {
       config = await this.prisma.storeConfig.create({
@@ -32,7 +46,13 @@ export class AdminStoreService {
         },
       });
     }
-    return toResponse(config);
+    const res = toResponse(config);
+    try {
+      await this.redis.set(CACHE_KEY, JSON.stringify(res), CACHE_TTL);
+    } catch (e) {
+      this.logger.warn(`Redis set ${CACHE_KEY} falhou: ${(e as Error).message}`);
+    }
+    return res;
   }
 
   async getLoja() {
@@ -61,6 +81,11 @@ export class AdminStoreService {
         address: payload.address ?? 'Luanda, Talatona',
       },
     });
+    // Invalida cache imediatamente — próximo GET recarrega do DB
+    try {
+      await this.redis.del(CACHE_KEY);
+      this.logger.log(`Cache invalidado ${CACHE_KEY}`);
+    } catch {}
     if (adminId) {
       await this.audit
         .register(adminId, 'update_store', 'store', 'singleton', {

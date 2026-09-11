@@ -76,37 +76,40 @@ async function main() {
   console.log(`✅ Zones: ${zones.length} neighborhoods`);
 
   // ── 3) StoreConfig (singleton) ─────────────────────────────────
+  // Seed completo loja + notificações admin — nome, email, telefone, endereço
+  const storeData = {
+    name: 'SadivaCloset',
+    contactEmail: 'contacto@sadivacloset.co.ao',
+    phone: '+244 923 456 789',
+    address: 'Luanda, Talatona, Condomínio Rosalinda, Rua da Samba, nº 123 - Loja 5 | Horário: Seg-Sab 08:00-18:00',
+  };
   await prisma.storeConfig.upsert({
     where: { id: 'singleton' },
-    update: {},
-    create: {
-      id: 'singleton',
-      name: 'SadivaCloset',
-      contactEmail: 'contacto@sadivacloset.co.ao',
-      phone: '+244 900 000 000',
-      address: 'Luanda, Talatona, Rua da Samba, nº 123',
-    },
+    update: storeData,
+    create: { id: 'singleton', ...storeData },
   });
-  console.log('✅ StoreConfig singleton');
+  console.log(`✅ StoreConfig singleton — ${storeData.name} ${storeData.contactEmail} ${storeData.phone}`);
 
   // ── 4) AdminPreferences (singleton) ─────────────────────────
+  // Configurações de notificações admin + taxa entrega + métodos ativos
+  const prefsData = {
+    notifyNewOrders: true,
+    notifyLowStock: true,
+    notifyNewMessages: true,
+    defaultDeliveryFee: 2500,
+    activePaymentMethods: [
+      'MULTICAIXA_EXPRESS' as any,
+      'MULTICAIXA_REFERENCE' as any,
+      'BANK_TRANSFER' as any,
+      'CASH_ON_DELIVERY' as any,
+    ],
+  };
   await prisma.adminPreferences.upsert({
     where: { id: 'singleton' },
-    update: {},
-    create: {
-      id: 'singleton',
-      notifyNewOrders: true,
-      notifyLowStock: true,
-      notifyNewMessages: true,
-      defaultDeliveryFee: 2500,
-      activePaymentMethods: [
-        'MULTICAIXA_EXPRESS' as any,
-        'MULTICAIXA_REFERENCE' as any,
-        'CASH_ON_DELIVERY' as any,
-      ],
-    },
+    update: prefsData,
+    create: { id: 'singleton', ...prefsData },
   });
-  console.log('✅ AdminPreferences singleton');
+  console.log(`✅ AdminPreferences singleton — notifyNewOrders=${prefsData.notifyNewOrders} fee=${prefsData.defaultDeliveryFee} methods=${prefsData.activePaymentMethods.join(',')}`);
 
   // ── 5) Example products — 3-4 categories ──────────────────
   const productsCount = await prisma.product.count();

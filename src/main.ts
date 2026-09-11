@@ -32,10 +32,10 @@ async function bootstrap() {
           .map((e) => {
             const constraints = Object.values(e.constraints ?? {});
             if (constraints.length > 0) return `${e.property}: ${constraints.join(', ')}`;
-            return `${e.property}: invalid value`;
+            return `${e.property}: valor inválido`;
           })
           .join('; ');
-        throw new BadRequestException(messages || 'Validation failed');
+        throw new BadRequestException(messages || 'Dados inválidos. Verifique os campos e tente novamente.');
       },
     }),
   );
