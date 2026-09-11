@@ -74,15 +74,62 @@ describe('HttpExceptionFilter', () => {
     );
   });
 
-  it('deve retornar message para Error genérico (500)', () => {
-    const err = new Error('falha interna');
+  it('deve retornar message genérica para Error genérico (500) sem vazar detalhes', () => {
+    const err = new Error('falha interna com detalhes sensíveis ConnectorError');
     filter.catch(err, createHost());
     expect(statusMock).toHaveBeenCalledWith(500);
     expect(jsonMock).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.any(String) }),
+      expect.objectContaining({ message: 'Ops! Algo deu errado. Tente novamente em instantes.' }),
     );
-    // Em test NODE_ENV != production, mostra mensagem real
-    expect(jsonMock.mock.calls[0][0].message).toBe('falha interna');
+    // Cliente NUNCA vê mensagem técnica, só log no servidor
+    expect(jsonMock.mock.calls[0][0].message).not.toBe('falha interna com detalhes sensíveis ConnectorError');
+    expect(jsonMock.mock.calls[0][0].message).not.toContain('ConnectorError');
+  });
+
+  it('deve sanitizar Prisma P2003 (FK restrict) para 409 sem vazar detalhes de tabela', () => {
+    const prismaError: any = new Error(
+      'Invalid `this.prisma.product.delete()` invocation:\nConnectorError(ConnectorError { kind: QueryError(PostgresError { code: "23001", message: "update or delete on table \\"products\\" violates RESTRICT setting of foreign key constraint \\"order_items_product_id_fkey\\"" }) })',
+    );
+    prismaError.code = 'P2003';
+    prismaError.meta = { field_name: 'order_items_product_id_fkey' };
+    prismaError.name = 'PrismaClientKnownRequestError';
+    filter.catch(prismaError, createHost());
+    expect(statusMock).toHaveBeenCalledWith(409);
+    const msg = jsonMock.mock.calls[0][0].message as string;
+    expect(msg).not.toContain('ConnectorError');
+    expect(msg).not.toContain('order_items');
+    expect(msg).not.toContain('PostgresError');
+    expect(msg.toLowerCase()).toContain('em uso');
+  });
+
+  it('deve sanitizar Prisma P2002 (unique) para 409 sem vazar detalhes', () => {
+    const prismaError: any = new Error('Unique constraint failed on the fields: (`email`)');
+    prismaError.code = 'P2002';
+    prismaError.meta = { target: ['email'] };
+    prismaError.name = 'PrismaClientKnownRequestError';
+    filter.catch(prismaError, createHost());
+    expect(statusMock).toHaveBeenCalledWith(409);
+    const msg = jsonMock.mock.calls[0][0].message as string;
+    expect(msg).not.toContain('Unique constraint');
+    // Mensagem segura em PT, sem leak de coluna
+    expect(msg.toLowerCase()).toMatch(/já|uso|existe/);
+  });
+
+  it('deve sanitizar Postgres 23001 bruto para 409 sem leak', () => {
+    const err: any = new Error('update or delete on table "products" violates RESTRICT');
+    err.code = '23001';
+    filter.catch(err, createHost());
+    expect(statusMock).toHaveBeenCalledWith(409);
+    expect(jsonMock.mock.calls[0][0].message).not.toContain('products');
+  });
+
+  it('deve sanitizar HttpException 500 com mensagem técnica para genérica', () => {
+    const exc = new HttpException('ConnectorError: PostgresError code 23001', HttpStatus.INTERNAL_SERVER_ERROR);
+    filter.catch(exc, createHost());
+    expect(statusMock).toHaveBeenCalledWith(500);
+    expect(jsonMock).toHaveBeenCalledWith({
+      message: 'Ops! Algo deu errado. Tente novamente em instantes.',
+    });
   });
 
   it('deve preservar detalhes concatenando em message quando já vem em error.details', () => {
@@ -108,8 +155,9 @@ describe('HttpExceptionFilter', () => {
       HttpStatus.UNAUTHORIZED,
     );
     filter.catch(exc, createHost());
+    // Filtro mantém mensagem em PT (não vaza inglês técnico), mapeia via translateMessage
     expect(jsonMock).toHaveBeenCalledWith({
-      message: 'Token not provided',
+      message: 'Token não fornecido',
     });
   });
 });

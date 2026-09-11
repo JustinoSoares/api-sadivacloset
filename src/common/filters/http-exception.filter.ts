@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { Prisma } from '@prisma/client';
 
 interface MessagePayload {
   message: string;
@@ -17,7 +18,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Ops! Algo deu errado. Tente novamente em instantes.';
 
-    if (exception instanceof HttpException) {
+    // ── 1) Prisma / DB errors (não são HttpException) → mapeia para 4xx seguro sem leak técnico
+    const prismaMapped = this.mapPrismaError(exception);
+    if (prismaMapped) {
+      status = prismaMapped.status;
+      message = prismaMapped.message;
+      // Log detalhado só no servidor
+      const rawMsg = exception instanceof Error ? exception.message : String(exception);
+      const rawStack = exception instanceof Error ? exception.stack : undefined;
+      this.logger.error(
+        `[Prisma ${prismaMapped.prismaCode ?? 'UNKNOWN'}] ${request.method} ${request.url} -> ${rawMsg}`,
+        rawStack,
+      );
+      // Não expõe detalhes técnicos ao cliente — usa mensagem sanitizada
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const excResp = exception.getResponse();
 
@@ -78,13 +92,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
           if (code) message = this.codeToMessage(code);
         }
       }
+
+      // Sanitização para 5xx via HttpException: nunca vaza stack/tabela ao cliente
+      if (status >= 500) {
+        const rawForLog = typeof excResp === 'string' ? excResp : JSON.stringify(excResp);
+        this.logger.error(
+          `[${status}] ${request.method} ${request.url} HttpException -> ${rawForLog}`,
+          exception.stack,
+        );
+        // Se mensagem contém padrão técnico, substitui por genérica
+        if (this.looksTechnical(message)) {
+          message = 'Ops! Algo deu errado. Tente novamente em instantes.';
+        }
+      }
     } else if (exception instanceof Error) {
+      // Erro genérico (não-Pisma, não-Http): loga detalhes só no servidor, cliente vê genérico SEMPRE
       this.logger.error(`[${request.method} ${request.url}] ${exception.message}`, exception.stack);
       message = 'Ops! Algo deu errado. Tente novamente em instantes.';
-      // Em dev/test mostra mensagem real para debug, em prod mantém genérica
-      if (process.env.NODE_ENV !== 'production') {
-        message = exception.message || message;
-      }
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      // NUNCA expõe exception.message ao cliente (mesmo em dev/test), só no log
     } else {
       this.logger.error(`[${request.method} ${request.url}] Unknown error`, String(exception));
     }
@@ -211,5 +237,131 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (msg.startsWith('Validation failed')) return msg.replace('Validation failed', 'Dados inválidos');
     if (msg.startsWith('Insufficient stock')) return 'Estoque insuficiente para este produto.';
     return map[msg] ?? msg;
+  }
+
+  private mapPrismaError(exception: unknown): { status: number; message: string; prismaCode?: string } | null {
+    // Usa duck typing + instanceof para cobrir diferentes formas que o Prisma expõe o erro
+    const anyExc = exception as any;
+    const code: string | undefined = anyExc?.code;
+    const name: string | undefined = anyExc?.name;
+    const msg: string = anyExc?.message ?? '';
+
+    const isKnown = code && /^P\d{4}$/.test(code);
+    const isPrismaName = typeof name === 'string' && name.includes('Prisma');
+    const isConnector = msg.includes('ConnectorError') || msg.includes('PostgresError') || msg.includes('QueryError');
+
+    // Erros nativos do Postgres que o driver expõe sem wrapper Prisma (ex: 23001/23505)
+    const isPostgresCode = code === '23001' || code === '23505' || code === '23503' || code === '23502';
+
+    // PrismaClientValidation / Initialization / RustPanic
+    const isPrismaClientError =
+      name === 'PrismaClientValidationError' ||
+      name === 'PrismaClientInitializationError' ||
+      name === 'PrismaClientRustPanicError' ||
+      name === 'PrismaClientUnknownRequestError';
+
+    if (!isKnown && !isPrismaName && !isConnector && !isPostgresCode && !isPrismaClientError) {
+      // Fallback heurístico: mensagens que contêm padrão Prisma mas sem code
+      if (!msg.includes('Invalid `prisma.') && !msg.includes('prisma.')) return null;
+    }
+
+    // Log adicional para instanceof check (não falha se Prisma não estiver disponível)
+    try {
+      if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+        // já capturado via code, mas garante
+      }
+    } catch {
+      // ignore
+    }
+
+    const prismaCode = code ?? (isPrismaClientError ? name : undefined);
+
+    // Mapeamento de códigos conhecidos para respostas sem leak
+    if (code === 'P2002' || code === '23505') {
+      // Unique constraint violation
+      const target = anyExc?.meta?.target;
+      const targetStr = Array.isArray(target) ? target.join(', ') : target ? String(target) : '';
+      // Não expõe nome da tabela/coluna crua; usa mensagem genérica segura
+      if (targetStr.toLowerCase().includes('email')) {
+        return { status: HttpStatus.CONFLICT, message: 'Este e-mail já está em uso.', prismaCode };
+      }
+      return { status: HttpStatus.CONFLICT, message: 'Este registro já existe. Verifique os dados e tente novamente.', prismaCode };
+    }
+
+    if (code === 'P2003' || code === '23001' || code === '23503') {
+      // Foreign key / Restrict violation
+      if (msg.includes('order_items_product_id_fkey') || msg.includes('order_items') || msg.includes('products')) {
+        return {
+          status: HttpStatus.CONFLICT,
+          message: 'Não é possível concluir a operação porque este registro está em uso (ex: produto associado a encomendas).',
+          prismaCode,
+        };
+      }
+      if (msg.includes('order_') || msg.includes('fkey')) {
+        return {
+          status: HttpStatus.CONFLICT,
+          message: 'Não é possível concluir a operação porque este registro está vinculado a outros dados.',
+          prismaCode,
+        };
+      }
+      return { status: HttpStatus.CONFLICT, message: 'Não é possível concluir a operação porque este registro está em uso.', prismaCode };
+    }
+
+    if (code === 'P2025') {
+      return { status: HttpStatus.NOT_FOUND, message: 'Registro não encontrado.', prismaCode };
+    }
+
+    if (code === 'P2000' || code === 'P2001' || code === 'P2011' || code === 'P2012' || code === 'P2014' || code === '23502') {
+      return { status: HttpStatus.BAD_REQUEST, message: 'Dados inválidos. Verifique os campos e tente novamente.', prismaCode };
+    }
+
+    if (isKnown || isPostgresCode) {
+      // Outros códigos Prisma conhecidos mas não mapeados especificamente -> genérico por categoria
+      if (code && code.startsWith('P2')) {
+        // P2xxx são erros de request -> 400 por defeito, exceto se já tratado acima
+        return { status: HttpStatus.BAD_REQUEST, message: 'Dados inválidos. Verifique os campos e tente novamente.', prismaCode };
+      }
+    }
+
+    if (isPrismaClientError || isConnector) {
+      // Validação / inicialização / connector -> 500 genérico sanitizado (não vaza detalhes de conexão)
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ops! Algo deu errado. Tente novamente em instantes.', prismaCode };
+    }
+
+    if (msg.includes('Invalid `prisma.') || msg.includes('ConnectorError')) {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ops! Algo deu errado. Tente novamente em instantes.', prismaCode };
+    }
+
+    return null;
+  }
+
+  private looksTechnical(message: string): boolean {
+    if (!message) return false;
+    const lowered = message.toLowerCase();
+    const patterns = [
+      'prisma',
+      'connectorerror',
+      'postgreserror',
+      'postgres',
+      'queryerror',
+      'p2002',
+      'p2003',
+      'p2025',
+      'invalid `prisma',
+      'invalid `this.prisma',
+      'at prisma',
+      'at object.',
+      'foreign key',
+      'unique constraint',
+      'violates',
+      'constraint',
+      'sql',
+      'stack',
+      'code: \"23001\"',
+      'order_items_product_id_fkey',
+      'table \"',
+      'connectorerror',
+    ];
+    return patterns.some((p) => lowered.includes(p.toLowerCase()));
   }
 }

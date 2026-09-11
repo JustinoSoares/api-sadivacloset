@@ -89,6 +89,7 @@ export class ProductsAdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 409, description: 'Conflict - product linked to orders' })
   @ApiResponse({ status: 429, description: 'Too Many Requests' })
   async remove(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id, user.sub);

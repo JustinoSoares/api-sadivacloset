@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Product } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
@@ -139,7 +139,44 @@ export class ProductsAdminService {
       });
     }
 
-    await this.prisma.product.delete({ where: { id } });
+    // Prevent hard delete when product is referenced by order_items (FK Restrict).
+    // Keep order history intact; admin should archive/deactivate instead.
+    const orderItemsCount =
+      (await (this.prisma as any).orderItem?.count?.({
+        where: { productId: id },
+      })) ?? 0;
+    if (orderItemsCount > 0) {
+      throw new ConflictException({
+        error: {
+          code: 'PRODUCT_IN_USE',
+          message:
+            'Não é possível eliminar o produto porque já está associado a encomendas. Considere arquivar o produto definindo o stock como 0.',
+        },
+      });
+    }
+
+    try {
+      await this.prisma.product.delete({ where: { id } });
+    } catch (error: any) {
+      // Race condition: order was created between the count check and delete.
+      // Prisma maps Postgres 23001 / FK_RESTRICT to P2003
+      if (
+        error?.code === 'P2003' ||
+        error?.code === '23001' ||
+        error?.meta?.field_name?.includes('order_items') ||
+        String(error?.message ?? '').includes('order_items_product_id_fkey') ||
+        String(error?.message ?? '').includes('violates RESTRICT')
+      ) {
+        throw new ConflictException({
+          error: {
+            code: 'PRODUCT_IN_USE',
+            message:
+              'Não é possível eliminar o produto porque já está associado a encomendas. Considere arquivar o produto definindo o stock como 0.',
+          },
+        });
+      }
+      throw error;
+    }
     await this.invalidateCatalogCache();
     if (adminId) {
       await this.audit
