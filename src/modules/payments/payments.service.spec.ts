@@ -11,6 +11,8 @@ import { PaymentStatus, OrderStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service';
 import { PaymentQueueService } from '../queue/payment-queue.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { MailService } from '../mail/mail.service';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
@@ -67,6 +69,10 @@ describe('PaymentsService', () => {
       },
       payout: { create: jest.fn().mockResolvedValue({}) },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
+      address: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
+      deliveryZone: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
+      adminPreferences: { findUnique: jest.fn().mockResolvedValue({ defaultDeliveryFee: 2500 }) },
+      delivery: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const ekwanza = {
       sendKwikToCustomer: jest.fn().mockResolvedValue({
@@ -120,6 +126,8 @@ describe('PaymentsService', () => {
           provide: PaymentQueueService,
           useValue: { enqueuePaymentConfirmed: jest.fn().mockResolvedValue(undefined) },
         },
+        { provide: RealtimeGateway, useValue: { emitPaymentConfirmed: jest.fn(), emitNotification: jest.fn() } },
+        { provide: MailService, useValue: { sendWebhookNotification: jest.fn().mockResolvedValue(undefined), sendMail: jest.fn() } },
       ],
     }).compile();
     service = module.get<PaymentsService>(PaymentsService);
@@ -315,7 +323,7 @@ describe('PaymentsService', () => {
       const redisMock = (service as any).redis;
       redisMock.exists.mockResolvedValueOnce(true);
       const rawBody = JSON.stringify({ externalReference: 'ref123', status: 'paid' });
-      const result = await service.handlePagamentoWebhook(
+      const result: any = await service.handlePagamentoWebhook(
         'generic',
         rawBody,
         {},

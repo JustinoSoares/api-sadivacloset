@@ -287,7 +287,7 @@ export class CheckoutService {
           : null,
       };
     }).then(async (result: any) => {
-      // Enriquecer delivery.address + deliveryZone e items.product
+      // Enriquecer delivery.address + deliveryZone e items.product — unificado no valor de pagamento
       try {
         if (result.delivery?.addressId) {
           const addr = await this.prisma.address.findUnique({ where: { id: result.delivery.addressId } });
@@ -297,6 +297,17 @@ export class CheckoutService {
             result.delivery.address = { ...addr, deliveryZone };
             result.delivery.deliveryZone = deliveryZone;
           }
+        } else if (result.deliveryFee !== undefined) {
+          // Pedido sem address mas com zonaEntregaId explícita — tenta deduzir zona pelo deliveryFee/preço pago
+          // Busca zona cujo preço == deliveryFee (melhor esforço) para exibir "valor usado para entrega"
+          if (input.zonaEntregaId) {
+            const zoneById = await this.prisma.deliveryZone.findUnique({ where: { id: input.zonaEntregaId } });
+            if (zoneById) result.delivery.deliveryZone = { id: zoneById.id, neighborhood: zoneById.neighborhood, price: zoneById.price };
+          }
+          if (!result.delivery.deliveryZone && result.deliveryFee > 0) {
+            const zoneByPrice = await this.prisma.deliveryZone.findFirst({ where: { price: result.deliveryFee } });
+            if (zoneByPrice) result.delivery.deliveryZone = { id: zoneByPrice.id, neighborhood: zoneByPrice.neighborhood, price: zoneByPrice.price };
+          }
         }
         // Enriquecer items com product
         if (result.items?.length) {
@@ -305,6 +316,17 @@ export class CheckoutService {
             return { ...it, product: prod ? { id: prod.id, name: prod.name, description: prod.description, image: prod.image, category: prod.category, size: prod.size, condition: prod.condition, stock: prod.stock, price: prod.price, discount: prod.discount } : null };
           }));
         }
+        // Breakdown unificado para pagamento — frontend pode dizer "valor usado para entrega"
+        try {
+          (result as any).breakdown = {
+            subtotal: result.subtotal,
+            deliveryFee: result.deliveryFee,
+            total: result.total,
+            valorEntrega: result.deliveryFee,
+            valorEntregaZona: result.delivery?.deliveryZone?.price ?? result.deliveryFee,
+          };
+          (result as any).valorEntrega = result.deliveryFee;
+        } catch {}
       } catch {}
       try {
         this.realtime?.emitNewOrder({ orderId: result.id, buyerId: result.buyerId, total: result.total, createdAt: result.createdAt instanceof Date ? result.createdAt.toISOString() : String(result.createdAt) });

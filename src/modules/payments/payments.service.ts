@@ -77,6 +77,60 @@ function toPaymentResponse(payment: any) {
   };
 }
 
+async function buildPaymentBreakdown(prisma: any, orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { delivery: true },
+  });
+  if (!order) return null;
+  let deliveryZone: any = null;
+  let deliveryAddress: any = null;
+  if (order.delivery?.addressId) {
+    const addr = await prisma.address.findUnique({ where: { id: order.delivery.addressId } });
+    if (addr) {
+      deliveryAddress = addr;
+      const zone = await prisma.deliveryZone.findUnique({ where: { neighborhood: addr.neighborhood } });
+      if (zone) deliveryZone = { id: zone.id, neighborhood: zone.neighborhood, price: zone.price };
+      else {
+        const prefs = await prisma.adminPreferences.findUnique({ where: { id: 'singleton' } });
+        if (prefs) deliveryZone = { id: 'default', neighborhood: addr.neighborhood, price: prefs.defaultDeliveryFee };
+      }
+    }
+  } else if (order.delivery) {
+    // sem address, tenta inferir zona pelo preço pago (útil para debug)
+    // não falha – deixa deliveryZone null
+  }
+  return {
+    order: {
+      id: order.id,
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
+      status: order.status,
+    },
+    delivery: order.delivery
+      ? {
+          id: order.delivery.id,
+          type: order.delivery.type,
+          status: order.delivery.status,
+          addressId: order.delivery.addressId,
+          deliveryFee: order.delivery.deliveryFee,
+          address: deliveryAddress,
+          deliveryZone,
+        }
+      : null,
+    deliveryZone,
+    breakdown: {
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
+      // valor_unificado_entrega – explicitamente o preço que foi usado para entrega (mesmo que deliveryZone.price ou default)
+      valorEntrega: order.deliveryFee,
+      valorEntregaZona: deliveryZone?.price ?? order.deliveryFee,
+    },
+  };
+}
+
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -492,13 +546,21 @@ export class PaymentsService {
       });
     }
 
-    return toPaymentResponse(payment);
+    // Unificar no valor de pagamento: retorna breakdown com entrega para o frontend mostrar "valor usado para entrega"
+    const base = toPaymentResponse(payment);
+    try {
+      const breakdown = await buildPaymentBreakdown(this.prisma, orderId);
+      if (breakdown) {
+        return { ...base, ...breakdown, amount: payment.amount, valorEntrega: breakdown.breakdown.valorEntrega };
+      }
+    } catch {}
+    return base;
   }
 
   async get(buyerId: string, orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { payment: true },
+      include: { payment: true, delivery: true },
     });
     if (!order || order.buyerId !== buyerId) {
       throw new NotFoundException({
@@ -510,7 +572,14 @@ export class PaymentsService {
         error: { code: 'NOT_FOUND', message: 'Payment not found for this order' },
       });
     }
-    return toPaymentResponse(order.payment);
+    const base = toPaymentResponse(order.payment);
+    try {
+      const breakdown = await buildPaymentBreakdown(this.prisma, orderId);
+      if (breakdown) {
+        return { ...base, ...breakdown, amount: order.payment.amount, valorEntrega: breakdown.breakdown.valorEntrega };
+      }
+    } catch {}
+    return base;
   }
 
   async comprovativo(buyerId: string, orderId: string, file: Express.Multer.File) {
@@ -560,7 +629,12 @@ export class PaymentsService {
       },
     });
 
-    return toPaymentResponse(updated);
+    const base = toPaymentResponse(updated);
+    try {
+      const breakdown = await buildPaymentBreakdown(this.prisma, orderId);
+      if (breakdown) return { ...base, ...breakdown, valorEntrega: breakdown.breakdown.valorEntrega };
+    } catch {}
+    return base;
   }
 
   // Admin validar – regra crítica: só aqui ou webhook passa Pedido para pago
@@ -1051,7 +1125,7 @@ export class PaymentsService {
     rawBody: string,
     headers: Record<string, string>,
     payload: any,
-  ) {
+  ): Promise<any> {
     const gatewayNorm = String(gateway).toLowerCase().trim();
 
     // 1. Validação HMAC genérica configurável por env
